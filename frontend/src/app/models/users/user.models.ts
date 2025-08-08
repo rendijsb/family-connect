@@ -6,14 +6,27 @@ export enum RoleEnum {
   CLIENT = 'client'
 }
 
+export interface Role {
+  id: number;
+  name: string;
+  displayName: string;
+  description: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface User {
   id: number;
   name: string;
   email: string;
-  role: RoleEnum;
-  role_display_name?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  emailVerifiedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  role: Role;
   token?: string;
   avatar?: string;
-  created_at?: string;
-  updated_at?: string;
+  canManageFamily?: boolean;
 }

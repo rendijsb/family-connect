@@ -12,7 +12,7 @@ class RolesSeeder extends Seeder
 {
     public function run(): void
     {
-        Role::truncate();
+        Role::query()->delete();
 
         foreach (RoleEnum::cases() as $roleEnum) {
             Role::create([

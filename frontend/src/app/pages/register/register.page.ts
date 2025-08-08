@@ -1,5 +1,4 @@
-// src/app/pages/register/register.page.ts
-import { Component } from '@angular/core';
+import {Component, inject} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import {
@@ -7,13 +6,15 @@ import {
   IonCard, IonCardContent, IonIcon, IonText, IonGrid, IonRow, IonCol,
   IonHeader, IonToolbar, IonTitle, IonBackButton, IonButtons, IonSelect, IonSelectOption
 } from '@ionic/angular/standalone';
-import { RouterLink } from '@angular/router';
+import {Router, RouterLink} from '@angular/router';
 import { addIcons } from 'ionicons';
 import {
   mailOutline, lockClosedOutline, eyeOutline, eyeOffOutline,
   personOutline, phonePortraitOutline, checkmarkOutline,
   logoApple, logoGoogle, logoFacebook, arrowBackOutline
 } from 'ionicons/icons';
+import {AuthService} from '../../core/services/auth/auth.service';
+import {catchError, EMPTY, finalize, tap} from 'rxjs';
 
 @Component({
   selector: 'app-register',
@@ -28,6 +29,10 @@ import {
   ]
 })
 export class RegisterPage {
+  private readonly formBuilder = inject(FormBuilder);
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+
   registerForm: FormGroup;
   showPassword = false;
   showConfirmPassword = false;
@@ -35,7 +40,7 @@ export class RegisterPage {
   currentStep = 1;
   totalSteps = 2;
 
-  constructor(private formBuilder: FormBuilder) {
+  constructor() {
     addIcons({
       mailOutline, lockClosedOutline, eyeOutline, eyeOffOutline,
       personOutline, phonePortraitOutline, checkmarkOutline,
@@ -43,16 +48,13 @@ export class RegisterPage {
     });
 
     this.registerForm = this.formBuilder.group({
-      // Step 1: Basic Info
-      firstName: ['', [Validators.required, Validators.minLength(2)]],
-      lastName: ['', [Validators.required, Validators.minLength(2)]],
+      firstName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
+      lastName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
       email: ['', [Validators.required, Validators.email]],
-      phone: ['', [Validators.required, Validators.pattern(/^\+?[\d\s-()]{10,}$/)]],
+      phone: ['', [Validators.pattern(/^\+?[\d\s-()]{10,}$/)]],
 
-      // Step 2: Account Setup
       password: ['', [Validators.required, Validators.minLength(8), this.passwordStrengthValidator]],
       confirmPassword: ['', [Validators.required]],
-      role: ['client', [Validators.required]],
       agreeToTerms: [false, [Validators.requiredTrue]],
       subscribeToNewsletter: [false]
     }, {
@@ -93,16 +95,15 @@ export class RegisterPage {
 
   nextStep() {
     if (this.currentStep < this.totalSteps) {
-      // Validate current step fields
       const step1Fields = ['firstName', 'lastName', 'email', 'phone'];
-      const isStep1Valid = step1Fields.every(field =>
-        this.registerForm.get(field)?.valid
-      );
+      const isStep1Valid = step1Fields.every(field => {
+        const control = this.registerForm.get(field);
+        return control?.valid || !control?.hasError('required');
+      });
 
       if (isStep1Valid) {
         this.currentStep++;
       } else {
-        // Mark step 1 fields as touched to show validation
         step1Fields.forEach(field => {
           this.registerForm.get(field)?.markAsTouched();
         });
@@ -140,10 +141,23 @@ export class RegisterPage {
   onRegister() {
     if (this.registerForm.valid) {
       this.isLoading = true;
-      // Add your registration logic here
-      console.log('Registration form data:', this.registerForm.value);
+
+      const formValue = this.registerForm.value;
+      const payload = {
+        ...formValue,
+        password_confirmation: formValue.confirmPassword
+      };
+
+      this.authService.register(payload)
+        .pipe(
+          tap(() => this.router.navigate(['/'])),
+          catchError(() => EMPTY),
+          finalize(() => this.isLoading = false)
+        )
+        .subscribe();
+
+
     } else {
-      // Mark all fields as touched to show validation errors
       this.markAllFieldsAsTouched();
     }
   }

@@ -118,7 +118,6 @@
                 </ion-icon>
               </ion-item>
               <div class="error-text" *ngIf="registerForm.get('phone')?.invalid && registerForm.get('phone')?.touched">
-                <span *ngIf="registerForm.get('phone')?.errors?.['required']">Phone number is required</span>
                 <span *ngIf="registerForm.get('phone')?.errors?.['pattern']">Please enter a valid phone number</span>
               </div>
             </div>
@@ -127,21 +126,6 @@
 
           <!-- Step 2: Account Security -->
           <div class="form-step" *ngIf="currentStep === 2">
-
-            <!-- Role Selection -->
-            <div class="input-group">
-              <ion-item class="custom-item" lines="none">
-                <ion-icon name="person-outline" slot="start" class="input-icon"></ion-icon>
-                <ion-select
-                  placeholder="Select your role"
-                  formControlName="role"
-                  class="custom-select"
-                  interface="popover">
-                  <ion-select-option value="client">Family Member</ion-select-option>
-                  <ion-select-option value="moderator">Family Moderator</ion-select-option>
-                </ion-select>
-              </ion-item>
-            </div>
 
             <!-- Password Input -->
             <div class="input-group">

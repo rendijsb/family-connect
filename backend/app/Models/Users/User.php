@@ -35,12 +35,14 @@ class User extends Authenticatable
     public const DATE_OF_BIRTH = 'date_of_birth';
     public const EMAIL_VERIFIED_AT = 'email_verified_at';
     public const CREATED_AT = 'created_at';
-    public const UPDATED_AT = 'updated';
+    public const UPDATED_AT = 'updated_at';
     public const REMEMBER_TOKEN = 'remember_token';
 
     protected $fillable = [
         self::NAME,
         self::EMAIL,
+        self::PHONE,
+        self::DATE_OF_BIRTH,
         self::PASSWORD,
         self::ROLE_ID,
     ];
