@@ -1,0 +1,286 @@
+<ion-header [translucent]="true" class="dashboard-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-menu-button class="menu-button"></ion-menu-button>
+    </ion-buttons>
+
+    <ion-title class="header-title">
+      <div class="title-content">
+        <span class="greeting">Good evening,</span>
+        <span class="username">{{currentUser.name}}</span>
+      </div>
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button class="notification-button">
+        <ion-icon name="notifications-outline" class="notification-icon"></ion-icon>
+        <ion-badge class="notification-badge">3</ion-badge>
+      </ion-button>
+
+      <ion-avatar class="header-avatar">
+        <img [src]="currentUser.avatar" [alt]="currentUser.name" />
+      </ion-avatar>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="dashboard-content">
+
+  <!-- Refresher -->
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="dashboard-container">
+
+    <!-- Segment Navigation -->
+    <ion-segment
+      [(ngModel)]="selectedSegment"
+      (ionChange)="segmentChanged($event)"
+      class="dashboard-segment">
+      <ion-segment-button value="overview">
+        <ion-icon name="home-outline"></ion-icon>
+        <ion-label>Overview</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="family">
+        <ion-icon name="people-outline"></ion-icon>
+        <ion-label>Family</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="activities">
+        <ion-icon name="stats-chart-outline"></ion-icon>
+        <ion-label>Activities</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+
+    <!-- Overview Tab -->
+    <div *ngIf="selectedSegment === 'overview'" class="tab-content">
+
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <ion-card class="stat-card primary">
+          <ion-card-content class="stat-content">
+            <div class="stat-icon">
+              <ion-icon name="people-outline"></ion-icon>
+            </div>
+            <div class="stat-info">
+              <h3 class="stat-number">{{familyStats.totalMembers}}</h3>
+              <p class="stat-label">Family Members</p>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card class="stat-card success">
+          <ion-card-content class="stat-content">
+            <div class="stat-icon">
+              <ion-icon name="checkmark-circle-outline"></ion-icon>
+            </div>
+            <div class="stat-info">
+              <h3 class="stat-number">{{familyStats.activeToday}}</h3>
+              <p class="stat-label">Active Today</p>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card class="stat-card warning">
+          <ion-card-content class="stat-content">
+            <div class="stat-icon">
+              <ion-icon name="photos-outline"></ion-icon>
+            </div>
+            <div class="stat-info">
+              <h3 class="stat-number">{{familyStats.photosShared}}</h3>
+              <p class="stat-label">Photos Shared</p>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card class="stat-card purple">
+          <ion-card-content class="stat-content">
+            <div class="stat-icon">
+              <ion-icon name="calendar-outline"></ion-icon>
+            </div>
+            <div class="stat-info">
+              <h3 class="stat-number">{{familyStats.eventsPlanned}}</h3>
+              <p class="stat-label">Events Planned</p>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+
+      <!-- Connection Strength -->
+      <ion-card class="connection-card">
+        <ion-card-header>
+          <ion-card-title class="connection-title">
+            <ion-icon name="heart-outline" class="title-icon"></ion-icon>
+            Family Connection Strength
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="connection-content">
+          <div class="connection-score">
+            <span class="score-number">{{familyStats.connectionStrength}}%</span>
+            <span class="score-label">Excellent!</span>
+          </div>
+          <ion-progress-bar
+            [value]="familyStats.connectionStrength / 100"
+            class="connection-bar">
+          </ion-progress-bar>
+          <p class="connection-description">
+            Your family is staying well connected! Keep up the great communication.
+          </p>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Quick Actions -->
+      <ion-card class="quick-actions-card">
+        <ion-card-header>
+          <ion-card-title class="section-title">Quick Actions</ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="quick-actions-content">
+          <div class="actions-grid">
+            <div
+              *ngFor="let action of quickActions"
+              class="action-item"
+              (click)="onQuickAction(action)">
+              <div class="action-icon" [style.background-color]="action.color + '20'">
+                <ion-icon [name]="action.icon" [style.color]="action.color"></ion-icon>
+              </div>
+              <span class="action-title">{{action.title}}</span>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Upcoming Events -->
+      <ion-card class="events-card">
+        <ion-card-header class="events-header">
+          <ion-card-title class="section-title">Upcoming Events</ion-card-title>
+          <ion-button fill="clear" class="view-all-button">
+            <ion-icon name="chevron-forward-outline"></ion-icon>
+          </ion-button>
+        </ion-card-header>
+        <ion-card-content class="events-content">
+          <div class="events-list">
+            <div
+              *ngFor="let event of upcomingEvents"
+              class="event-item"
+              (click)="onViewEvent(event)">
+              <div class="event-indicator" [style.background-color]="event.color"></div>
+              <div class="event-details">
+                <h4 class="event-title">{{event.title}}</h4>
+                <p class="event-time">
+                  <ion-icon name="time-outline"></ion-icon>
+                  {{event.date}}
+                </p>
+                <p class="event-location">
+                  <ion-icon name="location-outline"></ion-icon>
+                  {{event.location}}
+                </p>
+              </div>
+              <div class="event-attendees">
+                <ion-chip class="attendees-chip">
+                  <ion-icon name="people-outline"></ion-icon>
+                  <ion-label>{{event.attendees}}</ion-label>
+                </ion-chip>
+              </div>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+    </div>
+
+    <!-- Family Tab -->
+    <div *ngIf="selectedSegment === 'family'" class="tab-content">
+
+      <ion-card class="family-card">
+        <ion-card-header>
+          <ion-card-title class="section-title">Family Members</ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="family-content">
+          <ion-list class="family-list">
+            <ion-item
+              *ngFor="let member of familyMembers"
+              class="family-item"
+              button
+              (click)="onViewProfile(member)">
+
+              <ion-avatar slot="start" class="member-avatar">
+                <img [src]="member.avatar" [alt]="member.name" />
+                <div class="status-indicator" [style.background-color]="getStatusColor(member.status)"></div>
+              </ion-avatar>
+
+              <ion-label class="member-info">
+                <h3 class="member-name">{{member.name}}</h3>
+                <p class="member-role">{{member.role}}</p>
+                <p class="member-status" *ngIf="member.status === 'offline' && member.lastSeen">
+                  Last seen: {{member.lastSeen}}
+                </p>
+              </ion-label>
+
+              <div class="member-actions" slot="end">
+                <ion-button fill="clear" class="action-btn chat-btn">
+                  <ion-icon name="chatbubble-outline"></ion-icon>
+                </ion-button>
+                <ion-button fill="clear" class="action-btn call-btn">
+                  <ion-icon name="call-outline"></ion-icon>
+                </ion-button>
+              </div>
+
+            </ion-item>
+          </ion-list>
+        </ion-card-content>
+      </ion-card>
+
+    </div>
+
+    <!-- Activities Tab -->
+    <div *ngIf="selectedSegment === 'activities'" class="tab-content">
+
+      <ion-card class="activities-card">
+        <ion-card-header>
+          <ion-card-title class="section-title">Recent Activities</ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="activities-content">
+          <div class="activities-list">
+            <div
+              *ngFor="let activity of recentActivities; let i = index"
+              class="activity-item"
+              (click)="onViewActivity(activity)">
+
+              <div class="activity-timeline">
+                <div class="timeline-dot" [style.background-color]="activity.color"></div>
+                <div class="timeline-line" *ngIf="i < recentActivities.length - 1"></div>
+              </div>
+
+              <div class="activity-content">
+                <div class="activity-header">
+                  <ion-avatar class="activity-avatar">
+                    <img [src]="activity.userAvatar" [alt]="activity.user" />
+                  </ion-avatar>
+                  <div class="activity-meta">
+                    <h4 class="activity-title">{{activity.title}}</h4>
+                    <p class="activity-timestamp">{{activity.timestamp}}</p>
+                  </div>
+                  <div class="activity-icon" [style.background-color]="activity.color + '20'">
+                    <ion-icon [name]="activity.icon" [style.color]="activity.color"></ion-icon>
+                  </div>
+                </div>
+                <p class="activity-description">{{activity.description}}</p>
+              </div>
+
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+    </div>
+
+  </div>
+
+  <!-- Floating Action Button -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button class="fab-button">
+      <ion-icon name="add-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+
+</ion-content>

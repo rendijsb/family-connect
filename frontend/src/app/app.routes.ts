@@ -13,10 +13,10 @@ export const routes: Routes = [
     path: 'register',
     loadComponent: () => import('./pages/register/register.page').then(m => m.RegisterPage)
   },
-  {
-    path: 'forgot-password',
-    loadComponent: () => import('./pages/forgot-password/forgot-password.page').then(m => m.ForgotPasswordPage)
-  },
+  // {
+  //   path: 'forgot-password',
+  //   loadComponent: () => import('./pages/forgot-password/forgot-password.page').then(m => m.ForgotPasswordPage)
+  // },
   {
     path: 'dashboard',
     canActivate: [authGuard],
@@ -29,20 +29,20 @@ export const routes: Routes = [
     loadChildren: () => import('./tabs/tabs.routes').then(m => m.routes)
   },
 
-  {
-    path: 'admin',
-    canActivate: [authGuard, roleGuard([RoleEnum.ADMIN, RoleEnum.MODERATOR])],
-    loadChildren: () => import('./admin/admin.routes').then(m => m.routes)
-  },
+  // {
+  //   path: 'admin',
+  //   canActivate: [authGuard, roleGuard([RoleEnum.ADMIN, RoleEnum.MODERATOR])],
+  //   loadChildren: () => import('./admin/admin.routes').then(m => m.routes)
+  // },
 
-  {
-    path: 'unauthorized',
-    loadComponent: () => import('./pages/unauthorized/unauthorized.page').then(m => m.UnauthorizedPage)
-  },
-  {
-    path: 'not-found',
-    loadComponent: () => import('./pages/not-found/not-found.page').then(m => m.NotFoundPage)
-  },
+  // {
+  //   path: 'unauthorized',
+  //   loadComponent: () => import('./pages/unauthorized/unauthorized.page').then(m => m.UnauthorizedPage)
+  // },
+  // {
+  //   path: 'not-found',
+  //   loadComponent: () => import('./pages/not-found/not-found.page').then(m => m.NotFoundPage)
+  // },
 
   { path: '**', redirectTo: '/not-found' }
 ];

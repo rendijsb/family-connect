@@ -1,5 +1,7 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api.yourdomain.com/api/v1',
-  appName: 'Family Connect'
+  apiUrl: 'https://api.familyconnect.com/api',
+  appName: 'Family Connect',
+  version: '1.0.0',
+  enableDebugMode: false
 };
