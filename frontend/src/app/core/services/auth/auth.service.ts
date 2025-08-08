@@ -100,10 +100,8 @@ export class AuthService {
       this.apiUrlService.getUrl('auth/me')
     ).pipe(
       tap(response => {
-        if (response.success) {
           this.currentUser.set(response.data);
           this.saveUserToStorage(response.data);
-        }
       }),
       switchMap(response => [response.data]),
       catchError((error) => {
@@ -137,10 +135,8 @@ export class AuthService {
       }
     ).pipe(
       tap(async (response) => {
-        if (response.success) {
           await this.handleAuthSuccess(response.data.user, response.data.token);
           await this.showToast(response.message || 'Registration successful!', 'success');
-        }
       }),
       catchError(error => this.handleAuthError(error))
     );
@@ -156,10 +152,8 @@ export class AuthService {
       }
     ).pipe(
       tap(async (response) => {
-        if (response.success) {
           await this.handleAuthSuccess(response.data.user, response.data.token);
           await this.showToast(response.message || 'Login successful!', 'success');
-        }
       }),
       catchError(error => this.handleAuthError(error))
     );
@@ -190,9 +184,7 @@ export class AuthService {
       { email }
     ).pipe(
       tap(response => {
-        if (response.success) {
           this.showToast(response.message, 'success');
-        }
       }),
       catchError(error => this.handleAuthError(error))
     );
@@ -209,9 +201,7 @@ export class AuthService {
       resetData
     ).pipe(
       tap(response => {
-        if (response.success) {
           this.showToast(response.message, 'success');
-        }
       }),
       catchError(error => this.handleAuthError(error))
     );
@@ -222,10 +212,8 @@ export class AuthService {
       this.apiUrlService.getUrl('user')
     ).pipe(
       tap(response => {
-        if (response.success) {
           this.currentUser.set(response.data);
           this.saveUserToStorage(response.data);
-        }
       }),
       switchMap(response => [response.data]),
       catchError(error => this.handleAuthError(error))

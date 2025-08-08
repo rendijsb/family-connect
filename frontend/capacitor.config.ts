@@ -3,20 +3,19 @@ import { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.yourcompany.familyconnect',
   appName: 'Family Connect',
-  webDir: 'dist/browser',
+  webDir: 'dist',
   server: {
+    url: 'http://192.168.1.118:4200',
+    cleartext: true,
     androidScheme: 'https',
     iosScheme: 'capacitor'
   },
   plugins: {
     SplashScreen: {
-      launchAutoHide: false,
+      launchAutoHide: true,
+      launchShowDuration: 500, // Much shorter - 0.5 seconds
       backgroundColor: "#1a1a1a",
-      androidSplashResourceName: "splash",
-      androidScaleType: "CENTER_CROP",
-      showSpinner: false,
-      splashFullScreen: true,
-      splashImmersive: true
+      showSpinner: false
     },
     StatusBar: {
       style: 'DARK',
