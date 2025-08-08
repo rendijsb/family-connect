@@ -12,11 +12,13 @@ class ValidationRuleHelper
     public const INTEGER = 'integer';
     public const BOOLEAN = 'boolean';
     public const NULLABLE = 'nullable';
+    public const ARRAY = 'array';
     public const SOMETIMES = 'sometimes';
     public const UNIQUE = 'unique';
     public const MIN = 'min';
     public const MAX = 'max';
     public const CONFIRMED = 'confirmed';
+    public const EXISTS = 'exists';
 
     public static function min(int $length): string
     {

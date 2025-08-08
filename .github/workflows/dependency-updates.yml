@@ -1,0 +1,60 @@
+# .github/workflows/dependency-updates.yml
+name: Dependency Updates
+
+on:
+  schedule:
+    - cron: '0 2 * * 1'  # Every Monday at 2 AM
+  workflow_dispatch:
+
+jobs:
+  update-backend-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Update Composer dependencies
+        working-directory: ./backend
+        run: |
+          composer update --no-dev --optimize-autoloader
+          composer audit
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: update backend dependencies'
+          title: 'Backend Dependency Updates'
+          body: 'Automated dependency updates for backend'
+          branch: 'dependency-updates/backend'
+
+  update-frontend-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Update npm dependencies
+        working-directory: ./frontend
+        run: |
+          npm update
+          npm audit --audit-level=high
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: update frontend dependencies'
+          title: 'Frontend Dependency Updates'
+          body: 'Automated dependency updates for frontend'
+          branch: 'dependency-updates/frontend'
