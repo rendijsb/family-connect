@@ -1,6 +1,13 @@
 {
-  "name": "ionic-app",
-  "app_id": "",
+  "name": "family-connect",
+  "integrations": {
+    "capacitor": {}
+  },
   "type": "angular-standalone",
-  "integrations": {}
+  "proxies": [
+    {
+      "path": "/api/*",
+      "proxyUrl": "http://192.168.1.118:8000/api/*"
+    }
+  ]
 }

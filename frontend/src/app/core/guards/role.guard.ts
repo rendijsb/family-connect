@@ -10,10 +10,11 @@ export const roleGuard = (allowedRoles: RoleEnum[]): CanActivateFn => {
 
     const user = authService.user();
 
-    if (user && allowedRoles.includes(user.role)) {
+    if (user && user.role && allowedRoles.includes(user.role.name as RoleEnum)) {
       return true;
     } else {
-      router.navigate(['/unauthorized']);
+      // Redirect to unauthorized page or appropriate route
+      router.navigate(['/tabs/home']); // or '/unauthorized' if you have that page
       return false;
     }
   };

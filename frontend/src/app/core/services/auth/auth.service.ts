@@ -8,13 +8,38 @@ import { StorageService } from "../storage.service";
 import { ToastController, LoadingController, AlertController } from '@ionic/angular';
 
 interface AuthResponse {
-  data: User;
+  success: boolean;
   message?: string;
+  data: {
+    user: User;
+    token: string;
+    tokenType: string;
+  };
+  error?: string;
 }
 
 interface ErrorResponse {
+  success: boolean;
   message: string;
   errors?: { [key: string]: string[] };
+  error?: string;
+}
+
+interface RegisterPayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+  phone?: string;
+  agreeToTerms: boolean;
+  subscribeToNewsletter?: boolean;
+}
+
+interface LoginPayload {
+  email: string;
+  password: string;
+  remember?: boolean;
 }
 
 @Injectable({
@@ -35,9 +60,11 @@ export class AuthService {
   private token = signal<string | null>(null);
   private isInitialized = signal<boolean>(false);
 
-  readonly isAdmin = computed(() => this.currentUser()?.role === RoleEnum.ADMIN);
-  readonly isModerator = computed(() => this.currentUser()?.role === RoleEnum.MODERATOR);
-  readonly isClient = computed(() => this.currentUser()?.role === RoleEnum.CLIENT);
+  readonly isAdmin = computed(() => this.currentUser()?.role?.id === 1); // RoleEnum.ADMIN
+  readonly isModerator = computed(() => this.currentUser()?.role?.id === 2); // RoleEnum.MODERATOR
+  readonly isFamilyOwner = computed(() => this.currentUser()?.role?.id === 3); // RoleEnum.FAMILY_OWNER
+  readonly isFamilyMember = computed(() => this.currentUser()?.role?.id === 4); // RoleEnum.FAMILY_MEMBER
+  readonly isClient = computed(() => this.currentUser()?.role?.id === 5); // RoleEnum.CLIENT
   readonly isAuthenticated = computed(() => !!this.token() && !!this.currentUser());
 
   constructor() {
@@ -53,6 +80,12 @@ export class AuthService {
         const userData = JSON.parse(userDataString);
         this.currentUser.set(userData);
         this.token.set(token);
+
+        this.verifyTokenValidity().subscribe({
+          error: () => {
+            this.clearAuthData();
+          }
+        });
       }
     } catch (error) {
       console.error('Error initializing auth:', error);
@@ -62,7 +95,23 @@ export class AuthService {
     }
   }
 
-  user() {
+  private verifyTokenValidity(): Observable<User> {
+    return this.http.get<{success: boolean, data: User}>(
+      this.apiUrlService.getUrl('auth/me')
+    ).pipe(
+      tap(response => {
+          this.currentUser.set(response.data);
+          this.saveUserToStorage(response.data);
+      }),
+      switchMap(response => [response.data]),
+      catchError((error) => {
+        this.clearAuthData();
+        return throwError(() => error);
+      })
+    );
+  }
+
+  user(): User | null {
     return this.currentUser();
   }
 
@@ -70,41 +119,48 @@ export class AuthService {
     return this.token();
   }
 
-  register(userData: {
-    name: string;
-    email: string;
-    password: string;
-    password_confirmation: string;
-  }): Observable<AuthResponse> {
-    const formData = this.createFormData(userData);
-
+  register(userData: RegisterPayload): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(
-      this.apiUrlService.getUrl('api/auth/register'),
-      formData
+      this.apiUrlService.getUrl('auth/register'),
+      {
+        name: `${userData.firstName} ${userData.lastName}`.trim(),
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        password: userData.password,
+        password_confirmation: userData.password_confirmation,
+        phone: userData.phone,
+        agreeToTerms: userData.agreeToTerms,
+        subscribeToNewsletter: userData.subscribeToNewsletter || false
+      }
     ).pipe(
-      tap(response => this.handleAuthSuccess(response.data)),
+      tap(async (response) => {
+          await this.handleAuthSuccess(response.data.user, response.data.token);
+          await this.showToast(response.message || 'Registration successful!', 'success');
+      }),
       catchError(error => this.handleAuthError(error))
     );
   }
 
-  login(credentials: {
-    email: string;
-    password: string;
-    remember_me?: boolean;
-  }): Observable<AuthResponse> {
-    const formData = this.createFormData(credentials);
-
+  login(credentials: LoginPayload): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(
-      this.apiUrlService.getUrl('api/auth/login'),
-      formData
+      this.apiUrlService.getUrl('auth/login'),
+      {
+        email: credentials.email,
+        password: credentials.password,
+        remember: credentials.remember || false
+      }
     ).pipe(
-      tap(response => this.handleAuthSuccess(response.data)),
+      tap(async (response) => {
+          await this.handleAuthSuccess(response.data.user, response.data.token);
+          await this.showToast(response.message || 'Login successful!', 'success');
+      }),
       catchError(error => this.handleAuthError(error))
     );
   }
 
   logout(): Observable<any> {
-    return this.http.post(this.apiUrlService.getUrl('api/auth/logout'), {}).pipe(
+    return this.http.post(this.apiUrlService.getUrl('auth/logout'), {}).pipe(
       tap(async () => {
         await this.clearAuthData();
         this.currentUser.set(null);
@@ -113,7 +169,6 @@ export class AuthService {
         await this.showToast('Logged out successfully', 'success');
       }),
       catchError(async (error) => {
-        // Even if logout fails on server, clear local data
         await this.clearAuthData();
         this.currentUser.set(null);
         this.token.set(null);
@@ -123,14 +178,14 @@ export class AuthService {
     );
   }
 
-  forgotPassword(email: string): Observable<{message: string}> {
-    const formData = new FormData();
-    formData.append('email', email);
-
-    return this.http.post<{message: string}>(
-      this.apiUrlService.getUrl('api/auth/forgot-password'),
-      formData
+  forgotPassword(email: string): Observable<{success: boolean, message: string}> {
+    return this.http.post<{success: boolean, message: string}>(
+      this.apiUrlService.getUrl('auth/forgot-password'),
+      { email }
     ).pipe(
+      tap(response => {
+          this.showToast(response.message, 'success');
+      }),
       catchError(error => this.handleAuthError(error))
     );
   }
@@ -140,54 +195,35 @@ export class AuthService {
     email: string;
     password: string;
     password_confirmation: string;
-  }): Observable<{message: string}> {
-    const formData = this.createFormData(resetData);
-
-    return this.http.post<{message: string}>(
-      this.apiUrlService.getUrl('api/auth/reset-password'),
-      formData
+  }): Observable<{success: boolean, message: string}> {
+    return this.http.post<{success: boolean, message: string}>(
+      this.apiUrlService.getUrl('auth/reset-password'),
+      resetData
     ).pipe(
+      tap(response => {
+          this.showToast(response.message, 'success');
+      }),
       catchError(error => this.handleAuthError(error))
     );
   }
 
-  // Get fresh user data from server
   refreshUser(): Observable<User> {
-    return this.http.get<{data: User}>(
-      this.apiUrlService.getUrl('api/user')
+    return this.http.get<{success: boolean, data: User}>(
+      this.apiUrlService.getUrl('user')
     ).pipe(
       tap(response => {
-        this.currentUser.set(response.data);
-        this.saveUserToStorage(response.data);
+          this.currentUser.set(response.data);
+          this.saveUserToStorage(response.data);
       }),
       switchMap(response => [response.data]),
       catchError(error => this.handleAuthError(error))
     );
   }
 
-  // Update user profile
-  updateProfile(userData: Partial<User>): Observable<User> {
-    const formData = this.createFormData(userData);
-
-    return this.http.post<{data: User}>(
-      this.apiUrlService.getUrl('api/user/update'),
-      formData
-    ).pipe(
-      tap(response => {
-        this.currentUser.set(response.data);
-        this.saveUserToStorage(response.data);
-      }),
-      switchMap(response => [response.data]),
-      catchError(error => this.handleAuthError(error))
-    );
-  }
-
-  // Check if auth is initialized
   isAuthInitialized(): boolean {
     return this.isInitialized();
   }
 
-  // Wait for auth to initialize
   waitForInitialization(): Observable<boolean> {
     return new Observable(subscriber => {
       const checkInitialization = () => {
@@ -202,41 +238,63 @@ export class AuthService {
     });
   }
 
-  private async handleAuthSuccess(user: User): Promise<void> {
-    await this.setUserData(user);
+  canManageFamily(): boolean {
+    const user = this.currentUser();
+    return user ? <boolean>user.canManageFamily : false;
+  }
+
+  hasRole(role: RoleEnum): boolean {
+    const user = this.currentUser();
+    return user?.role?.name === role;
+  }
+
+  hasAnyRole(roles: RoleEnum[]): boolean {
+    const user = this.currentUser();
+    return user ? roles.includes(user.role?.name as RoleEnum) : false;
+  }
+
+  private async handleAuthSuccess(user: User, token: string): Promise<void> {
+    await this.setUserData(user, token);
     this.currentUser.set(user);
-    this.redirectBasedOnRole(user.role);
-    await this.showToast('Successfully authenticated!', 'success');
+    this.token.set(token);
+    this.redirectBasedOnRole(user.role?.name);
   }
 
   private handleAuthError(error: HttpErrorResponse): Observable<never> {
     let errorMessage = 'An error occurred';
 
-    if (error.error && error.error.message) {
-      errorMessage = error.error.message;
+    if (error.error) {
+      const errorResponse = error.error as ErrorResponse;
+
+      if (errorResponse.message) {
+        errorMessage = errorResponse.message;
+      } else if (errorResponse.errors) {
+        const firstError = Object.values(errorResponse.errors)[0];
+        errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
+      } else if (errorResponse.error) {
+        errorMessage = errorResponse.error;
+      }
     } else if (error.status === 0) {
       errorMessage = 'Network error. Please check your connection.';
     } else if (error.status >= 500) {
       errorMessage = 'Server error. Please try again later.';
+    } else if (error.status === 422) {
+      errorMessage = 'Please check your input and try again.';
+    } else if (error.status === 401) {
+      errorMessage = 'Invalid credentials. Please try again.';
     }
 
     this.showToast(errorMessage, 'danger');
     return throwError(() => error);
   }
 
-  private async setUserData(user: User): Promise<void> {
-    if (user.token) {
-      await this.storage.setItem(this.tokenKey, user.token);
-      this.token.set(user.token);
-    }
+  private async setUserData(user: User, token: string): Promise<void> {
+    await this.storage.setItem(this.tokenKey, token);
     await this.saveUserToStorage(user);
   }
 
   private async saveUserToStorage(user: User): Promise<void> {
-    // Don't save token in user object to avoid duplication
-    const userToSave = { ...user };
-    delete userToSave.token;
-    await this.storage.setItem(this.userKey, JSON.stringify(userToSave));
+    await this.storage.setItem(this.userKey, JSON.stringify(user));
   }
 
   private async clearAuthData(): Promise<void> {
@@ -244,30 +302,21 @@ export class AuthService {
     await this.storage.removeItem(this.userKey);
   }
 
-  private redirectBasedOnRole(role: RoleEnum): void {
-    switch (role) {
-      case RoleEnum.ADMIN:
-        this.router.navigate(['/admin/dashboard']);
+  private redirectBasedOnRole(roleName?: string): void {
+    switch (roleName) {
+      case 'admin':
+      case 'moderator':
+        this.router.navigate(['/dashboard']);
         break;
-      case RoleEnum.MODERATOR:
-        this.router.navigate(['/admin/dashboard']);
-        break;
-      case RoleEnum.CLIENT:
+      case 'family_owner':
+      case 'family_member':
         this.router.navigate(['/tabs/home']);
         break;
+      case 'client':
       default:
-        this.router.navigate(['/']);
+        this.router.navigate(['/tabs/home']);
+        break;
     }
-  }
-
-  private createFormData(data: any): FormData {
-    const formData = new FormData();
-    Object.keys(data).forEach(key => {
-      if (data[key] !== null && data[key] !== undefined) {
-        formData.append(key, data[key]);
-      }
-    });
-    return formData;
   }
 
   private async showToast(message: string, color: 'success' | 'danger' | 'warning' = 'success'): Promise<void> {
@@ -286,7 +335,6 @@ export class AuthService {
     await toast.present();
   }
 
-  // Utility method for showing loading
   async showLoading(message: string = 'Please wait...'): Promise<HTMLIonLoadingElement> {
     const loading = await this.loadingController.create({
       message,
@@ -296,7 +344,6 @@ export class AuthService {
     return loading;
   }
 
-  // Utility method for showing alerts
   async showAlert(header: string, message: string, buttons: string[] = ['OK']): Promise<void> {
     const alert = await this.alertController.create({
       header,
