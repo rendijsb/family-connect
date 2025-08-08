@@ -1,4 +1,4 @@
-import {Component, inject} from '@angular/core';
+import {Component, inject, signal} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import {
@@ -34,11 +34,12 @@ export class RegisterPage {
   private readonly router = inject(Router);
 
   registerForm: FormGroup;
-  showPassword = false;
-  showConfirmPassword = false;
-  isLoading = false;
-  currentStep = 1;
-  totalSteps = 2;
+
+  showPassword = signal<boolean>(false);
+  showConfirmPassword = signal<boolean>(false);
+  isLoading = signal<boolean>(false);
+  currentStep = signal<number>(1);
+  totalSteps = signal<number>(2);
 
   constructor() {
     addIcons({
@@ -66,12 +67,12 @@ export class RegisterPage {
     const value = control.value;
     if (!value) return null;
 
-    const hasNumber = /[0-9]/.test(value);
-    const hasUpper = /[A-Z]/.test(value);
-    const hasLower = /[a-z]/.test(value);
-    const hasSpecial = /[#?!@$%^&*-]/.test(value);
+    const hasNumber: boolean = /[0-9]/.test(value);
+    const hasUpper: boolean = /[A-Z]/.test(value);
+    const hasLower: boolean = /[a-z]/.test(value);
+    const hasSpecial: boolean = /[#?!@$%^&*-]/.test(value);
 
-    const valid = hasNumber && hasUpper && hasLower && hasSpecial;
+    const valid: boolean = hasNumber && hasUpper && hasLower && hasSpecial;
     return valid ? null : { weakPassword: true };
   }
 
@@ -86,15 +87,15 @@ export class RegisterPage {
   }
 
   togglePasswordVisibility() {
-    this.showPassword = !this.showPassword;
+    this.showPassword.set(!this.showPassword());
   }
 
   toggleConfirmPasswordVisibility() {
-    this.showConfirmPassword = !this.showConfirmPassword;
+    this.showConfirmPassword.set(!this.showConfirmPassword());
   }
 
   nextStep() {
-    if (this.currentStep < this.totalSteps) {
+    if (this.currentStep() < this.totalSteps()) {
       const step1Fields = ['firstName', 'lastName', 'email', 'phone'];
       const isStep1Valid = step1Fields.every(field => {
         const control = this.registerForm.get(field);
@@ -102,7 +103,7 @@ export class RegisterPage {
       });
 
       if (isStep1Valid) {
-        this.currentStep++;
+        this.currentStep.set(this.currentStep() + 1);
       } else {
         step1Fields.forEach(field => {
           this.registerForm.get(field)?.markAsTouched();
@@ -112,8 +113,8 @@ export class RegisterPage {
   }
 
   previousStep() {
-    if (this.currentStep > 1) {
-      this.currentStep--;
+    if (this.currentStep() > 1) {
+      this.currentStep.set(this.currentStep() - 1);
     }
   }
 
@@ -140,7 +141,7 @@ export class RegisterPage {
 
   onRegister() {
     if (this.registerForm.valid) {
-      this.isLoading = true;
+      this.isLoading.set(true);
 
       const formValue = this.registerForm.value;
       const payload = {
@@ -152,7 +153,7 @@ export class RegisterPage {
         .pipe(
           tap(() => this.router.navigate(['/'])),
           catchError(() => EMPTY),
-          finalize(() => this.isLoading = false)
+          finalize(() => this.isLoading.set(false))
         )
         .subscribe();
 
@@ -164,7 +165,6 @@ export class RegisterPage {
 
   onSocialRegister(provider: string) {
     console.log('Social registration with:', provider);
-    // Add social registration logic here
   }
 
   private markAllFieldsAsTouched() {

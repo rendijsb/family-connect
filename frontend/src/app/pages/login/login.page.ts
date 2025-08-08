@@ -1,5 +1,4 @@
-// src/app/pages/login/login.page.ts
-import { Component } from '@angular/core';
+import {Component, inject, signal} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import {
@@ -7,12 +6,14 @@ import {
   IonCard, IonCardContent, IonIcon, IonText, IonGrid, IonRow, IonCol,
   IonHeader, IonToolbar, IonTitle, IonBackButton, IonButtons
 } from '@ionic/angular/standalone';
-import { RouterLink } from '@angular/router';
+import {Router, RouterLink} from '@angular/router';
 import { addIcons } from 'ionicons';
 import {
   mailOutline, lockClosedOutline, eyeOutline, eyeOffOutline,
   logoApple, logoGoogle, logoFacebook, personOutline
 } from 'ionicons/icons';
+import {AuthService} from '../../core/services/auth/auth.service';
+import {catchError, EMPTY, finalize, tap} from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -27,9 +28,13 @@ import {
   ]
 })
 export class LoginPage {
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+
   loginForm: FormGroup;
-  showPassword = false;
-  isLoading = false;
+
+  showPassword = signal<boolean>(false);
+  isLoading = signal<boolean>(false);
 
   constructor(private formBuilder: FormBuilder) {
     addIcons({
@@ -45,14 +50,31 @@ export class LoginPage {
   }
 
   togglePasswordVisibility() {
-    this.showPassword = !this.showPassword;
+    this.showPassword.set(!this.showPassword);
   }
 
   onLogin() {
     if (this.loginForm.valid) {
-      this.isLoading = true;
-      // Add your login logic here
-      console.log('Login form data:', this.loginForm.value);
+      this.isLoading.set(true);
+
+      const payload = this.loginForm.value;
+
+      this.authService.login(payload)
+        .pipe(
+          tap(() => {
+            this.router.navigate(['/home']);
+          }),
+          catchError(error => {
+            return EMPTY;
+          }),
+          finalize(() => {
+            this.isLoading.set(false);
+          })
+        )
+        .subscribe();
+
+    } else {
+      this.loginForm.markAllAsTouched();
     }
   }
 

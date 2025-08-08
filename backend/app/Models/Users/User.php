@@ -126,6 +126,11 @@ class User extends Authenticatable
         return $this->getAttribute(self::EMAIL_VERIFIED_AT);
     }
 
+    public function getPassword(): ?string
+    {
+        return $this->getAttribute(self::PASSWORD);
+    }
+
     public function getCreatedAt(): Carbon
     {
         return $this->getAttribute(self::CREATED_AT);

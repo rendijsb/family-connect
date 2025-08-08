@@ -69,7 +69,7 @@ class RegisterRequest extends FormRequest
         ];
     }
 
-    public function data($key = null, $default = null): RegisterRequestData
+    public function dto(): RegisterRequestData
     {
         return new RegisterRequestData(
             name: $this->input(self::NAME),
