@@ -4,7 +4,13 @@ import { roleGuard } from './core/guards/role.guard';
 import { RoleEnum } from './models/users/user.models';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/login', pathMatch: 'full' },
+  {
+    path: '',
+    redirectTo: (route) => {
+      return '/login';
+    },
+    pathMatch: 'full'
+  },
   {
     path: 'login',
     loadComponent: () => import('./pages/login/login.page').then(m => m.LoginPage)

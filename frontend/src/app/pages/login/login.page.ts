@@ -47,22 +47,30 @@ export class LoginPage {
       password: ['', [Validators.required, Validators.minLength(6)]],
       rememberMe: [false]
     });
+
+    if (this.authService.isAuthenticated()) {
+      this.redirectUser();
+    }
   }
 
   togglePasswordVisibility() {
-    this.showPassword.set(!this.showPassword);
+    this.showPassword.set(!this.showPassword());
   }
 
   onLogin() {
     if (this.loginForm.valid) {
       this.isLoading.set(true);
 
-      const payload = this.loginForm.value;
+      const payload = {
+        email: this.loginForm.value.email,
+        password: this.loginForm.value.password,
+        remember: this.loginForm.value.rememberMe
+      };
 
       this.authService.login(payload)
         .pipe(
           tap(() => {
-            this.router.navigate(['/home']);
+            this.redirectUser();
           }),
           catchError(error => {
             return EMPTY;
@@ -79,6 +87,21 @@ export class LoginPage {
   }
 
   onSocialLogin(provider: string) {
-    // Add social login logic here
+    // TODO: Implement social login
+  }
+
+  private redirectUser() {
+    const user = this.authService.user();
+    if (user) {
+      switch (user.role?.name) {
+        case 'admin':
+        case 'moderator':
+          this.router.navigate(['/dashboard']);
+          break;
+        default:
+          this.router.navigate(['/tabs/home']);
+          break;
+      }
+    }
   }
 }

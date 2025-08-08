@@ -10,9 +10,9 @@
       <!-- Progress Indicator -->
       <div class="progress-container">
         <div class="progress-bar">
-          <div class="progress-fill" [style.width.%]="(currentStep / totalSteps) * 100"></div>
+          <div class="progress-fill" [style.width.%]="(currentStep() / totalSteps()) * 100"></div>
         </div>
-        <span class="progress-text">Step {{currentStep}} of {{totalSteps}}</span>
+        <span class="progress-text">Step {{currentStep()}} of {{totalSteps()}}</span>
       </div>
     </div>
 
@@ -22,8 +22,8 @@
         <ion-icon name="person-outline" class="logo-icon"></ion-icon>
       </div>
       <h1 class="page-title">Create Account</h1>
-      <p class="page-subtitle" *ngIf="currentStep === 1">Let's get you started with Family Connect</p>
-      <p class="page-subtitle" *ngIf="currentStep === 2">Almost there! Set up your account security</p>
+      <p class="page-subtitle" *ngIf="currentStep() === 1">Let's get you started with Family Connect</p>
+      <p class="page-subtitle" *ngIf="currentStep() === 2">Almost there! Set up your account security</p>
     </div>
 
     <!-- Registration Form -->
@@ -32,7 +32,7 @@
         <form [formGroup]="registerForm" (ngSubmit)="onRegister()">
 
           <!-- Step 1: Personal Information -->
-          <div class="form-step" *ngIf="currentStep === 1">
+          <div class="form-step" *ngIf="currentStep() === 1">
 
             <!-- Name Fields -->
             <ion-grid class="name-grid">
@@ -125,21 +125,21 @@
           </div>
 
           <!-- Step 2: Account Security -->
-          <div class="form-step" *ngIf="currentStep === 2">
+          <div class="form-step" *ngIf="currentStep() === 2">
 
             <!-- Password Input -->
             <div class="input-group">
               <ion-item class="custom-item" lines="none">
                 <ion-icon name="lock-closed-outline" slot="start" class="input-icon"></ion-icon>
                 <ion-input
-                  [type]="showPassword ? 'text' : 'password'"
+                  [type]="showPassword() ? 'text' : 'password'"
                   placeholder="Create Password"
                   formControlName="password"
                   class="custom-input"
                   [class.error]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
                 </ion-input>
                 <ion-icon
-                  [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"
+                  [name]="showPassword() ? 'eye-off-outline' : 'eye-outline'"
                   slot="end"
                   class="password-toggle"
                   (click)="togglePasswordVisibility()">
@@ -174,14 +174,14 @@
               <ion-item class="custom-item" lines="none">
                 <ion-icon name="lock-closed-outline" slot="start" class="input-icon"></ion-icon>
                 <ion-input
-                  [type]="showConfirmPassword ? 'text' : 'password'"
+                  [type]="showConfirmPassword() ? 'text' : 'password'"
                   placeholder="Confirm Password"
                   formControlName="confirmPassword"
                   class="custom-input"
                   [class.error]="(registerForm.get('confirmPassword')?.invalid || registerForm.errors?.['passwordMismatch']) && registerForm.get('confirmPassword')?.touched">
                 </ion-input>
                 <ion-icon
-                  [name]="showConfirmPassword ? 'eye-off-outline' : 'eye-outline'"
+                  [name]="showConfirmPassword() ? 'eye-off-outline' : 'eye-outline'"
                   slot="end"
                   class="password-toggle"
                   (click)="toggleConfirmPasswordVisibility()">
@@ -232,7 +232,7 @@
           <!-- Navigation Buttons -->
           <div class="button-group">
             <ion-button
-              *ngIf="currentStep > 1"
+              *ngIf="currentStep() > 1"
               fill="outline"
               expand="block"
               class="secondary-button"
@@ -262,7 +262,7 @@
         </form>
 
         <!-- Social Registration (Step 1 only) -->
-        <div class="social-section" *ngIf="currentStep === 1">
+        <div class="social-section" *ngIf="currentStep() === 1">
           <div class="divider">
             <span class="divider-text">or sign up with</span>
           </div>

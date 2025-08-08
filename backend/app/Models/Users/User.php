@@ -67,6 +67,8 @@ class User extends Authenticatable
         return [
             self::EMAIL_VERIFIED_AT => 'datetime',
             self::PASSWORD => 'hashed',
+            self::DATE_OF_BIRTH => 'date',
+            self::ROLE_ID => 'integer',
         ];
     }
 
@@ -76,7 +78,7 @@ class User extends Authenticatable
 
     public function roleRelation(): BelongsTo
     {
-        return $this->belongsTo(Role::class, Role::ID, self::ROLE_ID);
+        return $this->belongsTo(Role::class, self::ROLE_ID, Role::ID);
     }
 
     /**
@@ -96,9 +98,9 @@ class User extends Authenticatable
         return $this->getAttribute(self::ID);
     }
 
-    public function getRoleId(): string
+    public function getRoleId(): int
     {
-        return $this->getAttribute(self::ROLE_ID);
+        return (int) $this->getAttribute(self::ROLE_ID);
     }
 
     public function getName(): string

@@ -39,7 +39,7 @@ interface RegisterPayload {
 interface LoginPayload {
   email: string;
   password: string;
-  remember_me?: boolean;
+  remember?: boolean;
 }
 
 @Injectable({
@@ -60,11 +60,11 @@ export class AuthService {
   private token = signal<string | null>(null);
   private isInitialized = signal<boolean>(false);
 
-  readonly isAdmin = computed(() => this.currentUser()?.role.id === 1); // RoleEnum.ADMIN
-  readonly isModerator = computed(() => this.currentUser()?.role.id === 2); // RoleEnum.MODERATOR
-  readonly isFamilyOwner = computed(() => this.currentUser()?.role.id === 3); // RoleEnum.FAMILY_OWNER
-  readonly isFamilyMember = computed(() => this.currentUser()?.role.id === 4); // RoleEnum.FAMILY_MEMBER
-  readonly isClient = computed(() => this.currentUser()?.role.id === 5); // RoleEnum.CLIENT
+  readonly isAdmin = computed(() => this.currentUser()?.role?.id === 1); // RoleEnum.ADMIN
+  readonly isModerator = computed(() => this.currentUser()?.role?.id === 2); // RoleEnum.MODERATOR
+  readonly isFamilyOwner = computed(() => this.currentUser()?.role?.id === 3); // RoleEnum.FAMILY_OWNER
+  readonly isFamilyMember = computed(() => this.currentUser()?.role?.id === 4); // RoleEnum.FAMILY_MEMBER
+  readonly isClient = computed(() => this.currentUser()?.role?.id === 5); // RoleEnum.CLIENT
   readonly isAuthenticated = computed(() => !!this.token() && !!this.currentUser());
 
   constructor() {
@@ -81,8 +81,11 @@ export class AuthService {
         this.currentUser.set(userData);
         this.token.set(token);
 
-        // Optionally verify token is still valid
-        this.verifyTokenValidity();
+        this.verifyTokenValidity().subscribe({
+          error: () => {
+            this.clearAuthData();
+          }
+        });
       }
     } catch (error) {
       console.error('Error initializing auth:', error);
@@ -146,7 +149,11 @@ export class AuthService {
   login(credentials: LoginPayload): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(
       this.apiUrlService.getUrl('auth/login'),
-      credentials
+      {
+        email: credentials.email,
+        password: credentials.password,
+        remember: credentials.remember || false
+      }
     ).pipe(
       tap(async (response) => {
         if (response.success) {
@@ -168,7 +175,6 @@ export class AuthService {
         await this.showToast('Logged out successfully', 'success');
       }),
       catchError(async (error) => {
-        // Even if logout fails on server, clear local data
         await this.clearAuthData();
         this.currentUser.set(null);
         this.token.set(null);
@@ -211,7 +217,6 @@ export class AuthService {
     );
   }
 
-  // Get fresh user data from server
   refreshUser(): Observable<User> {
     return this.http.get<{success: boolean, data: User}>(
       this.apiUrlService.getUrl('user')
@@ -227,12 +232,10 @@ export class AuthService {
     );
   }
 
-  // Check if auth is initialized
   isAuthInitialized(): boolean {
     return this.isInitialized();
   }
 
-  // Wait for auth to initialize
   waitForInitialization(): Observable<boolean> {
     return new Observable(subscriber => {
       const checkInitialization = () => {
@@ -247,7 +250,6 @@ export class AuthService {
     });
   }
 
-  // Check user permissions
   canManageFamily(): boolean {
     const user = this.currentUser();
     return user ? <boolean>user.canManageFamily : false;
@@ -279,7 +281,6 @@ export class AuthService {
       if (errorResponse.message) {
         errorMessage = errorResponse.message;
       } else if (errorResponse.errors) {
-        // Handle validation errors
         const firstError = Object.values(errorResponse.errors)[0];
         errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
       } else if (errorResponse.error) {
@@ -346,7 +347,6 @@ export class AuthService {
     await toast.present();
   }
 
-  // Utility method for showing loading
   async showLoading(message: string = 'Please wait...'): Promise<HTMLIonLoadingElement> {
     const loading = await this.loadingController.create({
       message,
@@ -356,7 +356,6 @@ export class AuthService {
     return loading;
   }
 
-  // Utility method for showing alerts
   async showAlert(header: string, message: string, buttons: string[] = ['OK']): Promise<void> {
     const alert = await this.alertController.create({
       header,

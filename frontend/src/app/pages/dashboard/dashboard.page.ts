@@ -1,5 +1,5 @@
 // src/app/pages/dashboard/dashboard.page.ts
-import { Component, OnInit } from '@angular/core';
+import {Component, inject, OnInit} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -20,6 +20,9 @@ import {
   chevronForwardOutline, ellipsisHorizontalOutline, personOutline,
   checkmarkCircleOutline, alertCircleOutline
 } from 'ionicons/icons';
+import {Router} from '@angular/router';
+import {LoadingController} from '@ionic/angular';
+import {AuthService} from '../../core/services/auth/auth.service';
 
 interface FamilyMember {
   id: number;
@@ -217,14 +220,29 @@ export class DashboardPage implements OnInit {
     });
   }
 
+  private readonly router = inject(Router)
+  private readonly loadingController = inject(LoadingController)
+  private readonly authService = inject(AuthService);
+
   ngOnInit() {
     // Initialize dashboard data
     this.loadDashboardData();
+
+    // Add navigation handling for mobile back button
+    this.handleBackButton();
   }
 
   loadDashboardData() {
     // Simulate loading dashboard data
     console.log('Loading dashboard data...');
+  }
+
+  private handleBackButton() {
+    // Handle hardware back button on Android
+    document.addEventListener('backbutton', () => {
+      // Prevent default back action in dashboard
+      // User should use logout instead
+    });
   }
 
   doRefresh(event: any) {
@@ -240,19 +258,41 @@ export class DashboardPage implements OnInit {
 
   onQuickAction(action: QuickAction) {
     console.log('Quick action clicked:', action.title);
-    // Navigate to the specific route or perform action
+
+    // Add basic navigation logic
+    switch (action.id) {
+      case 'chat':
+        // For now, navigate to tabs since chat tab doesn't exist yet
+        this.router.navigate(['/tabs/home']);
+        break;
+      case 'photos':
+        this.router.navigate(['/tabs/home']);
+        break;
+      case 'calendar':
+        this.router.navigate(['/tabs/home']);
+        break;
+      default:
+        this.router.navigate(['/tabs/home']);
+        break;
+    }
   }
 
   onViewProfile(member: FamilyMember) {
     console.log('View profile:', member.name);
+    // Navigate to profile or show modal
+    this.router.navigate(['/tabs/home']);
   }
 
   onViewActivity(activity: Activity) {
     console.log('View activity:', activity.title);
+    // Navigate to activity details
+    this.router.navigate(['/tabs/home']);
   }
 
   onViewEvent(event: any) {
     console.log('View event:', event.title);
+    // Navigate to event details
+    this.router.navigate(['/tabs/home']);
   }
 
   getStatusColor(status: string): string {
@@ -273,5 +313,22 @@ export class DashboardPage implements OnInit {
       case 'achievement': return 'checkmark-circle-outline';
       default: return 'happy-outline';
     }
+  }
+
+  async onLogout() {
+    const loading = await this.loadingController.create({
+      message: 'Logging out...',
+      spinner: 'crescent'
+    });
+    await loading.present();
+
+    this.authService.logout().subscribe({
+      complete: async () => {
+        await loading.dismiss();
+      },
+      error: async () => {
+        await loading.dismiss();
+      }
+    });
   }
 }
