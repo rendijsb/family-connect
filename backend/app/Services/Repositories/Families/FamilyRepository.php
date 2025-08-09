@@ -15,8 +15,9 @@ use Illuminate\Support\Str;
 readonly class FamilyRepository
 {
     public function __construct(
-        private Family $family,
-        private Auth   $auth,
+        private Family                 $family,
+        private Auth                   $auth,
+        private FamilyMemberRepository $familyMemberRepository,
     )
     {
     }
@@ -35,7 +36,12 @@ readonly class FamilyRepository
             Family::INVITE_CODE => $this->makeInviteCode(),
         ];
 
-        return $this->family->create($payload);
+        /** @var Family $family */
+        $family = $this->family->create($payload);
+
+        $this->familyMemberRepository->createFamilyLeader($family->getId(), $authUser->getId());
+
+        return $family;
     }
 
     public function makeInviteCode(): string

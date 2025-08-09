@@ -21,6 +21,7 @@ class FamilyResource extends JsonResource
             'settings' => $this->resource->getSettings(),
             'created_at' => $this->resource->getCreatedAt(),
             'updated_at' => $this->resource->getUpdatedAt(),
+            'familyMembers' => FamilyMemberResource::make($this->resource->relatedMembers()),
         ];
     }
 }

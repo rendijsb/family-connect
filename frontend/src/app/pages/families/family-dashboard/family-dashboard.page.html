@@ -1,0 +1,437 @@
+<ion-header [translucent]="true" class="family-dashboard-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/families"></ion-back-button>
+    </ion-buttons>
+
+    <ion-title class="header-title">
+      <div class="family-title-content" *ngIf="family()">
+        <span class="family-name">{{ family()!.name }}</span>
+        <span class="member-count">{{ family()!.memberCount || 0 }} members</span>
+      </div>
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button class="notification-button" *ngIf="family()">
+        <ion-icon name="notifications-outline"></ion-icon>
+        <ion-badge class="notification-badge" *ngIf="notificationCount() > 0">
+          {{ notificationCount() }}
+        </ion-badge>
+      </ion-button>
+
+      <ion-button
+        class="menu-button"
+        (click)="onShowFamilyMenu($event)"
+        *ngIf="family()">
+        <ion-icon name="ellipsis-vertical-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="family-dashboard-content">
+  <!-- Refresher -->
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="loading-container">
+    <ion-spinner name="crescent" class="loading-spinner"></ion-spinner>
+    <p class="loading-text">Loading family dashboard...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error()" class="error-container">
+    <div class="error-icon">
+      <ion-icon name="alert-circle-outline"></ion-icon>
+    </div>
+    <h3 class="error-title">Unable to Load Family</h3>
+    <p class="error-message">{{ error() }}</p>
+    <ion-button fill="outline" (click)="onRetry()">
+      <ion-icon name="refresh-outline" slot="start"></ion-icon>
+      Try Again
+    </ion-button>
+  </div>
+
+  <!-- Dashboard Content -->
+  <div *ngIf="!isLoading() && !error() && family()" class="dashboard-container">
+
+    <!-- Family Hero Section -->
+    <div class="family-hero" [style.background-image]="getFamilyBackground()">
+      <div class="hero-overlay">
+        <div class="hero-content">
+          <div class="family-avatar">
+            <span class="avatar-text">{{ getFamilyInitials() }}</span>
+          </div>
+          <div class="family-info">
+            <h1 class="family-name">{{ family()!.name }}</h1>
+            <p class="family-description" *ngIf="family()!.description">
+              {{ family()!.description }}
+            </p>
+            <div class="family-meta">
+              <span class="role-badge" [attr.data-role]="userRole()">
+                <ion-icon [name]="getRoleIcon()"></ion-icon>
+                {{ getRoleDisplayName() }}
+              </span>
+              <span class="created-date">
+                Created {{ family()!.createdAt | date:'MMM d, y' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ion-segment
+      [(ngModel)]="selectedTab"
+      (ionChange)="onTabChange($event)"
+      class="dashboard-tabs">
+      <ion-segment-button value="overview">
+        <ion-icon name="home-outline"></ion-icon>
+        <ion-label>Overview</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="members">
+        <ion-icon name="people-outline"></ion-icon>
+        <ion-label>Members</ion-label>
+        <ion-badge *ngIf="family()!.memberCount">{{ family()!.memberCount }}</ion-badge>
+      </ion-segment-button>
+      <ion-segment-button value="activity">
+        <ion-icon name="pulse-outline"></ion-icon>
+        <ion-label>Activity</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+
+    <!-- Overview Tab -->
+    <div *ngIf="selectedTab === 'overview'" class="tab-content overview-tab">
+
+      <!-- Quick Stats -->
+      <ion-card class="stats-card">
+        <ion-card-header>
+          <ion-card-title class="card-title">Family Statistics</ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="stats-content">
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-icon members">
+                <ion-icon name="people-outline"></ion-icon>
+              </div>
+              <div class="stat-value">{{ dashboardData()?.stats?.totalMembers || 0 }}</div>
+              <div class="stat-label">Total Members</div>
+            </div>
+
+            <div class="stat-item">
+              <div class="stat-icon active">
+                <ion-icon name="pulse-outline"></ion-icon>
+              </div>
+              <div class="stat-value">{{ dashboardData()?.stats?.activeMembers || 0 }}</div>
+              <div class="stat-label">Active Today</div>
+            </div>
+
+            <div class="stat-item">
+              <div class="stat-icon photos">
+                <ion-icon name="camera-outline"></ion-icon>
+              </div>
+              <div class="stat-value">{{ dashboardData()?.stats?.photosShared || 0 }}</div>
+              <div class="stat-label">Photos Shared</div>
+            </div>
+
+            <div class="stat-item">
+              <div class="stat-icon events">
+                <ion-icon name="calendar-outline"></ion-icon>
+              </div>
+              <div class="stat-value">{{ dashboardData()?.stats?.eventsPlanned || 0 }}</div>
+              <div class="stat-label">Upcoming Events</div>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Quick Actions -->
+      <ion-card class="actions-card">
+        <ion-card-header>
+          <ion-card-title class="card-title">Quick Actions</ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="actions-content">
+          <div class="actions-grid">
+            <div class="action-item" (click)="onStartChat()">
+              <div class="action-icon chat">
+                <ion-icon name="chatbubble-outline"></ion-icon>
+              </div>
+              <span class="action-title">Family Chat</span>
+            </div>
+
+            <div class="action-item" (click)="onSharePhotos()">
+              <div class="action-icon photos">
+                <ion-icon name="camera-outline"></ion-icon>
+              </div>
+              <span class="action-title">Share Photos</span>
+            </div>
+
+            <div class="action-item" (click)="onCreateEvent()">
+              <div class="action-icon events">
+                <ion-icon name="calendar-outline"></ion-icon>
+              </div>
+              <span class="action-title">Plan Event</span>
+            </div>
+
+            <div class="action-item" (click)="onViewMembers()">
+              <div class="action-icon members">
+                <ion-icon name="people-outline"></ion-icon>
+              </div>
+              <span class="action-title">View Members</span>
+            </div>
+
+            <div class="action-item" (click)="onInviteMembers()" *ngIf="canInvite()">
+              <div class="action-icon invite">
+                <ion-icon name="person-add-outline"></ion-icon>
+              </div>
+              <span class="action-title">Invite</span>
+            </div>
+
+            <div class="action-item" (click)="onShareLocation()">
+              <div class="action-icon location">
+                <ion-icon name="location-outline"></ion-icon>
+              </div>
+              <span class="action-title">Share Location</span>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Recent Activity -->
+      <ion-card class="activity-card" *ngIf="dashboardData()?.recentActivities?.length">
+        <ion-card-header class="activity-header">
+          <ion-card-title class="card-title">Recent Activity</ion-card-title>
+          <ion-button fill="clear" size="small" (click)="onViewAllActivity()">
+            View All
+          </ion-button>
+        </ion-card-header>
+        <ion-card-content class="activity-content">
+          <div class="activity-list">
+            <div
+              *ngFor="let activity of dashboardData()!.recentActivities.slice(0, 5); trackBy: trackByActivityId"
+              class="activity-item">
+              <div class="activity-avatar">
+                <img [src]="activity.user?.avatar || '/assets/avatars/default.jpg'" [alt]="activity.user?.name">
+              </div>
+              <div class="activity-details">
+                <p class="activity-title">{{ activity.title }}</p>
+                <p class="activity-description" *ngIf="activity.description">
+                  {{ activity.description }}
+                </p>
+                <span class="activity-time">{{ activity.createdAt | date:'MMM d, h:mm a' }}</span>
+              </div>
+              <div class="activity-type-icon" [attr.data-type]="activity.type">
+                <ion-icon [name]="getActivityIcon(activity.type)"></ion-icon>
+              </div>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Invite Code Card -->
+      <ion-card class="invite-code-card" *ngIf="canManage()">
+        <ion-card-header>
+          <ion-card-title class="card-title">
+            <ion-icon name="link-outline"></ion-icon>
+            Family Invite Code
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="invite-code-content">
+          <div class="invite-code-display">
+            <span class="invite-code">{{ family()!.inviteCode }}</span>
+            <div class="invite-actions">
+              <ion-button fill="clear" size="small" (click)="onCopyInviteCode()">
+                <ion-icon name="copy-outline"></ion-icon>
+              </ion-button>
+              <ion-button fill="clear" size="small" (click)="onShareInviteCode()">
+                <ion-icon name="share-outline"></ion-icon>
+              </ion-button>
+              <ion-button fill="clear" size="small" (click)="onRegenerateInviteCode()">
+                <ion-icon name="refresh-outline"></ion-icon>
+              </ion-button>
+            </div>
+          </div>
+          <p class="invite-description">
+            Share this code with family members to invite them to join
+          </p>
+        </ion-card-content>
+      </ion-card>
+
+    </div>
+
+    <!-- Members Tab -->
+    <div *ngIf="selectedTab === 'members'" class="tab-content members-tab">
+
+      <!-- Members List -->
+      <ion-card class="members-card">
+        <ion-card-header class="members-header">
+          <ion-card-title class="card-title">Family Members</ion-card-title>
+          <ion-button
+            fill="clear"
+            size="small"
+            (click)="onInviteMembers()"
+            *ngIf="canInvite()">
+            <ion-icon name="person-add-outline"></ion-icon>
+          </ion-button>
+        </ion-card-header>
+        <ion-card-content class="members-content">
+          <div class="members-list">
+            <div
+              *ngFor="let member of family()!.members; trackBy: trackByMemberId"
+              class="member-item"
+              (click)="onViewMemberProfile(member)">
+
+              <ion-avatar class="member-avatar">
+                <img [src]="member.user?.avatar || '/assets/avatars/default.jpg'" [alt]="member.user?.name">
+                <div class="online-indicator" [class.online]="isMemberOnline(member)"></div>
+              </ion-avatar>
+
+              <div class="member-info">
+                <h4 class="member-name">{{ member.user?.name }}</h4>
+                <p class="member-role">{{ getMemberRoleDisplay(member.role) }}</p>
+                <p class="member-status" *ngIf="member.lastActivityAt">
+                  Last active {{ member.lastActivityAt | date:'MMM d, h:mm a' }}
+                </p>
+              </div>
+
+              <div class="member-actions" *ngIf="canManageMembers()">
+                <ion-button
+                  fill="clear"
+                  size="small"
+                  (click)="onMemberActions($event, member)">
+                  <ion-icon name="ellipsis-horizontal-outline"></ion-icon>
+                </ion-button>
+              </div>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Pending Invitations -->
+      <ion-card class="invitations-card" *ngIf="pendingInvitations()?.length && canManage()">
+        <ion-card-header>
+          <ion-card-title class="card-title">Pending Invitations</ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="invitations-content">
+          <div class="invitations-list">
+            <div
+              *ngFor="let invitation of pendingInvitations(); trackBy: trackByInvitationId"
+              class="invitation-item">
+              <div class="invitation-info">
+                <h4 class="invitation-email">{{ invitation.email }}</h4>
+                <p class="invitation-role">Invited as {{ getMemberRoleDisplay(invitation.role) }}</p>
+                <p class="invitation-date">Sent {{ invitation.sentAt | date:'MMM d, h:mm a' }}</p>
+              </div>
+              <div class="invitation-actions">
+                <ion-button fill="clear" size="small" (click)="onResendInvitation(invitation)">
+                  <ion-icon name="paper-plane-outline"></ion-icon>
+                </ion-button>
+                <ion-button fill="clear" size="small" (click)="onCancelInvitation(invitation)">
+                  <ion-icon name="close-outline"></ion-icon>
+                </ion-button>
+              </div>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+    </div>
+
+    <!-- Activity Tab -->
+    <div *ngIf="selectedTab === 'activity'" class="tab-content activity-tab">
+
+      <!-- Activity Filter -->
+      <div class="activity-filter">
+        <ion-segment
+          [(ngModel)]="activityFilter"
+          (ionChange)="onActivityFilterChange($event)"
+          class="filter-segment">
+          <ion-segment-button value="all">
+            <ion-label>All</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="today">
+            <ion-label>Today</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="week">
+            <ion-label>This Week</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+      </div>
+
+      <!-- Activity Timeline -->
+      <ion-card class="timeline-card">
+        <ion-card-content class="timeline-content">
+          <div class="activity-timeline">
+            <div
+              *ngFor="let activity of filteredActivities(); let i = index; trackBy: trackByActivityId"
+              class="timeline-item">
+
+              <div class="timeline-marker">
+                <div class="timeline-dot" [attr.data-type]="activity.type"></div>
+                <div class="timeline-line" *ngIf="i < filteredActivities().length - 1"></div>
+              </div>
+
+              <div class="timeline-content-item">
+                <div class="activity-header">
+                  <ion-avatar class="activity-avatar">
+                    <img [src]="activity.user?.avatar || '/assets/avatars/default.jpg'" [alt]="activity.user?.name">
+                  </ion-avatar>
+                  <div class="activity-meta">
+                    <h4 class="activity-user">{{ activity.user?.name }}</h4>
+                    <span class="activity-timestamp">{{ activity.createdAt | date:'MMM d, h:mm a' }}</span>
+                  </div>
+                </div>
+
+                <div class="activity-body">
+                  <h5 class="activity-title">{{ activity.title }}</h5>
+                  <p class="activity-description" *ngIf="activity.description">
+                    {{ activity.description }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Load More -->
+          <div class="load-more" *ngIf="hasMoreActivities()">
+            <ion-button
+              fill="outline"
+              expand="block"
+              (click)="onLoadMoreActivities()"
+              [disabled]="isLoadingMore()">
+              <ion-spinner name="crescent" *ngIf="isLoadingMore()"></ion-spinner>
+              <span *ngIf="!isLoadingMore()">Load More</span>
+            </ion-button>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+    </div>
+
+  </div>
+
+  <!-- Floating Action Button -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="family()">
+    <ion-fab-button class="main-fab">
+      <ion-icon name="add-outline"></ion-icon>
+    </ion-fab-button>
+    <ion-fab-list side="top">
+      <ion-fab-button (click)="onStartChat()" class="chat-fab">
+        <ion-icon name="chatbubble-outline"></ion-icon>
+      </ion-fab-button>
+      <ion-fab-button (click)="onSharePhotos()" class="photo-fab">
+        <ion-icon name="camera-outline"></ion-icon>
+      </ion-fab-button>
+      <ion-fab-button (click)="onCreateEvent()" class="event-fab">
+        <ion-icon name="calendar-outline"></ion-icon>
+      </ion-fab-button>
+      <ion-fab-button (click)="onInviteMembers()" class="invite-fab" *ngIf="canInvite()">
+        <ion-icon name="person-add-outline"></ion-icon>
+      </ion-fab-button>
+    </ion-fab-list>
+  </ion-fab>
+
+</ion-content>
