@@ -1,0 +1,226 @@
+<ion-header [translucent]="true" class="family-list-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/home"></ion-back-button>
+    </ion-buttons>
+
+    <ion-title class="header-title">My Families</ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button (click)="onJoinByCode()" class="join-button">
+        <ion-icon name="add-circle-outline"></ion-icon>
+      </ion-button>
+
+      <ion-button (click)="onRefresh()" class="refresh-button">
+        <ion-icon name="refresh-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="family-list-content">
+  <!-- Refresher -->
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="family-list-container">
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading()" class="loading-container">
+      <ion-spinner name="crescent" class="loading-spinner"></ion-spinner>
+      <p class="loading-text">Loading your families...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!isLoading() && families().length === 0" class="empty-state">
+      <div class="empty-icon">
+        <ion-icon name="people-outline"></ion-icon>
+      </div>
+      <h2 class="empty-title">No Families Yet</h2>
+      <p class="empty-description">
+        Create your first family or join an existing one to get started
+      </p>
+      <div class="empty-actions">
+        <ion-button expand="block" class="create-button" (click)="onCreateFamily()">
+          <ion-icon name="add-outline" slot="start"></ion-icon>
+          Create Family
+        </ion-button>
+
+        <ion-button expand="block" fill="outline" class="join-button" (click)="onJoinByCode()">
+          <ion-icon name="link-outline" slot="start"></ion-icon>
+          Join with Code
+        </ion-button>
+      </div>
+    </div>
+
+    <!-- Families List -->
+    <div *ngIf="!isLoading() && families().length > 0" class="families-list">
+
+      <!-- Quick Stats -->
+      <ion-card class="stats-card">
+        <ion-card-content class="stats-content">
+          <div class="stat-item">
+            <span class="stat-number">{{ families().length }}</span>
+            <span class="stat-label">Families</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">{{ getTotalMembers() }}</span>
+            <span class="stat-label">Total Members</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">{{ getActiveFamilies() }}</span>
+            <span class="stat-label">Active</span>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Search and Filter -->
+      <div class="search-section">
+        <ion-searchbar
+          [(ngModel)]="searchTerm"
+          (ionInput)="onSearch($event)"
+          placeholder="Search families..."
+          class="family-searchbar">
+        </ion-searchbar>
+
+        <ion-segment
+          [(ngModel)]="selectedFilter"
+          (ionChange)="onFilterChange($event)"
+          class="filter-segment">
+          <ion-segment-button value="all">
+            <ion-label>All</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="owner">
+            <ion-label>Owner</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="member">
+            <ion-label>Member</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+      </div>
+
+      <!-- Family Cards -->
+      <div class="family-cards">
+        <ion-card
+          *ngFor="let family of filteredFamilies(); trackBy: trackByFamilyId"
+          class="family-card"
+          [class.archived]="!family.isActive"
+          (click)="onSelectFamily(family)">
+
+          <ion-card-content class="family-card-content">
+
+            <!-- Family Header -->
+            <div class="family-header">
+              <div class="family-info">
+                <h3 class="family-name">{{ family.name }}</h3>
+                <p class="family-description" *ngIf="family.description">
+                  {{ family.description }}
+                </p>
+              </div>
+
+              <div class="family-actions">
+                <ion-button
+                  fill="clear"
+                  class="menu-button"
+                  (click)="onShowFamilyMenu($event, family)">
+                  <ion-icon name="ellipsis-vertical-outline"></ion-icon>
+                </ion-button>
+              </div>
+            </div>
+
+            <!-- Family Stats -->
+            <div class="family-stats">
+              <div class="stat-badge members">
+                <ion-icon name="people-outline"></ion-icon>
+                <span>{{ family.memberCount || 0 }} members</span>
+              </div>
+
+              <div class="stat-badge role" [attr.data-role]="getUserRole(family)">
+                <ion-icon [name]="getRoleIcon(family)"></ion-icon>
+                <span>{{ getRoleDisplayName(family) }}</span>
+              </div>
+
+              <div class="stat-badge activity" *ngIf="family.activeMemberCount">
+                <ion-icon name="pulse-outline"></ion-icon>
+                <span>{{ family.activeMemberCount }} active</span>
+              </div>
+            </div>
+
+            <!-- Family Status -->
+            <div class="family-status">
+              <div class="status-indicators">
+                <ion-chip
+                  class="status-chip"
+                  [class.active]="family.isActive"
+                  [class.archived]="!family.isActive">
+                  <ion-icon [name]="family.isActive ? 'checkmark-circle-outline' : 'archive-outline'"></ion-icon>
+                  <ion-label>{{ family.isActive ? 'Active' : 'Archived' }}</ion-label>
+                </ion-chip>
+
+                <ion-chip
+                  class="privacy-chip"
+                  [class.public]="family.settings?.privacy?.isPublic"
+                  [class.private]="!family.settings?.privacy?.isPublic">
+                  <ion-icon [name]="family.settings?.privacy?.isPublic ? 'globe-outline' : 'lock-closed-outline'"></ion-icon>
+                  <ion-label>{{ family.settings?.privacy?.isPublic ? 'Public' : 'Private' }}</ion-label>
+                </ion-chip>
+              </div>
+
+              <div class="family-date">
+                <span class="created-date">Created {{ family.createdAt | date:'MMM d, y' }}</span>
+              </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions" *ngIf="family.isActive">
+              <ion-button
+                fill="clear"
+                size="small"
+                class="quick-action chat"
+                (click)="onFamilyChat($event, family)">
+                <ion-icon name="chatbubble-outline"></ion-icon>
+              </ion-button>
+
+              <ion-button
+                fill="clear"
+                size="small"
+                class="quick-action photos"
+                (click)="onFamilyPhotos($event, family)">
+                <ion-icon name="camera-outline"></ion-icon>
+              </ion-button>
+
+              <ion-button
+                fill="clear"
+                size="small"
+                class="quick-action events"
+                (click)="onFamilyEvents($event, family)">
+                <ion-icon name="calendar-outline"></ion-icon>
+              </ion-button>
+
+              <ion-button
+                fill="clear"
+                size="small"
+                class="quick-action invite"
+                (click)="onInviteMembers($event, family)"
+                *ngIf="canInviteMembers(family)">
+                <ion-icon name="person-add-outline"></ion-icon>
+              </ion-button>
+            </div>
+
+          </ion-card-content>
+        </ion-card>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Floating Action Button -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button class="create-fab" (click)="onCreateFamily()">
+      <ion-icon name="add-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+
+</ion-content>

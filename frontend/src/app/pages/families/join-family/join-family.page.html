@@ -1,0 +1,262 @@
+<!-- src/app/pages/families/join-family/join-family.page.html -->
+<ion-header [translucent]="true" class="join-family-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/families"></ion-back-button>
+    </ion-buttons>
+
+    <ion-title class="header-title">Join Family</ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button fill="clear" class="scan-button" (click)="onScanQRCode()">
+        <ion-icon name="qr-code-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="join-family-content">
+  <div class="join-family-container">
+
+    <!-- Success State -->
+    <div *ngIf="joinedFamily()" class="success-state">
+      <div class="success-icon">
+        <ion-icon name="checkmark-outline"></ion-icon>
+      </div>
+      <h2 class="success-title">Welcome to {{ joinedFamily()!.name }}!</h2>
+      <p class="success-description">
+        You've successfully joined the family. You can now access family features and connect with other members.
+      </p>
+
+      <div class="success-actions">
+        <ion-button
+          expand="block"
+          class="primary-button"
+          (click)="router.navigate(['/families', joinedFamily()!.id, 'dashboard'])">
+          <ion-icon name="home-outline" slot="start"></ion-icon>
+          View Family Dashboard
+        </ion-button>
+
+        <ion-button
+          expand="block"
+          fill="outline"
+          class="secondary-button"
+          (click)="onGoToFamilies()">
+          <ion-icon name="people-outline" slot="start"></ion-icon>
+          All Families
+        </ion-button>
+      </div>
+    </div>
+
+    <!-- Join Form -->
+    <div *ngIf="!joinedFamily()" class="join-form-container">
+
+      <!-- Hero Section -->
+      <div class="hero-section">
+        <div class="hero-icon">
+          <ion-icon name="people-outline"></ion-icon>
+        </div>
+        <h1 class="hero-title">Join Your Family</h1>
+        <p class="hero-subtitle">
+          Enter the invite code shared by your family to join and start connecting
+        </p>
+      </div>
+
+      <!-- Error Alert -->
+      <ion-card class="error-card" *ngIf="error()">
+        <ion-card-content class="error-content">
+          <div class="error-header">
+            <ion-icon name="alert-circle-outline" class="error-icon"></ion-icon>
+            <span class="error-title">Unable to Join Family</span>
+          </div>
+          <p class="error-message">{{ error() }}</p>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Join Form -->
+      <form [formGroup]="joinForm" (ngSubmit)="onJoinFamily()">
+
+        <ion-card class="code-input-card">
+          <ion-card-header>
+            <ion-card-title class="card-title">
+              <ion-icon name="key-outline"></ion-icon>
+              Enter Invite Code
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content class="code-input-content">
+
+            <!-- Code Input -->
+            <div class="code-input-section">
+              <ion-item class="code-input-item" lines="none">
+                <ion-input
+                  type="text"
+                  placeholder="Enter family invite code"
+                  formControlName="inviteCode"
+                  (ionInput)="onCodeInput($event)"
+                  (paste)="onCodePaste($event)"
+                  [class.error]="hasFieldError('inviteCode')"
+                  maxlength="8"
+                  class="code-input">
+                </ion-input>
+                <div class="code-counter" slot="end">
+                  <span class="counter-text">{{ codeLength }}/8</span>
+                </div>
+              </ion-item>
+
+              <div class="code-help">
+                <div class="help-row">
+                  <ion-icon name="information-circle-outline" class="help-icon"></ion-icon>
+                  <span class="help-text">
+                    Ask a family member for the 6-8 character invite code
+                  </span>
+                </div>
+              </div>
+
+              <!-- Error Text -->
+              <div class="error-text" *ngIf="hasFieldError('inviteCode')">
+                {{ getFieldError('inviteCode') }}
+              </div>
+            </div>
+
+            <!-- Join Button -->
+            <ion-button
+              expand="block"
+              type="submit"
+              class="join-button"
+              [disabled]="!canJoinFamily">
+              <ion-spinner *ngIf="isJoining()" name="crescent"></ion-spinner>
+              <span *ngIf="!isJoining()">
+                <ion-icon name="link-outline" slot="start"></ion-icon>
+                Join Family
+              </span>
+            </ion-button>
+
+          </ion-card-content>
+        </ion-card>
+
+      </form>
+
+      <!-- Alternative Actions -->
+      <ion-card class="alternatives-card">
+        <ion-card-content class="alternatives-content">
+          <h3 class="alternatives-title">Other Ways to Join</h3>
+
+          <div class="alternative-actions">
+            <ion-button
+              fill="outline"
+              expand="block"
+              class="alternative-button qr-button"
+              (click)="onScanQRCode()">
+              <ion-icon name="qr-code-outline" slot="start"></ion-icon>
+              Scan QR Code
+              <ion-chip class="coming-soon-chip">
+                <ion-label>Coming Soon</ion-label>
+              </ion-chip>
+            </ion-button>
+
+            <ion-button
+              fill="clear"
+              expand="block"
+              class="alternative-button browse-button"
+              (click)="onGoToFamilies()">
+              <ion-icon name="search-outline" slot="start"></ion-icon>
+              Browse Public Families
+            </ion-button>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Example Families -->
+      <ion-card class="examples-card">
+        <ion-card-header>
+          <ion-card-title class="examples-title">
+            <ion-icon name="information-circle-outline"></ion-icon>
+            How Invite Codes Work
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="examples-content">
+
+          <div class="examples-info">
+            <p class="examples-description">
+              Family invite codes are unique 6-8 character codes that families can share. Here are some examples:
+            </p>
+          </div>
+
+          <div class="example-families">
+            <div
+              *ngFor="let family of exampleFamilies"
+              class="example-family"
+              (click)="onTryExampleCode(family)">
+              <div class="family-info">
+                <h4 class="family-name">{{ family.name }}</h4>
+                <p class="family-members">{{ family.members }} members</p>
+              </div>
+              <div class="family-code">
+                <span class="code-text">{{ family.code }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="examples-note">
+            <ion-icon name="information-circle-outline" class="note-icon"></ion-icon>
+            <span class="note-text">
+              These are examples only. Click to see how codes work.
+            </span>
+          </div>
+
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Help Section -->
+      <ion-card class="help-card">
+        <ion-card-content class="help-content">
+          <h3 class="help-title">Need Help?</h3>
+
+          <div class="help-items">
+            <div class="help-item">
+              <ion-icon name="help-circle-outline" class="help-item-icon"></ion-icon>
+              <div class="help-item-content">
+                <h4 class="help-item-title">Don't have an invite code?</h4>
+                <p class="help-item-text">
+                  Ask a family member to send you the invite code or share the invite link.
+                </p>
+              </div>
+            </div>
+
+            <div class="help-item">
+              <ion-icon name="alert-circle-outline" class="help-item-icon"></ion-icon>
+              <div class="help-item-content">
+                <h4 class="help-item-title">Code not working?</h4>
+                <p class="help-item-text">
+                  Make sure you've entered the code correctly. Codes may expire or be regenerated.
+                </p>
+              </div>
+            </div>
+
+            <div class="help-item">
+              <ion-icon name="people-outline" class="help-item-icon"></ion-icon>
+              <div class="help-item-content">
+                <h4 class="help-item-title">Want to create a family?</h4>
+                <p class="help-item-text">
+                  You can create your own family and invite others to join.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <ion-button
+            expand="block"
+            fill="outline"
+            class="create-family-button"
+            routerLink="/families/create">
+            <ion-icon name="add-outline" slot="start"></ion-icon>
+            Create New Family
+          </ion-button>
+
+        </ion-card-content>
+      </ion-card>
+
+    </div>
+
+  </div>
+</ion-content>
