@@ -1,0 +1,805 @@
+// src/app/pages/families/family-settings/family-settings.page.scss
+
+.family-settings-content {
+  --background: linear-gradient(135deg, #1a1a1a 0%, #2d1b1b 50%, #1a1a1a 100%);
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+.family-settings-container {
+  padding: 16px;
+  padding-top: 0;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+  min-height: calc(100vh - 60px);
+}
+
+// Header Styles
+.family-settings-header {
+  --background: rgba(38, 38, 38, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header-toolbar {
+  --background: transparent;
+  --color: white;
+  --padding-top: max(env(safe-area-inset-top, 0px), 8px);
+  --padding-bottom: 8px;
+  --min-height: 56px;
+}
+
+.title-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.page-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.family-name {
+  font-size: 12px;
+  color: #a1a1aa;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.save-button {
+  --color: #22c55e;
+  width: 40px;
+  height: 40px;
+
+  &.button-disabled {
+    --color: #6b7280;
+  }
+
+  ion-spinner {
+    --color: #22c55e;
+  }
+}
+
+// Unsaved Changes Alert
+.changes-alert {
+  --background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 12px;
+  margin: 16px 0;
+  animation: slideDown 0.3s ease-out;
+}
+
+.changes-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+}
+
+.changes-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.changes-icon {
+  font-size: 18px;
+  color: #f59e0b;
+}
+
+.changes-text {
+  font-size: 14px;
+  color: #f59e0b;
+  font-weight: 500;
+}
+
+.save-changes-button {
+  --color: #f59e0b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Settings Tabs
+.settings-tabs {
+  --background: rgba(55, 55, 55, 0.8);
+  border-radius: 12px;
+  margin: 16px 0;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  ion-segment-button {
+    --background: transparent;
+    --background-checked: #dc2626;
+    --color: #a1a1aa;
+    --color-checked: white;
+    --indicator-color: transparent;
+    border-radius: 8px;
+    margin: 3px;
+    min-height: 44px;
+    min-width: 90px;
+    transition: all 0.3s ease;
+
+    ion-icon {
+      font-size: 16px;
+      margin-bottom: 2px;
+    }
+
+    ion-label {
+      font-size: 11px;
+      font-weight: 500;
+      margin: 0;
+      white-space: nowrap;
+    }
+  }
+}
+
+// Tab Content
+.tab-content {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// Shared card styles
+%card-base {
+  --background: rgba(55, 55, 55, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  margin: 0 0 20px 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.settings-card {
+  @extend %card-base;
+}
+
+.settings-content {
+  padding: 20px;
+}
+
+.settings-title {
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  ion-icon {
+    font-size: 18px;
+    color: #dc2626;
+  }
+}
+
+// Form Fields
+.setting-field {
+  margin-bottom: 20px;
+}
+
+.field-item {
+  --background: rgba(75, 75, 75, 0.5);
+  --border-radius: 12px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --min-height: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 8px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    --background: rgba(85, 85, 85, 0.7);
+    border-color: rgba(220, 38, 38, 0.3);
+  }
+
+  &.item-has-focus {
+    --background: rgba(85, 85, 85, 0.7);
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+  }
+
+  &.error {
+    border-color: #ef4444;
+    --background: rgba(239, 68, 68, 0.1);
+  }
+}
+
+.field-label {
+  color: #e5e5e5;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.optional-text {
+  color: #a1a1aa;
+  font-weight: 400;
+  font-size: 12px;
+}
+
+.field-input, .field-textarea {
+  --color: white;
+  --placeholder-color: #a1a1aa;
+  font-size: 15px;
+  font-weight: 400;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+}
+
+.field-help {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 4px;
+}
+
+.character-count {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.error-text {
+  font-size: 12px;
+  color: #ef4444;
+  margin-top: 4px;
+  line-height: 1.3;
+}
+
+// Invite Code Section
+.invite-code-section {
+  text-align: center;
+}
+
+.code-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: rgba(75, 75, 75, 0.5);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 12px;
+}
+
+.current-code {
+  font-size: 20px;
+  font-weight: 700;
+  color: #dc2626;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 2px;
+}
+
+.code-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.code-actions ion-button {
+  --color: #a1a1aa;
+  width: 32px;
+  height: 32px;
+
+  &:hover {
+    --color: white;
+  }
+}
+
+.code-description {
+  font-size: 13px;
+  color: #a1a1aa;
+  margin: 0 0 16px 0;
+  line-height: 1.4;
+}
+
+.regenerate-button {
+  --border-color: rgba(255, 255, 255, 0.3);
+  --background: transparent;
+  --color: white;
+  --border-radius: 8px;
+  height: 40px;
+  font-size: 13px;
+
+  &.button-disabled {
+    --color: #6b7280;
+    --border-color: rgba(107, 114, 128, 0.3);
+  }
+}
+
+// Setting Items
+.setting-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  &:first-child {
+    padding-top: 0;
+  }
+
+  &.full-width {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+}
+
+.setting-info {
+  flex: 1;
+  margin-right: 16px;
+
+  .full-width & {
+    margin-right: 0;
+  }
+}
+
+.setting-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 4px 0;
+  line-height: 1.3;
+}
+
+.setting-description {
+  font-size: 13px;
+  color: #a1a1aa;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.setting-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 8px;
+
+  ion-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+}
+
+.setting-toggle {
+  --background: rgba(107, 114, 128, 0.5);
+  --background-checked: #dc2626;
+  --handle-background: white;
+  --handle-background-checked: white;
+  flex-shrink: 0;
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+.frequency-select {
+  --background: rgba(75, 75, 75, 0.5);
+  --color: white;
+  --placeholder-color: #a1a1aa;
+  --border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 16px;
+  min-height: 44px;
+}
+
+// Feature Headers
+.feature-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.feature-icon {
+  font-size: 18px;
+
+  &.location { color: #ec4899; }
+  &.photos { color: #f59e0b; }
+  &.events { color: #8b5cf6; }
+  &.chat { color: #22c55e; }
+}
+
+// Color Themes
+.theme-section {
+  text-align: center;
+}
+
+.theme-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 6px 0;
+}
+
+.theme-description {
+  font-size: 13px;
+  color: #a1a1aa;
+  margin: 0 0 20px 0;
+  line-height: 1.4;
+}
+
+.color-themes {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.color-theme-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  &.selected {
+    background: rgba(255, 255, 255, 0.1);
+
+    .color-preview {
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+    }
+  }
+}
+
+.color-preview {
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.color-name {
+  font-size: 12px;
+  color: #e5e5e5;
+  font-weight: 500;
+  text-align: center;
+}
+
+.selected-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 16px;
+  color: #22c55e;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// Action Buttons
+.action-buttons {
+  margin: 32px 0 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.save-button-main {
+  --background: linear-gradient(135deg, #22c55e, #16a34a);
+  --background-hover: linear-gradient(135deg, #16a34a, #15803d);
+  --color: white;
+  --border-radius: 12px;
+  height: 52px;
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4);
+  transition: all 0.3s ease;
+
+  &:hover:not(.button-disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 25px rgba(34, 197, 94, 0.5);
+  }
+
+  &.button-disabled {
+    --background: rgba(107, 114, 128, 0.5);
+    --color: rgba(255, 255, 255, 0.5);
+    box-shadow: none;
+  }
+
+  ion-spinner {
+    --color: white;
+  }
+}
+
+.reset-button {
+  --border-color: rgba(255, 255, 255, 0.3);
+  --background: transparent;
+  --background-hover: rgba(255, 255, 255, 0.1);
+  --color: white;
+  --border-radius: 12px;
+  height: 48px;
+  font-size: 14px;
+  font-weight: 500;
+
+  &.button-disabled {
+    --color: #6b7280;
+    --border-color: rgba(107, 114, 128, 0.3);
+  }
+}
+
+// Danger Card
+.danger-card {
+  @extend %card-base;
+  --background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  margin-top: 32px;
+}
+
+.danger-title {
+  color: #ef4444;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  ion-icon {
+    font-size: 18px;
+    color: #ef4444;
+  }
+}
+
+.danger-content {
+  padding: 20px;
+}
+
+.danger-description {
+  font-size: 13px;
+  color: #a1a1aa;
+  margin: 0 0 16px 0;
+  line-height: 1.4;
+}
+
+.danger-button {
+  --border-color: rgba(239, 68, 68, 0.5);
+  --background: transparent;
+  --background-hover: rgba(239, 68, 68, 0.1);
+  --color: #ef4444;
+  --border-radius: 12px;
+  height: 44px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+// Responsive Design
+@media (max-width: 430px) {
+  .family-settings-container {
+    padding: 12px;
+    padding-top: 0;
+  }
+
+  .settings-content {
+    padding: 16px;
+  }
+
+  .setting-item {
+    padding: 16px 0;
+  }
+
+  .setting-info {
+    margin-right: 12px;
+  }
+
+  .code-display {
+    padding: 12px 16px;
+  }
+
+  .current-code {
+    font-size: 18px;
+    letter-spacing: 1px;
+  }
+
+  .color-themes {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .color-preview {
+    width: 36px;
+    height: 36px;
+    border-radius: 18px;
+  }
+
+  .settings-tabs {
+    margin: 12px 0;
+
+    ion-segment-button {
+      min-height: 40px;
+      min-width: 80px;
+
+      ion-icon {
+        font-size: 14px;
+      }
+
+      ion-label {
+        font-size: 10px;
+      }
+    }
+  }
+
+  .action-buttons {
+    margin: 24px 0 16px 0;
+    gap: 10px;
+  }
+
+  .save-button-main {
+    height: 48px;
+    font-size: 14px;
+  }
+
+  .reset-button {
+    height: 44px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 375px) {
+  .family-settings-container {
+    padding: 10px;
+    padding-top: 0;
+  }
+
+  .settings-content, .danger-content {
+    padding: 14px;
+  }
+
+  .color-themes {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .setting-item {
+    padding: 14px 0;
+
+    &.full-width {
+      gap: 12px;
+    }
+  }
+
+  .code-display {
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+  }
+
+  .code-actions {
+    justify-content: center;
+  }
+
+  .changes-content {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+}
+
+// Very small screens
+@media (max-width: 320px) {
+  .color-themes {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .color-theme-item {
+    flex-direction: row;
+    justify-content: flex-start;
+    text-align: left;
+    padding: 12px;
+  }
+
+  .color-preview {
+    margin-right: 12px;
+  }
+
+  .color-name {
+    text-align: left;
+  }
+}
+
+// Landscape mode
+@media (orientation: landscape) and (max-height: 500px) {
+  .family-settings-container {
+    padding: 8px 16px;
+    padding-top: 0;
+  }
+
+  .settings-content, .danger-content {
+    padding: 12px 16px;
+  }
+
+  .setting-item {
+    padding: 12px 0;
+  }
+
+  .action-buttons {
+    margin: 20px 0 12px 0;
+  }
+}
+
+// Dark mode enhancements
+@media (prefers-color-scheme: dark) {
+  .family-settings-content {
+    --background: linear-gradient(135deg, #0a0a0a 0%, #1a0f0f 50%, #0a0a0a 100%);
+  }
+}
+
+// Reduced motion
+@media (prefers-reduced-motion: reduce) {
+  .tab-content {
+    animation: none !important;
+  }
+
+  .changes-alert {
+    animation: none !important;
+  }
+
+  .save-button-main:hover,
+  .color-theme-item:hover {
+    transform: none !important;
+  }
+}
+
+// High contrast mode
+@media (prefers-contrast: high) {
+  .settings-card,
+  .danger-card {
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .field-item {
+    border-width: 2px;
+  }
+
+  .setting-toggle {
+    --background: #000000;
+    --background-checked: #ffffff;
+    --handle-background: #ffffff;
+    --handle-background-checked: #000000;
+  }
+}

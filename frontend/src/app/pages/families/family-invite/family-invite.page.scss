@@ -1,0 +1,813 @@
+// src/app/pages/families/family-invite/family-invite.page.scss
+
+.family-invite-content {
+  --background: linear-gradient(135deg, #1a1a1a 0%, #2d1b1b 50%, #1a1a1a 100%);
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+.family-invite-container {
+  padding: 16px;
+  padding-top: 0;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 90px);
+  min-height: calc(100vh - 60px);
+}
+
+// Header Styles
+.family-invite-header {
+  --background: rgba(38, 38, 38, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header-toolbar {
+  --background: transparent;
+  --color: white;
+  --padding-top: max(env(safe-area-inset-top, 0px), 8px);
+  --padding-bottom: 8px;
+  --min-height: 56px;
+}
+
+.title-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.page-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.family-name {
+  font-size: 12px;
+  color: #a1a1aa;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.quick-invite-button {
+  --color: white;
+  width: 40px;
+  height: 40px;
+}
+
+// Navigation Tabs
+.invite-tabs {
+  --background: rgba(55, 55, 55, 0.8);
+  border-radius: 12px;
+  margin: 16px 0;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  ion-segment-button {
+    --background: transparent;
+    --background-checked: #dc2626;
+    --color: #a1a1aa;
+    --color-checked: white;
+    --indicator-color: transparent;
+    border-radius: 8px;
+    margin: 3px;
+    min-height: 44px;
+    transition: all 0.3s ease;
+    position: relative;
+
+    ion-icon {
+      font-size: 18px;
+      margin-bottom: 2px;
+    }
+
+    ion-label {
+      font-size: 11px;
+      font-weight: 500;
+      margin: 0;
+    }
+
+    ion-badge {
+      position: absolute;
+      top: 4px;
+      right: 8px;
+      --background: #dc2626;
+      --color: white;
+      font-size: 9px;
+      min-width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+// Tab Content
+.tab-content {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// Shared card styles
+%card-base {
+  --background: rgba(55, 55, 55, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  margin: 0 0 20px 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.instructions-card, .email-input-card, .role-card, .message-card,
+.invitations-card, .invite-code-card, .code-instructions-card {
+  @extend %card-base;
+}
+
+.card-title {
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  ion-icon {
+    font-size: 18px;
+    color: #dc2626;
+  }
+}
+
+.optional-label {
+  color: #a1a1aa;
+  font-weight: 400;
+  font-size: 12px;
+}
+
+// Instructions Card
+.instructions-content {
+  padding: 16px;
+}
+
+.instruction-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.instruction-icon {
+  font-size: 20px;
+  color: #3b82f6;
+}
+
+.instruction-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  margin: 0;
+}
+
+.instruction-text {
+  font-size: 14px;
+  color: #a1a1aa;
+  margin: 0;
+  line-height: 1.5;
+}
+
+// Email Input Card
+.email-input-content {
+  padding: 20px;
+}
+
+.email-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.email-chip {
+  --background: rgba(59, 130, 246, 0.2);
+  --color: #60a5fa;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    --background: rgba(59, 130, 246, 0.3);
+    transform: scale(1.05);
+  }
+
+  ion-icon {
+    margin-left: 4px;
+    font-size: 14px;
+  }
+}
+
+.email-input-item {
+  --background: rgba(75, 75, 75, 0.5);
+  --border-radius: 12px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --min-height: 52px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+
+  &:hover {
+    --background: rgba(85, 85, 85, 0.7);
+    border-color: rgba(220, 38, 38, 0.3);
+  }
+
+  &.item-has-focus {
+    --background: rgba(85, 85, 85, 0.7);
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+  }
+}
+
+.email-input {
+  --color: white;
+  --placeholder-color: #a1a1aa;
+  font-size: 15px;
+}
+
+.add-email-button {
+  --color: #dc2626;
+  width: 36px;
+  height: 36px;
+
+  &.button-disabled {
+    --color: #6b7280;
+  }
+}
+
+.email-help {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.email-count {
+  font-size: 12px;
+  color: #a1a1aa;
+  font-weight: 500;
+}
+
+.email-hint {
+  font-size: 11px;
+  color: #6b7280;
+  flex: 1;
+  text-align: right;
+}
+
+// Role Card
+.role-content {
+  padding: 20px;
+}
+
+.role-select-item {
+  --background: rgba(75, 75, 75, 0.5);
+  --border-radius: 12px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --min-height: 52px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 16px;
+}
+
+.role-select {
+  --background: transparent;
+  --color: white;
+  --placeholder-color: #a1a1aa;
+  width: 100%;
+}
+
+.role-description {
+  padding: 12px 16px;
+  background: rgba(75, 75, 75, 0.3);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.role-desc-text {
+  font-size: 13px;
+  color: #a1a1aa;
+  margin: 0;
+  line-height: 1.4;
+}
+
+// Message Card
+.message-content {
+  padding: 20px;
+}
+
+.message-item {
+  --background: rgba(75, 75, 75, 0.5);
+  --border-radius: 12px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 12px;
+}
+
+.message-textarea {
+  --color: white;
+  --placeholder-color: #a1a1aa;
+  font-size: 15px;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+}
+
+.message-help {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.character-count {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+// Send Button
+.send-button {
+  --background: linear-gradient(135deg, #dc2626, #b91c1c);
+  --background-hover: linear-gradient(135deg, #b91c1c, #991b1b);
+  --color: white;
+  --border-radius: 12px;
+  height: 52px;
+  font-size: 15px;
+  font-weight: 600;
+  margin: 20px 0;
+  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4);
+  transition: all 0.3s ease;
+
+  &:hover:not(.button-disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 25px rgba(220, 38, 38, 0.5);
+  }
+
+  &.button-disabled {
+    --background: rgba(107, 114, 128, 0.5);
+    --color: rgba(255, 255, 255, 0.5);
+    box-shadow: none;
+  }
+
+  ion-spinner {
+    --color: white;
+  }
+}
+
+// Loading and Empty States
+.loading-container, .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.loading-spinner {
+  --color: #dc2626;
+  margin-bottom: 16px;
+  width: 32px;
+  height: 32px;
+}
+
+.loading-text {
+  color: #a1a1aa;
+  font-size: 14px;
+  margin: 0;
+}
+
+.empty-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 30px;
+  background: rgba(107, 114, 128, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+
+  ion-icon {
+    font-size: 30px;
+    color: #6b7280;
+  }
+}
+
+.empty-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 8px 0;
+}
+
+.empty-description {
+  font-size: 14px;
+  color: #a1a1aa;
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+}
+
+.empty-action {
+  --border-color: rgba(255, 255, 255, 0.3);
+  --color: white;
+  --border-radius: 12px;
+  height: 44px;
+}
+
+// Invitations List
+.invitations-content {
+  padding: 20px;
+}
+
+.invitations-list-content {
+  margin: 0;
+  padding: 0;
+}
+
+.invitation-sliding {
+  margin-bottom: 12px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.invitation-item {
+  --background: rgba(75, 75, 75, 0.5);
+  --color: white;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --min-height: 80px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+
+  &:hover {
+    --background: rgba(85, 85, 85, 0.7);
+  }
+}
+
+.invitation-avatar {
+  width: 44px;
+  height: 44px;
+  margin-right: 12px;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  border-radius: 50%;
+}
+
+.invitation-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.invitation-email {
+  font-size: 15px;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 4px 0;
+  line-height: 1.3;
+}
+
+.invitation-role {
+  font-size: 13px;
+  color: #a1a1aa;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.invitation-time {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.invitation-warning {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #f59e0b;
+  margin-top: 4px;
+
+  ion-icon {
+    font-size: 12px;
+  }
+}
+
+.invitation-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.action-button {
+  width: 36px;
+  height: 36px;
+
+  &.resend {
+    --color: #3b82f6;
+  }
+
+  &.cancel {
+    --color: #ef4444;
+  }
+}
+
+// Invite Code Card
+.invite-code-content {
+  padding: 20px;
+}
+
+.code-display {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.code-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: rgba(75, 75, 75, 0.5);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 12px;
+}
+
+.invite-code {
+  font-size: 24px;
+  font-weight: 700;
+  color: #dc2626;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 3px;
+}
+
+.code-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.code-action {
+  --color: #a1a1aa;
+  width: 36px;
+  height: 36px;
+
+  &:hover {
+    --color: white;
+  }
+
+  &.copy:hover {
+    --color: #3b82f6;
+  }
+
+  &.share:hover {
+    --color: #22c55e;
+  }
+}
+
+.code-description {
+  font-size: 13px;
+  color: #a1a1aa;
+  margin: 0;
+  line-height: 1.4;
+}
+
+// QR Code Section
+.qr-code-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.qr-code-placeholder {
+  width: 150px;
+  height: 150px;
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.qr-icon {
+  font-size: 40px;
+  color: #6b7280;
+}
+
+.qr-text {
+  font-size: 14px;
+  color: #a1a1aa;
+  font-weight: 500;
+  margin: 0;
+}
+
+.qr-subtitle {
+  font-size: 11px;
+  color: #6b7280;
+  margin: 0;
+}
+
+// Code Bottom Actions
+.code-bottom-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.share-button {
+  --border-color: rgba(255, 255, 255, 0.3);
+  --background: transparent;
+  --background-hover: rgba(255, 255, 255, 0.1);
+  --color: white;
+  --border-radius: 12px;
+  height: 48px;
+}
+
+.regenerate-button {
+  --color: #6b7280;
+  --border-radius: 12px;
+  height: 44px;
+
+  &:hover {
+    --color: #a1a1aa;
+  }
+}
+
+// Code Instructions
+.code-instructions-content {
+  padding: 16px;
+}
+
+.instructions-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 12px 0;
+}
+
+.instructions-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.instructions-list li {
+  font-size: 13px;
+  color: #a1a1aa;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+// FAB
+.invite-fab {
+  --background: linear-gradient(135deg, #3b82f6, #2563eb);
+  --color: white;
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.4);
+  width: 56px;
+  height: 56px;
+
+  &:active {
+    transform: scale(0.9);
+  }
+
+  ion-icon {
+    font-size: 24px;
+  }
+}
+
+// Responsive Design
+@media (max-width: 430px) {
+  .family-invite-container {
+    padding: 12px;
+    padding-top: 0;
+  }
+
+  .instructions-content, .email-input-content, .role-content,
+  .message-content, .invitations-content, .invite-code-content {
+    padding: 16px;
+  }
+
+  .invite-code {
+    font-size: 20px;
+    letter-spacing: 2px;
+  }
+
+  .code-container {
+    padding: 12px 16px;
+  }
+
+  .qr-code-placeholder {
+    width: 120px;
+    height: 120px;
+  }
+
+  .qr-icon {
+    font-size: 32px;
+  }
+
+  .email-help {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .email-hint {
+    text-align: left;
+  }
+}
+
+@media (max-width: 375px) {
+  .family-invite-container {
+    padding: 10px;
+    padding-top: 0;
+  }
+
+  .code-bottom-actions {
+    gap: 10px;
+  }
+
+  .invite-tabs {
+    margin: 12px 0;
+
+    ion-segment-button {
+      min-height: 40px;
+
+      ion-icon {
+        font-size: 16px;
+      }
+
+      ion-label {
+        font-size: 10px;
+      }
+    }
+  }
+
+  .invitation-item {
+    --min-height: 72px;
+  }
+
+  .invitation-actions {
+    gap: 2px;
+  }
+
+  .action-button {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+// Dark mode enhancements
+@media (prefers-color-scheme: dark) {
+  .family-invite-content {
+    --background: linear-gradient(135deg, #0a0a0a 0%, #1a0f0f 50%, #0a0a0a 100%);
+  }
+}
+
+// Reduced motion
+@media (prefers-reduced-motion: reduce) {
+  .tab-content {
+    animation: none !important;
+  }
+
+  .send-button:hover,
+  .email-chip:hover {
+    transform: none !important;
+  }
+}
+
+// Track by function for emails
+.email-chips {
+  .email-chip {
+    animation: slideIn 0.3s ease-out;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

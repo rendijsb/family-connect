@@ -104,7 +104,7 @@
     </ion-segment>
 
     <!-- Overview Tab -->
-    <div *ngIf="selectedTab === 'overview'" class="tab-content overview-tab">
+    <div *ngIf="selectedTab() === 'overview'" class="tab-content overview-tab">
 
       <!-- Quick Stats -->
       <ion-card class="stats-card">
@@ -263,7 +263,7 @@
     </div>
 
     <!-- Members Tab -->
-    <div *ngIf="selectedTab === 'members'" class="tab-content members-tab">
+    <div *ngIf="selectedTab() === 'members'" class="tab-content members-tab">
 
       <!-- Members List -->
       <ion-card class="members-card">
@@ -341,7 +341,7 @@
     </div>
 
     <!-- Activity Tab -->
-    <div *ngIf="selectedTab === 'activity'" class="tab-content activity-tab">
+    <div *ngIf="selectedTab() === 'activity'" class="tab-content activity-tab">
 
       <!-- Activity Filter -->
       <div class="activity-filter">

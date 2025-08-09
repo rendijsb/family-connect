@@ -1,0 +1,383 @@
+<!-- src/app/pages/families/create-family/create-family.page.html -->
+<ion-header [translucent]="true" class="create-family-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/families"></ion-back-button>
+    </ion-buttons>
+
+    <ion-title class="header-title">Create Family</ion-title>
+
+    <ion-buttons slot="end" *ngIf="currentStep() > 1">
+      <ion-button fill="clear" class="skip-button" (click)="onCreateFamily()" [disabled]="!canCreateFamily">
+        Skip
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+
+  <!-- Progress Indicator -->
+  <div class="progress-container">
+    <div class="progress-steps">
+      <div
+        *ngFor="let step of [1, 2, 3]; let i = index"
+        class="progress-step"
+        [class.active]="step === currentStep()"
+        [class.completed]="step < currentStep()">
+        <div class="step-circle">
+          <ion-icon
+            *ngIf="step < currentStep()"
+            name="checkmark-outline"
+            class="step-check">
+          </ion-icon>
+          <span *ngIf="step >= currentStep()" class="step-number">{{ step }}</span>
+        </div>
+        <span class="step-label">
+          {{ step === 1 ? 'Basic Info' : step === 2 ? 'Settings' : 'Customize' }}
+        </span>
+      </div>
+    </div>
+    <ion-progress-bar
+      [value]="progressPercentage / 100"
+      class="progress-bar">
+    </ion-progress-bar>
+  </div>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="create-family-content">
+  <div class="create-family-container">
+
+    <!-- Error Messages -->
+    <ion-card class="error-card" *ngIf="formErrors().length > 0">
+      <ion-card-content class="error-content">
+        <div class="error-header">
+          <ion-icon name="alert-circle-outline" class="error-icon"></ion-icon>
+          <span class="error-title">Please fix the following issues:</span>
+        </div>
+        <ul class="error-list">
+          <li *ngFor="let error of formErrors()" class="error-item">{{ error }}</li>
+        </ul>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Step Content -->
+    <form [formGroup]="createFamilyForm" (ngSubmit)="onCreateFamily()">
+
+      <!-- Step 1: Basic Information -->
+      <div *ngIf="currentStep() === 1" class="form-step basic-info-step">
+
+        <div class="step-header">
+          <div class="step-icon">
+            <ion-icon name="people-outline"></ion-icon>
+          </div>
+          <h2 class="step-title">Let's create your family</h2>
+          <p class="step-subtitle">Give your family a name and tell us a bit about it</p>
+        </div>
+
+        <ion-card class="form-card">
+          <ion-card-content class="form-content">
+
+            <!-- Family Name -->
+            <div class="input-group">
+              <ion-item class="custom-item" lines="none">
+                <ion-label position="stacked" class="input-label">
+                  Family Name *
+                </ion-label>
+                <ion-input
+                  type="text"
+                  placeholder="e.g., The Smith Family"
+                  formControlName="name"
+                  class="custom-input"
+                  [class.error]="hasFieldError('name')"
+                  maxlength="100">
+                </ion-input>
+              </ion-item>
+              <div class="input-help">
+                <span class="character-count">
+                  {{ createFamilyForm.get('name')?.value?.length || 0 }}/100
+                </span>
+              </div>
+              <div class="error-text" *ngIf="hasFieldError('name')">
+                {{ getFieldError('name') }}
+              </div>
+            </div>
+
+            <!-- Family Description -->
+            <div class="input-group">
+              <ion-item class="custom-item" lines="none">
+                <ion-label position="stacked" class="input-label">
+                  Family Description <span class="optional-label">(Optional)</span>
+                </ion-label>
+                <ion-textarea
+                  placeholder="Tell us what makes your family special..."
+                  formControlName="description"
+                  class="custom-textarea"
+                  [class.error]="hasFieldError('description')"
+                  rows="4"
+                  maxlength="500">
+                </ion-textarea>
+              </ion-item>
+              <div class="input-help">
+                <span class="character-count">
+                  {{ createFamilyForm.get('description')?.value?.length || 0 }}/500
+                </span>
+              </div>
+              <div class="error-text" *ngIf="hasFieldError('description')">
+                {{ getFieldError('description') }}
+              </div>
+            </div>
+
+            <!-- Family Preview -->
+            <div class="family-preview" *ngIf="createFamilyForm.get('name')?.value">
+              <div class="preview-header">
+                <ion-icon name="eye-outline" class="preview-icon"></ion-icon>
+                <span class="preview-title">Preview</span>
+              </div>
+              <div class="preview-card">
+                <div class="family-avatar">
+                  <span class="avatar-text">
+                    {{ createFamilyForm.get('name')?.value?.charAt(0)?.toUpperCase() || 'F' }}
+                  </span>
+                </div>
+                <div class="family-info">
+                  <h4 class="family-name">{{ createFamilyForm.get('name')?.value || 'Family Name' }}</h4>
+                  <p class="family-description" *ngIf="createFamilyForm.get('description')?.value">
+                    {{ createFamilyForm.get('description')?.value }}
+                  </p>
+                  <div class="family-meta">
+                    <span class="owner-badge">Owner</span>
+                    <span class="member-count">1 member</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </ion-card-content>
+        </ion-card>
+
+      </div>
+
+      <!-- Step 2: Privacy & Features -->
+      <div *ngIf="currentStep() === 2" class="form-step settings-step">
+
+        <div class="step-header">
+          <div class="step-icon">
+            <ion-icon name="shield-checkmark-outline"></ion-icon>
+          </div>
+          <h2 class="step-title">Privacy & Features</h2>
+          <p class="step-subtitle">Configure how your family works and who can join</p>
+        </div>
+
+        <!-- Privacy Settings -->
+        <ion-card class="settings-card">
+          <ion-card-header>
+            <ion-card-title class="settings-title">
+              <ion-icon name="lock-closed-outline"></ion-icon>
+              Privacy Settings
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content class="settings-content">
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4 class="setting-name">Public Family</h4>
+                <p class="setting-description">Allow others to discover your family and request to join</p>
+              </div>
+              <ion-toggle formControlName="isPublic" class="setting-toggle"></ion-toggle>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4 class="setting-name">Member Invitations</h4>
+                <p class="setting-description">Allow family members to invite others</p>
+              </div>
+              <ion-toggle formControlName="allowMemberInvites" class="setting-toggle"></ion-toggle>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4 class="setting-name">Approval Required</h4>
+                <p class="setting-description">Require approval for new members to join</p>
+              </div>
+              <ion-toggle formControlName="requireApprovalForJoining" class="setting-toggle"></ion-toggle>
+            </div>
+
+          </ion-card-content>
+        </ion-card>
+
+        <!-- Feature Settings -->
+        <ion-card class="settings-card">
+          <ion-card-header>
+            <ion-card-title class="settings-title">
+              <ion-icon name="options-outline"></ion-icon>
+              Family Features
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content class="settings-content">
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4 class="setting-name">Location Sharing</h4>
+                <p class="setting-description">Share locations with family members</p>
+              </div>
+              <ion-toggle formControlName="enableLocationSharing" class="setting-toggle"></ion-toggle>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4 class="setting-name">Photo Sharing</h4>
+                <p class="setting-description">Share photos and memories</p>
+              </div>
+              <ion-toggle formControlName="enablePhotoSharing" class="setting-toggle"></ion-toggle>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4 class="setting-name">Event Planning</h4>
+                <p class="setting-description">Create and manage family events</p>
+              </div>
+              <ion-toggle formControlName="enableEventPlanning" class="setting-toggle"></ion-toggle>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4 class="setting-name">Family Chat</h4>
+                <p class="setting-description">Group messaging for the family</p>
+              </div>
+              <ion-toggle formControlName="enableFamilyChat" class="setting-toggle"></ion-toggle>
+            </div>
+
+          </ion-card-content>
+        </ion-card>
+
+      </div>
+
+      <!-- Step 3: Customization -->
+      <div *ngIf="currentStep() === 3" class="form-step customization-step">
+
+        <div class="step-header">
+          <div class="step-icon">
+            <ion-icon name="color-palette-outline"></ion-icon>
+          </div>
+          <h2 class="step-title">Customize Your Family</h2>
+          <p class="step-subtitle">Choose colors and notification preferences</p>
+        </div>
+
+        <!-- Color Theme -->
+        <ion-card class="settings-card">
+          <ion-card-header>
+            <ion-card-title class="settings-title">
+              <ion-icon name="color-palette-outline"></ion-icon>
+              Family Colors
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content class="settings-content">
+
+            <div class="color-themes">
+              <div
+                *ngFor="let theme of colorThemes"
+                class="color-theme-item"
+                [class.selected]="getSelectedTheme().value === theme.value"
+                (click)="selectColorTheme(theme)">
+                <div
+                  class="color-preview"
+                  [style.background]="theme.gradient">
+                </div>
+                <span class="color-name">{{ theme.name }}</span>
+                <ion-icon
+                  *ngIf="getSelectedTheme().value === theme.value"
+                  name="checkmark-outline"
+                  class="selected-icon">
+                </ion-icon>
+              </div>
+            </div>
+
+          </ion-card-content>
+        </ion-card>
+
+        <!-- Notification Settings -->
+        <ion-card class="settings-card">
+          <ion-card-header>
+            <ion-card-title class="settings-title">
+              <ion-icon name="notifications-outline"></ion-icon>
+              Notifications
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content class="settings-content">
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4 class="setting-name">Email Notifications</h4>
+                <p class="setting-description">Receive updates via email</p>
+              </div>
+              <ion-toggle formControlName="emailNotifications" class="setting-toggle"></ion-toggle>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4 class="setting-name">Push Notifications</h4>
+                <p class="setting-description">Receive push notifications on your device</p>
+              </div>
+              <ion-toggle formControlName="pushNotifications" class="setting-toggle"></ion-toggle>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4 class="setting-name">Digest Frequency</h4>
+                <p class="setting-description">How often to receive summary emails</p>
+              </div>
+              <ion-select
+                formControlName="digestFrequency"
+                class="digest-select"
+                interface="popover"
+                placeholder="Select frequency">
+                <ion-select-option value="daily">Daily</ion-select-option>
+                <ion-select-option value="weekly">Weekly</ion-select-option>
+                <ion-select-option value="monthly">Monthly</ion-select-option>
+                <ion-select-option value="never">Never</ion-select-option>
+              </ion-select>
+            </div>
+
+          </ion-card-content>
+        </ion-card>
+
+      </div>
+
+    </form>
+
+    <!-- Navigation Buttons -->
+    <div class="navigation-buttons">
+      <ion-button
+        *ngIf="currentStep() > 1"
+        fill="outline"
+        expand="block"
+        class="nav-button secondary"
+        (click)="previousStep()">
+        <ion-icon name="arrow-back-outline" slot="start"></ion-icon>
+        Previous
+      </ion-button>
+
+      <ion-button
+        *ngIf="currentStep() < totalSteps()"
+        expand="block"
+        class="nav-button primary"
+        [disabled]="!canProceedToNextStep()"
+        (click)="nextStep()">
+        Continue
+        <ion-icon name="arrow-forward-outline" slot="end"></ion-icon>
+      </ion-button>
+
+      <ion-button
+        *ngIf="currentStep() === totalSteps()"
+        expand="block"
+        class="nav-button primary create-button"
+        [disabled]="!canCreateFamily"
+        (click)="onCreateFamily()">
+        <span *ngIf="!isSubmitting()">
+          <ion-icon name="add-outline" slot="start"></ion-icon>
+          Create Family
+        </span>
+        <ion-spinner *ngIf="isSubmitting()" name="crescent"></ion-spinner>
+      </ion-button>
+    </div>
+
+  </div>
+</ion-content>
