@@ -1,4 +1,3 @@
-<!-- src/app/pages/families/family-invite/family-invite.page.html -->
 <ion-header [translucent]="true" class="family-invite-header">
   <ion-toolbar class="header-toolbar">
     <ion-buttons slot="start">
@@ -6,10 +5,12 @@
     </ion-buttons>
 
     <ion-title class="header-title">
-      <div class="title-content" *ngIf="family()">
-        <span class="page-title">Invite Members</span>
-        <span class="family-name">{{ family()!.name }}</span>
-      </div>
+      @if (family()) {
+        <div class="title-content">
+          <span class="page-title">Invite Members</span>
+          <span class="family-name">{{ family()!.name }}</span>
+        </div>
+      }
     </ion-title>
 
     <ion-buttons slot="end">
@@ -35,9 +36,11 @@
       <ion-segment-button value="pending">
         <ion-icon name="mail-outline"></ion-icon>
         <ion-label>Pending</ion-label>
-        <ion-badge *ngIf="pendingInvitations().length > 0">
-          {{ pendingInvitations().length }}
-        </ion-badge>
+        @if (pendingInvitations().length > 0) {
+          <ion-badge>
+            {{ pendingInvitations().length }}
+          </ion-badge>
+        }
       </ion-segment-button>
       <ion-segment-button value="code">
         <ion-icon name="qr-code-outline"></ion-icon>
@@ -45,354 +48,373 @@
       </ion-segment-button>
     </ion-segment>
 
-    <!-- Send Invites Tab -->
-    <div *ngIf="selectedTab() === 'invite'" class="tab-content invite-tab">
+    @if (selectedTab() === 'invite') {
+      <div class="tab-content invite-tab">
 
-      <!-- Instructions -->
-      <ion-card class="instructions-card">
-        <ion-card-content class="instructions-content">
-          <div class="instruction-header">
-            <ion-icon name="information-circle-outline" class="instruction-icon"></ion-icon>
-            <h3 class="instruction-title">Invite Family Members</h3>
-          </div>
-          <p class="instruction-text">
-            Add email addresses to send personalized invitations to join your family.
-            You can invite multiple people at once.
-          </p>
-        </ion-card-content>
-      </ion-card>
-
-      <!-- Invite Form -->
-      <form [formGroup]="inviteForm" (ngSubmit)="onSendInvitations()">
-
-        <!-- Email Input -->
-        <ion-card class="email-input-card">
-          <ion-card-header>
-            <ion-card-title class="card-title">
-              <ion-icon name="mail-outline"></ion-icon>
-              Email Addresses
-            </ion-card-title>
-          </ion-card-header>
-          <ion-card-content class="email-input-content">
-
-            <!-- Email Chips -->
-            <div class="email-chips" *ngIf="emailList().length > 0">
-              <ion-chip
-                *ngFor="let email of emailList();"
-                class="email-chip"
-                (click)="removeEmail(email)">
-                <ion-label>{{ email }}</ion-label>
-                <ion-icon name="close-outline"></ion-icon>
-              </ion-chip>
+        <!-- Instructions -->
+        <ion-card class="instructions-card">
+          <ion-card-content class="instructions-content">
+            <div class="instruction-header">
+              <ion-icon name="information-circle-outline" class="instruction-icon"></ion-icon>
+              <h3 class="instruction-title">Invite Family Members</h3>
             </div>
-
-            <!-- Email Input Field -->
-            <ion-item class="email-input-item" lines="none">
-              <ion-input
-                type="email"
-                placeholder="Enter email addresses (press Enter to add)"
-                [value]="currentEmail()"
-                (ionInput)="onEmailInput($event)"
-                (keydown)="onEmailKeyDown($event)"
-                [disabled]="hasMaxEmails"
-                class="email-input">
-              </ion-input>
-              <ion-button
-                fill="clear"
-                slot="end"
-                (click)="addEmail()"
-                [disabled]="!currentEmail() || hasMaxEmails"
-                class="add-email-button">
-                <ion-icon name="add-outline"></ion-icon>
-              </ion-button>
-            </ion-item>
-
-            <div class="email-help">
-              <span class="email-count">{{ emailList().length }}/10 emails</span>
-              <span class="email-hint">Separate multiple emails with commas or Enter</span>
-            </div>
-
+            <p class="instruction-text">
+              Add email addresses to send personalized invitations to join your family.
+              You can invite multiple people at once.
+            </p>
           </ion-card-content>
         </ion-card>
 
-        <!-- Role Selection -->
-        <ion-card class="role-card">
-          <ion-card-header>
-            <ion-card-title class="card-title">
-              <ion-icon name="people-outline"></ion-icon>
-              Member Role
-            </ion-card-title>
-          </ion-card-header>
-          <ion-card-content class="role-content">
+        <!-- Invite Form -->
+        <form [formGroup]="inviteForm" (ngSubmit)="onSendInvitations()">
 
-            <ion-item class="role-select-item" lines="none">
-              <ion-select
-                formControlName="role"
-                interface="popover"
-                placeholder="Select role"
-                class="role-select">
-                <ion-select-option
-                  *ngFor="let role of familyRoles"
-                  [value]="role.value">
-                  {{ role.label }}
-                </ion-select-option>
-              </ion-select>
-            </ion-item>
+          <!-- Email Input -->
+          <ion-card class="email-input-card">
+            <ion-card-header>
+              <ion-card-title class="card-title">
+                <ion-icon name="mail-outline"></ion-icon>
+                Email Addresses
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content class="email-input-content">
 
-            <!-- Role Description -->
-            <div class="role-description" *ngIf="inviteForm.get('role')?.value">
-              <p class="role-desc-text">
-                {{ getRoleDescription(inviteForm.get('role')?.value) }}
-              </p>
-            </div>
+              @if (emailList().length > 0) {
+                <div class="email-chips">
+                  @for (email of emailList(); track email) {
+                    <ion-chip
+                      class="email-chip"
+                      (click)="removeEmail(email)">
+                      <ion-label>{{ email }}</ion-label>
+                      <ion-icon name="close-outline"></ion-icon>
+                    </ion-chip>
+                  }
+                </div>
+              }
 
-          </ion-card-content>
-        </ion-card>
+              <!-- Email Input Field -->
+              <ion-item class="email-input-item" lines="none">
+                <ion-input
+                  type="email"
+                  placeholder="Enter email addresses (press Enter to add)"
+                  [value]="currentEmail()"
+                  (ionInput)="onEmailInput($event)"
+                  (keydown)="onEmailKeyDown($event)"
+                  [disabled]="hasMaxEmails"
+                  class="email-input">
+                </ion-input>
+                <ion-button
+                  fill="clear"
+                  slot="end"
+                  (click)="addEmail()"
+                  [disabled]="!currentEmail() || hasMaxEmails"
+                  class="add-email-button">
+                  <ion-icon name="add-outline"></ion-icon>
+                </ion-button>
+              </ion-item>
 
-        <!-- Personal Message -->
-        <ion-card class="message-card">
-          <ion-card-header>
-            <ion-card-title class="card-title">
-              <ion-icon name="chatbubble-outline"></ion-icon>
-              Personal Message <span class="optional-label">(Optional)</span>
-            </ion-card-title>
-          </ion-card-header>
-          <ion-card-content class="message-content">
+              <div class="email-help">
+                <span class="email-count">{{ emailList().length }}/10 emails</span>
+                <span class="email-hint">Separate multiple emails with commas or Enter</span>
+              </div>
 
-            <ion-item class="message-item" lines="none">
-              <ion-textarea
-                formControlName="personalMessage"
-                placeholder="Add a personal message to your invitation..."
-                rows="4"
-                maxlength="500"
-                class="message-textarea">
-              </ion-textarea>
-            </ion-item>
+            </ion-card-content>
+          </ion-card>
 
-            <div class="message-help">
+          <!-- Role Selection -->
+          <ion-card class="role-card">
+            <ion-card-header>
+              <ion-card-title class="card-title">
+                <ion-icon name="people-outline"></ion-icon>
+                Member Role
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content class="role-content">
+
+              <ion-item class="role-select-item" lines="none">
+                <ion-select
+                  formControlName="role"
+                  interface="popover"
+                  placeholder="Select role"
+                  class="role-select">
+                  @for (role of familyRoles; track role.value) {
+                    <ion-select-option
+                      [value]="role.value">
+                      {{ role.label }}
+                    </ion-select-option>
+                  }
+                </ion-select>
+              </ion-item>
+
+              @if (inviteForm.get('role')?.value) {
+                <div class="role-description">
+                  <p class="role-desc-text">
+                    {{ getRoleDescription(inviteForm.get('role')?.value) }}
+                  </p>
+                </div>
+              }
+
+            </ion-card-content>
+          </ion-card>
+
+          <!-- Personal Message -->
+          <ion-card class="message-card">
+            <ion-card-header>
+              <ion-card-title class="card-title">
+                <ion-icon name="chatbubble-outline"></ion-icon>
+                Personal Message <span class="optional-label">(Optional)</span>
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content class="message-content">
+
+              <ion-item class="message-item" lines="none">
+                <ion-textarea
+                  formControlName="personalMessage"
+                  placeholder="Add a personal message to your invitation..."
+                  rows="4"
+                  maxlength="500"
+                  class="message-textarea">
+                </ion-textarea>
+              </ion-item>
+
+              <div class="message-help">
               <span class="character-count">
                 {{ inviteForm.get('personalMessage')?.value?.length || 0 }}/500
               </span>
-            </div>
+              </div>
 
-          </ion-card-content>
-        </ion-card>
+            </ion-card-content>
+          </ion-card>
 
-        <!-- Send Button -->
-        <ion-button
-          expand="block"
-          type="submit"
-          class="send-button"
-          [disabled]="!canSendInvitations">
-          <ion-spinner *ngIf="isSubmitting()" name="crescent"></ion-spinner>
-          <span *ngIf="!isSubmitting()">
-            <ion-icon name="paper-plane-outline" slot="start"></ion-icon>
-            Send {{ emailList().length }} Invitation{{ emailList().length > 1 ? 's' : '' }}
-          </span>
-        </ion-button>
+          <!-- Send Button -->
+          <ion-button
+            expand="block"
+            type="submit"
+            class="send-button"
+            [disabled]="!canSendInvitations">
+            @if (isSubmitting()) {
+              <ion-spinner name="crescent"></ion-spinner>
+            }
+            @if (!isSubmitting()) {
+              <span>
+                <ion-icon name="paper-plane-outline" slot="start"></ion-icon>
+                Send {{ emailList().length }} Invitation{{ emailList().length > 1 ? 's' : '' }}
+              </span>
+            }
+          </ion-button>
 
-      </form>
+        </form>
 
-    </div>
-
-    <!-- Pending Invitations Tab -->
-    <div *ngIf="selectedTab() === 'pending'" class="tab-content pending-tab">
-
-      <!-- Loading State -->
-      <div *ngIf="isLoading()" class="loading-container">
-        <ion-spinner name="crescent" class="loading-spinner"></ion-spinner>
-        <p class="loading-text">Loading pending invitations...</p>
       </div>
+    }
 
-      <!-- Empty State -->
-      <div *ngIf="!isLoading() && pendingInvitations().length === 0" class="empty-state">
-        <div class="empty-icon">
-          <ion-icon name="mail-outline"></ion-icon>
-        </div>
-        <h3 class="empty-title">No Pending Invitations</h3>
-        <p class="empty-description">
-          All invitations have been responded to or you haven't sent any yet.
-        </p>
-        <ion-button
-          fill="outline"
-          class="empty-action"
-          (click)="selectedTab.set('invite')">
-          <ion-icon name="person-add-outline" slot="start"></ion-icon>
-          Send Invitations
-        </ion-button>
-      </div>
+    @if (selectedTab() === 'pending') {
+      <div class="tab-content pending-tab">
 
-      <!-- Pending Invitations List -->
-      <div *ngIf="!isLoading() && pendingInvitations().length > 0" class="invitations-list">
+        @if (isLoading()) {
+          <div class="loading-container">
+            <ion-spinner name="crescent" class="loading-spinner"></ion-spinner>
+            <p class="loading-text">Loading pending invitations...</p>
+          </div>
+        }
 
-        <ion-card class="invitations-card">
-          <ion-card-header>
-            <ion-card-title class="card-title">
+        @if (!isLoading() && pendingInvitations().length === 0) {
+          <div class="empty-state">
+            <div class="empty-icon">
               <ion-icon name="mail-outline"></ion-icon>
-              Pending Invitations ({{ pendingInvitations().length }})
-            </ion-card-title>
-          </ion-card-header>
-          <ion-card-content class="invitations-content">
+            </div>
+            <h3 class="empty-title">No Pending Invitations</h3>
+            <p class="empty-description">
+              All invitations have been responded to or you haven't sent any yet.
+            </p>
+            <ion-button
+              fill="outline"
+              class="empty-action"
+              (click)="selectedTab.set('invite')">
+              <ion-icon name="person-add-outline" slot="start"></ion-icon>
+              Send Invitations
+            </ion-button>
+          </div>
+        }
 
-            <ion-list class="invitations-list-content">
-              <ion-item-sliding
-                *ngFor="let invitation of pendingInvitations(); trackBy: trackByInvitationId"
-                class="invitation-sliding">
+        @if (!isLoading() && pendingInvitations().length > 0) {
+          <div class="invitations-list">
 
-                <ion-item class="invitation-item">
-                  <ion-avatar slot="start" class="invitation-avatar">
-                    <div class="avatar-placeholder">
-                      {{ invitation.email.charAt(0).toUpperCase() }}
-                    </div>
-                  </ion-avatar>
+            <ion-card class="invitations-card">
+              <ion-card-header>
+                <ion-card-title class="card-title">
+                  <ion-icon name="mail-outline"></ion-icon>
+                  Pending Invitations ({{ pendingInvitations().length }})
+                </ion-card-title>
+              </ion-card-header>
+              <ion-card-content class="invitations-content">
 
-                  <ion-label class="invitation-label">
-                    <h3 class="invitation-email">{{ invitation.email }}</h3>
-                    <p class="invitation-role">{{ getRoleDisplayName(invitation.role) }}</p>
-                    <p class="invitation-time">Sent {{ getInvitationAge(invitation) }}</p>
-                    <div class="invitation-warning" *ngIf="getExpirationWarning(invitation)">
-                      <ion-icon name="alert-circle-outline"></ion-icon>
-                      <span>{{ getExpirationWarning(invitation) }}</span>
-                    </div>
-                  </ion-label>
+                <ion-list class="invitations-list-content">
+                  @for (invitation of pendingInvitations(); track trackByInvitationId) {
+                  <ion-item-sliding
+                    class="invitation-sliding">
 
-                  <div class="invitation-actions" slot="end">
+                    <ion-item class="invitation-item">
+                      <ion-avatar slot="start" class="invitation-avatar">
+                        <div class="avatar-placeholder">
+                          {{ invitation.email.charAt(0).toUpperCase() }}
+                        </div>
+                      </ion-avatar>
+
+                      <ion-label class="invitation-label">
+                        <h3 class="invitation-email">{{ invitation.email }}</h3>
+                        <p class="invitation-role">{{ getRoleDisplayName(invitation.role) }}</p>
+                        <p class="invitation-time">Sent {{ getInvitationAge(invitation) }}</p>
+                        @if (getExpirationWarning(invitation)) {
+                          <div class="invitation-warning">
+                            <ion-icon name="alert-circle-outline"></ion-icon>
+                            <span>{{ getExpirationWarning(invitation) }}</span>
+                          </div>
+                        }
+                      </ion-label>
+
+                      <div class="invitation-actions" slot="end">
+                        <ion-button
+                          fill="clear"
+                          size="small"
+                          (click)="onResendInvitation(invitation)"
+                          class="action-button resend">
+                          <ion-icon name="refresh-outline"></ion-icon>
+                        </ion-button>
+                        <ion-button
+                          fill="clear"
+                          size="small"
+                          (click)="onCancelInvitation(invitation)"
+                          class="action-button cancel">
+                          <ion-icon name="close-outline"></ion-icon>
+                        </ion-button>
+                      </div>
+                    </ion-item>
+
+                    <ion-item-options side="end">
+                      <ion-item-option
+                        color="primary"
+                        (click)="onResendInvitation(invitation)">
+                        <ion-icon name="refresh-outline"></ion-icon>
+                        Resend
+                      </ion-item-option>
+                      <ion-item-option
+                        color="danger"
+                        (click)="onCancelInvitation(invitation)">
+                        <ion-icon name="trash-outline"></ion-icon>
+                        Cancel
+                      </ion-item-option>
+                    </ion-item-options>
+
+                  </ion-item-sliding>
+                  }
+                </ion-list>
+
+              </ion-card-content>
+            </ion-card>
+
+          </div>
+        }
+
+      </div>
+    }
+
+    @if (selectedTab() === 'code') {
+      <div class="tab-content code-tab">
+
+        @if (family()) {
+          <ion-card class="invite-code-card">
+            <ion-card-header>
+              <ion-card-title class="card-title">
+                <ion-icon name="qr-code-outline"></ion-icon>
+                Family Invite Code
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content class="invite-code-content">
+
+              <!-- Code Display -->
+              <div class="code-display">
+                <div class="code-container">
+                  <span class="invite-code">{{ family()!.inviteCode }}</span>
+                  <div class="code-actions">
                     <ion-button
                       fill="clear"
                       size="small"
-                      (click)="onResendInvitation(invitation)"
-                      class="action-button resend">
-                      <ion-icon name="refresh-outline"></ion-icon>
+                      (click)="onCopyInviteCode()"
+                      class="code-action copy">
+                      <ion-icon name="copy-outline"></ion-icon>
                     </ion-button>
                     <ion-button
                       fill="clear"
                       size="small"
-                      (click)="onCancelInvitation(invitation)"
-                      class="action-button cancel">
-                      <ion-icon name="close-outline"></ion-icon>
+                      (click)="onShareInviteCode()"
+                      class="code-action share">
+                      <ion-icon name="share-outline"></ion-icon>
                     </ion-button>
                   </div>
-                </ion-item>
+                </div>
+                <p class="code-description">
+                  Share this code with family members so they can join instantly
+                </p>
+              </div>
 
-                <ion-item-options side="end">
-                  <ion-item-option
-                    color="primary"
-                    (click)="onResendInvitation(invitation)">
-                    <ion-icon name="refresh-outline"></ion-icon>
-                    Resend
-                  </ion-item-option>
-                  <ion-item-option
-                    color="danger"
-                    (click)="onCancelInvitation(invitation)">
-                    <ion-icon name="trash-outline"></ion-icon>
-                    Cancel
-                  </ion-item-option>
-                </ion-item-options>
+              <!-- QR Code Placeholder -->
+              <div class="qr-code-section">
+                <div class="qr-code-placeholder">
+                  <ion-icon name="qr-code-outline" class="qr-icon"></ion-icon>
+                  <p class="qr-text">QR Code</p>
+                  <p class="qr-subtitle">Coming Soon</p>
+                </div>
+              </div>
 
-              </ion-item-sliding>
-            </ion-list>
+              <!-- Code Actions -->
+              <div class="code-bottom-actions">
+                <ion-button
+                  expand="block"
+                  fill="outline"
+                  (click)="onShareInviteCode()"
+                  class="share-button">
+                  <ion-icon name="share-outline" slot="start"></ion-icon>
+                  Share Invite Link
+                </ion-button>
 
+                <ion-button
+                  expand="block"
+                  fill="clear"
+                  (click)="onRegenerateInviteCode()"
+                  class="regenerate-button">
+                  <ion-icon name="refresh-outline" slot="start"></ion-icon>
+                  Generate New Code
+                </ion-button>
+              </div>
+
+            </ion-card-content>
+          </ion-card>
+        }
+
+        <!-- Instructions -->
+        <ion-card class="code-instructions-card">
+          <ion-card-content class="code-instructions-content">
+            <h4 class="instructions-title">How to use the invite code:</h4>
+            <ul class="instructions-list">
+              <li>Share the code with family members</li>
+              <li>They can enter it in the "Join Family" section</li>
+              <li>Instant access without waiting for email</li>
+              <li>Code works until you generate a new one</li>
+            </ul>
           </ion-card-content>
         </ion-card>
 
       </div>
-
-    </div>
-
-    <!-- Invite Code Tab -->
-    <div *ngIf="selectedTab() === 'code'" class="tab-content code-tab">
-
-      <!-- Invite Code Card -->
-      <ion-card class="invite-code-card" *ngIf="family()">
-        <ion-card-header>
-          <ion-card-title class="card-title">
-            <ion-icon name="qr-code-outline"></ion-icon>
-            Family Invite Code
-          </ion-card-title>
-        </ion-card-header>
-        <ion-card-content class="invite-code-content">
-
-          <!-- Code Display -->
-          <div class="code-display">
-            <div class="code-container">
-              <span class="invite-code">{{ family()!.inviteCode }}</span>
-              <div class="code-actions">
-                <ion-button
-                  fill="clear"
-                  size="small"
-                  (click)="onCopyInviteCode()"
-                  class="code-action copy">
-                  <ion-icon name="copy-outline"></ion-icon>
-                </ion-button>
-                <ion-button
-                  fill="clear"
-                  size="small"
-                  (click)="onShareInviteCode()"
-                  class="code-action share">
-                  <ion-icon name="share-outline"></ion-icon>
-                </ion-button>
-              </div>
-            </div>
-            <p class="code-description">
-              Share this code with family members so they can join instantly
-            </p>
-          </div>
-
-          <!-- QR Code Placeholder -->
-          <div class="qr-code-section">
-            <div class="qr-code-placeholder">
-              <ion-icon name="qr-code-outline" class="qr-icon"></ion-icon>
-              <p class="qr-text">QR Code</p>
-              <p class="qr-subtitle">Coming Soon</p>
-            </div>
-          </div>
-
-          <!-- Code Actions -->
-          <div class="code-bottom-actions">
-            <ion-button
-              expand="block"
-              fill="outline"
-              (click)="onShareInviteCode()"
-              class="share-button">
-              <ion-icon name="share-outline" slot="start"></ion-icon>
-              Share Invite Link
-            </ion-button>
-
-            <ion-button
-              expand="block"
-              fill="clear"
-              (click)="onRegenerateInviteCode()"
-              class="regenerate-button">
-              <ion-icon name="refresh-outline" slot="start"></ion-icon>
-              Generate New Code
-            </ion-button>
-          </div>
-
-        </ion-card-content>
-      </ion-card>
-
-      <!-- Instructions -->
-      <ion-card class="code-instructions-card">
-        <ion-card-content class="code-instructions-content">
-          <h4 class="instructions-title">How to use the invite code:</h4>
-          <ul class="instructions-list">
-            <li>Share the code with family members</li>
-            <li>They can enter it in the "Join Family" section</li>
-            <li>Instant access without waiting for email</li>
-            <li>Code works until you generate a new one</li>
-          </ul>
-        </ion-card-content>
-      </ion-card>
-
-    </div>
+    }
 
   </div>
 
-  <!-- Floating Action Button -->
-  <ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="selectedTab() === 'invite'">
-    <ion-fab-button class="invite-fab" (click)="onQuickInvite()">
-      <ion-icon name="person-add-outline"></ion-icon>
-    </ion-fab-button>
-  </ion-fab>
+  @if (selectedTab() === 'invite') {
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab-button class="invite-fab" (click)="onQuickInvite()">
+        <ion-icon name="person-add-outline"></ion-icon>
+      </ion-fab-button>
+    </ion-fab>
+  }
 
 </ion-content>

@@ -5,7 +5,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import {
   IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardContent, IonCardHeader, IonCardTitle,
   IonButton, IonIcon, IonBackButton, IonButtons, IonItem, IonInput, IonLabel,
-  IonText, IonSpinner, IonAlert, LoadingController, AlertController, ToastController
+  IonText, IonSpinner, IonAlert, LoadingController, AlertController, ToastController, IonChip, IonRouterLink
 } from '@ionic/angular/standalone';
 import { ActivatedRoute, Router } from '@angular/router';
 import { addIcons } from 'ionicons';
@@ -27,7 +27,7 @@ import { Subject, takeUntil, finalize } from 'rxjs';
     CommonModule, FormsModule, ReactiveFormsModule,
     IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardContent, IonCardHeader, IonCardTitle,
     IonButton, IonIcon, IonBackButton, IonButtons, IonItem, IonInput, IonLabel,
-    IonText, IonSpinner, IonAlert
+    IonText, IonSpinner, IonAlert, IonChip, IonRouterLink
   ]
 })
 export class JoinFamilyPage implements OnInit, OnDestroy {
@@ -35,7 +35,7 @@ export class JoinFamilyPage implements OnInit, OnDestroy {
   private readonly familyService = inject(FamilyService);
   private readonly authService = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
+  protected readonly router = inject(Router);
   private readonly loadingController = inject(LoadingController);
   private readonly alertController = inject(AlertController);
   private readonly toastController = inject(ToastController);
