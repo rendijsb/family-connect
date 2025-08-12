@@ -1,0 +1,298 @@
+<ion-header [translucent]="true" class="family-members-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="'/families/' + familyId() + '/dashboard'"></ion-back-button>
+    </ion-buttons>
+
+    <ion-title class="header-title">
+      @if (family()) {
+        <div class="title-content">
+          <span class="page-title">Members</span>
+          <span class="family-name">{{ family()!.name }}</span>
+        </div>
+      }
+    </ion-title>
+
+    <ion-buttons slot="end">
+      @
+      <ion-button
+        fill="clear"
+        class="invite-button"
+        (click)="onInviteMembers()"
+        *ngIf="canInvite()">
+        <ion-icon name="person-add-outline"></ion-icon>
+      </ion-button>
+
+      <ion-button
+        fill="clear"
+        class="menu-button"
+        (click)="onShowMembersMenu($event)"
+        *ngIf="canManage()">
+        <ion-icon name="ellipsis-vertical-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="family-members-content">
+  <!-- Refresher -->
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="family-members-container">
+
+    <!-- Search and Filter -->
+    <div class="search-section">
+      <ion-searchbar
+        [(ngModel)]="searchTerm"
+        (ionInput)="onSearch($event)"
+        placeholder="Search members..."
+        class="members-searchbar">
+      </ion-searchbar>
+
+      <ion-segment
+        [(ngModel)]="selectedFilter"
+        (ionChange)="onFilterChange($event)"
+        class="filter-segment">
+        <ion-segment-button value="all">
+          <ion-label>All</ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="active">
+          <ion-label>Active</ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="admins">
+          <ion-label>Admins</ion-label>
+        </ion-segment-button>
+      </ion-segment>
+    </div>
+
+    <!-- Members Stats -->
+    @if (!isLoading() && members().length > 0) {
+      <ion-card class="stats-card">
+        <ion-card-content class="stats-content">
+          <div class="stat-item">
+            <span class="stat-number">{{ getTotalMembers() }}</span>
+            <span class="stat-label">Total Members</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">{{ getActiveMembers() }}</span>
+            <span class="stat-label">Active</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">{{ getAdminMembers() }}</span>
+            <span class="stat-label">Admins</span>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    }
+
+    <!-- Loading State -->
+    @if (isLoading()) {
+      <div class="loading-container">
+        <ion-spinner name="crescent" class="loading-spinner"></ion-spinner>
+        <p class="loading-text">Loading family members...</p>
+      </div>
+    }
+
+    <!-- Empty State -->
+    @if (!isLoading() && filteredMembers().length === 0 && searchTerm() === '') {
+      <div class="empty-state">
+        <div class="empty-icon">
+          <ion-icon name="people-outline"></ion-icon>
+        </div>
+        <h3 class="empty-title">No Members Yet</h3>
+        <p class="empty-description">
+          Invite family members to get started
+        </p>
+        <ion-button
+          fill="outline"
+          class="empty-action"
+          (click)="onInviteMembers()"
+          *ngIf="canInvite()">
+          <ion-icon name="person-add-outline" slot="start"></ion-icon>
+          Invite Members
+        </ion-button>
+      </div>
+    }
+
+    <!-- No Search Results -->
+    @if (!isLoading() && filteredMembers().length === 0 && searchTerm() !== '') {
+      <div class="no-results">
+        <ion-icon name="search-outline" class="no-results-icon"></ion-icon>
+        <h3 class="no-results-title">No members found</h3>
+        <p class="no-results-text">Try adjusting your search or filter</p>
+      </div>
+    }
+
+    <!-- Members List -->
+    @if (!isLoading() && filteredMembers().length > 0) {
+      <div class="members-list">
+
+        <!-- Family Owner -->
+        @if (familyOwner()) {
+          <ion-card class="member-card owner-card">
+            <ion-card-header>
+              <ion-card-title class="card-title">
+                <ion-icon name="crown-outline"></ion-icon>
+                Family Owner
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content class="member-card-content">
+              <div class="member-item owner-item">
+                <ion-avatar class="member-avatar">
+                  <img
+                    [src]="familyOwner()!.user?.avatar || '/assets/avatars/default.jpg'"
+                    [alt]="familyOwner()!.user?.name">
+                  <div class="status-indicator" [class.online]="isMemberOnline(familyOwner()!)"></div>
+                </ion-avatar>
+
+                <div class="member-info">
+                  <h3 class="member-name">{{ familyOwner()!.user?.name }}</h3>
+                  <p class="member-email">{{ familyOwner()!.user?.email }}</p>
+                  <div class="member-meta">
+                    <span class="member-role owner">Owner</span>
+                    <span class="join-date">
+                      Joined {{ familyOwner()!.joinedAt | date:'MMM d, y' }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="member-actions">
+                  <ion-button
+                    fill="clear"
+                    size="small"
+                    (click)="onViewMemberProfile(familyOwner()!)">
+                    <ion-icon name="person-outline"></ion-icon>
+                  </ion-button>
+                  <ion-button
+                    fill="clear"
+                    size="small"
+                    (click)="onMessageMember(familyOwner()!)">
+                    <ion-icon name="chatbubble-outline"></ion-icon>
+                  </ion-button>
+                </div>
+              </div>
+            </ion-card-content>
+          </ion-card>
+        }
+
+        <!-- Regular Members -->
+        @if (regularMembers().length > 0) {
+          <ion-card class="members-card">
+            <ion-card-header>
+              <ion-card-title class="card-title">
+                <ion-icon name="people-outline"></ion-icon>
+                Family Members
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content class="members-card-content">
+
+              @for (member of regularMembers(); track trackByMemberId) {
+                <div class="member-item" (click)="onViewMemberProfile(member)">
+                  <ion-avatar class="member-avatar">
+                    <img
+                      [src]="member.user?.avatar || '/assets/avatars/default.jpg'"
+                      [alt]="member.user?.name">
+                    <div class="status-indicator" [class.online]="isMemberOnline(member)"></div>
+                  </ion-avatar>
+
+                  <div class="member-info">
+                    <h3 class="member-name">{{ member.user?.name }}</h3>
+                    <p class="member-email">{{ member.user?.email }}</p>
+                    <div class="member-meta">
+                      <span
+                        class="member-role"
+                        [attr.data-role]="member.role">
+                        {{ getMemberRoleDisplay(member.role) }}
+                      </span>
+                      <span class="join-date">
+                        Joined {{ member.joinedAt | date:'MMM d, y' }}
+                      </span>
+                      @if (member.lastActivityAt) {
+                        <span class="last-active">
+                          Last active {{ member.lastActivityAt | date:'MMM d, h:mm a' }}
+                        </span>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="member-actions" (click)="$event.stopPropagation()">
+                    <ion-button
+                      fill="clear"
+                      size="small"
+                      (click)="onMessageMember(member)">
+                      <ion-icon name="chatbubble-outline"></ion-icon>
+                    </ion-button>
+
+                    @if (canManageMembers()) {
+                      <ion-button
+                        fill="clear"
+                        size="small"
+                        (click)="onMemberActions($event, member)">
+                        <ion-icon name="ellipsis-horizontal-outline"></ion-icon>
+                      </ion-button>
+                    }
+                  </div>
+                </div>
+              }
+
+            </ion-card-content>
+          </ion-card>
+        }
+
+        <!-- Blocked Members -->
+        @if (blockedMembers().length > 0 && canManage()) {
+          <ion-card class="blocked-members-card">
+            <ion-card-header>
+              <ion-card-title class="card-title">
+                <ion-icon name="ban-outline"></ion-icon>
+                Blocked Members ({{ blockedMembers().length }})
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content class="blocked-members-content">
+
+              @for (member of blockedMembers(); track trackByMemberId) {
+                <div class="member-item blocked-item">
+                  <ion-avatar class="member-avatar blocked">
+                    <img
+                      [src]="member.user?.avatar || '/assets/avatars/default.jpg'"
+                      [alt]="member.user?.name">
+                  </ion-avatar>
+
+                  <div class="member-info">
+                    <h3 class="member-name">{{ member.user?.name }}</h3>
+                    <p class="member-status blocked">Blocked</p>
+                  </div>
+
+                  <div class="member-actions">
+                    <ion-button
+                      fill="clear"
+                      size="small"
+                      color="success"
+                      (click)="onUnblockMember(member)">
+                      <ion-icon name="checkmark-outline"></ion-icon>
+                    </ion-button>
+                  </div>
+                </div>
+              }
+
+            </ion-card-content>
+          </ion-card>
+        }
+
+      </div>
+    }
+
+  </div>
+
+  <!-- Floating Action Button -->
+  @if (canInvite()) {
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab-button class="invite-fab" (click)="onInviteMembers()">
+        <ion-icon name="person-add-outline"></ion-icon>
+      </ion-fab-button>
+    </ion-fab>
+  }
+
+</ion-content>

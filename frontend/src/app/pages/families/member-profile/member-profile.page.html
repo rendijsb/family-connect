@@ -1,0 +1,327 @@
+<!-- frontend/src/app/pages/families/member-profile/member-profile.page.html -->
+<ion-header [translucent]="true" class="member-profile-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="'/families/' + familyId() + '/members'"></ion-back-button>
+    </ion-buttons>
+
+    <ion-title class="header-title">
+      @if (member()) {
+        <div class="title-content">
+          <span class="page-title">{{ member()!.user?.name }}</span>
+          <span class="member-role">{{ getMemberRoleDisplay(member()!.role) }}</span>
+        </div>
+      }
+    </ion-title>
+
+    <ion-buttons slot="end">
+      @if (member() && canManageMembers()) {
+        <ion-button
+          fill="clear"
+          class="actions-button"
+          (click)="onShowMemberActions($event)">
+          <ion-icon name="ellipsis-vertical-outline"></ion-icon>
+        </ion-button>
+      }
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="member-profile-content">
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="loading-container">
+      <ion-spinner name="crescent" class="loading-spinner"></ion-spinner>
+      <p class="loading-text">Loading member profile...</p>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error()) {
+    <div class="error-container">
+      <div class="error-icon">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+      </div>
+      <h3 class="error-title">Unable to Load Profile</h3>
+      <p class="error-message">{{ error() }}</p>
+      <ion-button fill="outline" (click)="onRetry()">
+        <ion-icon name="refresh-outline" slot="start"></ion-icon>
+        Try Again
+      </ion-button>
+    </div>
+  }
+
+  @if (!isLoading() && !error() && member()) {
+    <div class="member-profile-container">
+
+      <!-- Profile Header -->
+      <div class="profile-header">
+        <div class="profile-avatar-section">
+          <ion-avatar class="profile-avatar">
+            <img
+              [src]="member()!.user?.avatar || '/assets/avatars/default.jpg'"
+              [alt]="member()!.user?.name">
+            <div class="status-indicator" [class.online]="isMemberOnline()"></div>
+          </ion-avatar>
+
+          <div class="profile-status">
+            <div class="status-text" [class.online]="isMemberOnline()">
+              {{ getStatusText() }}
+            </div>
+            @if (!isMemberOnline() && member()!.lastActivityAt) {
+              <div class="last-seen">
+                Last seen {{ member()!.lastActivityAt | date:'MMM d, h:mm a' }}
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="profile-info">
+          <h1 class="profile-name">{{ member()!.user?.name }}</h1>
+          <div class="profile-badges">
+            <span class="role-badge" [attr.data-role]="member()!.role">
+              <ion-icon [name]="getRoleIcon()"></ion-icon>
+              {{ getMemberRoleDisplay(member()!.role) }}
+            </span>
+            @if (member()!.status !== 'active') {
+              <span class="status-badge" [attr.data-status]="member()!.status">
+                {{ getStatusDisplay(member()!.status) }}
+              </span>
+            }
+          </div>
+          @if (member()!.preferences?.nickname) {
+            <p class="profile-nickname">"{{ member()!.preferences.nickname }}"</p>
+          }
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <ion-card class="quick-actions-card">
+        <ion-card-content class="quick-actions-content">
+          <div class="actions-grid">
+            <div class="action-item" (click)="onMessageMember()">
+              <div class="action-icon message">
+                <ion-icon name="chatbubble-outline"></ion-icon>
+              </div>
+              <span class="action-title">Message</span>
+            </div>
+
+            <div class="action-item" (click)="onCallMember()">
+              <div class="action-icon call">
+                <ion-icon name="call-outline"></ion-icon>
+              </div>
+              <span class="action-title">Call</span>
+            </div>
+
+            <div class="action-item" (click)="onVideoCallMember()">
+              <div class="action-icon video">
+                <ion-icon name="videocam-outline"></ion-icon>
+              </div>
+              <span class="action-title">Video</span>
+            </div>
+
+            @if (member()!.preferences?.allowLocationTracking) {
+              <div class="action-item" (click)="onViewLocation()">
+                <div class="action-icon location">
+                  <ion-icon name="location-outline"></ion-icon>
+                </div>
+                <span class="action-title">Location</span>
+              </div>
+            }
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Member Information -->
+      <ion-card class="info-card">
+        <ion-card-header>
+          <ion-card-title class="card-title">
+            <ion-icon name="information-circle-outline"></ion-icon>
+            Member Information
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="info-content">
+
+          <div class="info-item">
+            <div class="info-label">
+              <ion-icon name="mail-outline"></ion-icon>
+              Email
+            </div>
+            <div class="info-value">{{ member()!.user?.email }}</div>
+          </div>
+
+          @if (member()!.user?.phone) {
+            <div class="info-item">
+              <div class="info-label">
+                <ion-icon name="call-outline"></ion-icon>
+                Phone
+              </div>
+              <div class="info-value">{{ member()!.user?.phone }}</div>
+            </div>
+          }
+
+          @if (member()!.user?.dateOfBirth) {
+            <div class="info-item">
+              <div class="info-label">
+                <ion-icon name="calendar-outline"></ion-icon>
+                Birthday
+              </div>
+              <div class="info-value">{{ member()!.user?.dateOfBirth | date:'MMM d, y' }}</div>
+            </div>
+          }
+
+          <div class="info-item">
+            <div class="info-label">
+              <ion-icon name="time-outline"></ion-icon>
+              Joined
+            </div>
+            <div class="info-value">{{ member()!.joinedAt | date:'MMMM d, y' }}</div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <ion-icon name="shield-outline"></ion-icon>
+              Permissions
+            </div>
+            <div class="info-value">
+              @if (member()!.permissions.length > 0) {
+                <div class="permissions-list">
+                  @for (permission of member()!.permissions; track permission) {
+                    <span class="permission-chip">{{ getPermissionDisplay(permission) }}</span>
+                  }
+                </div>
+              }
+              @if (member()!.permissions.length === 0) {
+                <span class="no-permissions">Standard member permissions</span>
+              }
+            </div>
+          </div>
+
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Family Activity -->
+      <ion-card class="activity-card">
+        <ion-card-header>
+          <ion-card-title class="card-title">
+            <ion-icon name="pulse-outline"></ion-icon>
+            Recent Activity
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="activity-content">
+
+          @if (memberActivities().length > 0) {
+            <div class="activity-list">
+              @for (activity of memberActivities(); track activity.id) {
+                <div class="activity-item">
+                  <div class="activity-icon" [attr.data-type]="activity.type">
+                    <ion-icon [name]="getActivityIcon(activity.type)"></ion-icon>
+                  </div>
+                  <div class="activity-details">
+                    <h4 class="activity-title">{{ activity.title }}</h4>
+                    @if (activity.description) {
+                      <p class="activity-description">{{ activity.description }}</p>
+                    }
+                    <span class="activity-time">{{ activity.createdAt | date:'MMM d, h:mm a' }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          @if (memberActivities().length === 0) {
+            <div class="no-activity">
+              <ion-icon name="time-outline" class="no-activity-icon"></ion-icon>
+              <p class="no-activity-text">No recent activity</p>
+            </div>
+          }
+
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Privacy Settings (if member can view) -->
+      @if (canViewPreferences()) {
+        <ion-card class="preferences-card">
+          <ion-card-header>
+            <ion-card-title class="card-title">
+              <ion-icon name="settings-outline"></ion-icon>
+              Privacy & Preferences
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content class="preferences-content">
+
+            <div class="preference-item">
+              <div class="preference-info">
+                <ion-icon name="location-outline" class="preference-icon"></ion-icon>
+                <span class="preference-label">Location Sharing</span>
+              </div>
+              <div class="preference-status" [class.enabled]="member()!.preferences?.allowLocationTracking">
+                {{ member()!.preferences?.allowLocationTracking ? 'Enabled' : 'Disabled' }}
+              </div>
+            </div>
+
+            <div class="preference-item">
+              <div class="preference-info">
+                <ion-icon name="camera-outline" class="preference-icon"></ion-icon>
+                <span class="preference-label">Photo Tagging</span>
+              </div>
+              <div class="preference-status" [class.enabled]="member()!.preferences?.allowPhotoTagging">
+                {{ member()!.preferences?.allowPhotoTagging ? 'Enabled' : 'Disabled' }}
+              </div>
+            </div>
+
+            <div class="preference-item">
+              <div class="preference-info">
+                <ion-icon name="notifications-outline" class="preference-icon"></ion-icon>
+                <span class="preference-label">Notifications</span>
+              </div>
+              <div class="preference-status">
+                @if (member()!.preferences?.notificationSettings) {
+                  <div class="notification-settings">
+                    @if (member()!.preferences.notificationSettings.mentions) {
+                      <span class="notification-type">Mentions</span>
+                    }
+                    @if (member()!.preferences.notificationSettings.events) {
+                      <span class="notification-type">Events</span>
+                    }
+                    @if (member()!.preferences.notificationSettings.photos) {
+                      <span class="notification-type">Photos</span>
+                    }
+                    @if (member()!.preferences.notificationSettings.activities) {
+                      <span class="notification-type">Activities</span>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+
+          </ion-card-content>
+        </ion-card>
+      }
+
+    </div>
+  }
+
+  <!-- Floating Action Buttons -->
+  @if (member()) {
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab-button class="main-fab">
+        <ion-icon name="chatbubble-outline"></ion-icon>
+      </ion-fab-button>
+      <ion-fab-list side="top">
+        <ion-fab-button (click)="onCallMember()" class="call-fab">
+          <ion-icon name="call-outline"></ion-icon>
+        </ion-fab-button>
+        <ion-fab-button (click)="onVideoCallMember()" class="video-fab">
+          <ion-icon name="videocam-outline"></ion-icon>
+        </ion-fab-button>
+        @if (member()!.preferences?.allowLocationTracking) {
+          <ion-fab-button (click)="onViewLocation()" class="location-fab">
+            <ion-icon name="location-outline"></ion-icon>
+          </ion-fab-button>
+        }
+      </ion-fab-list>
+    </ion-fab>
+  }
+
+</ion-content>

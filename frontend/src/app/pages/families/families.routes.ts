@@ -30,14 +30,14 @@ export const familyRoutes: Routes = [
         path: ':id/invite',
         loadComponent: () => import('./family-invite/family-invite.page').then(m => m.FamilyInvitePage)
       },
-      // {
-      //   path: ':id/members',
-      //   loadComponent: () => import('./family-members/family-members.page').then(m => m.FamilyMembersPage)
-      // },
-      // {
-      //   path: ':id/members/:userId',
-      //   loadComponent: () => import('./member-profile/member-profile.page').then(m => m.MemberProfilePage)
-      // }
+      {
+        path: ':id/members',
+        loadComponent: () => import('./family-members/family-members.page').then(m => m.FamilyMembersPage)
+      },
+      {
+        path: ':id/members/:userId',
+        loadComponent: () => import('./member-profile/member-profile.page').then(m => m.MemberProfilePage)
+      }
     ]
   }
 ];
