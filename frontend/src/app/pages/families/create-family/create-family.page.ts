@@ -193,7 +193,7 @@ export class CreateFamilyPage implements OnInit, OnDestroy {
     }
   }
 
-  private canProceedToNextStep(): boolean {
+  protected canProceedToNextStep(): boolean {
     switch (this.currentStep()) {
       case 1: return this.step1Valid();
       case 2: return this.step2Valid();
