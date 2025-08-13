@@ -1,0 +1,36 @@
+<ion-header [translucent]="true" class="chat-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-title class="header-title">
+      <div class="title-content">
+        <span class="greeting">Family</span>
+        <span class="username">Chat</span>
+      </div>
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button class="notification-button">
+        <ion-icon name="notifications-outline"></ion-icon>
+        <ion-badge class="notification-badge">5</ion-badge>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="chat-content">
+  <div class="chat-container">
+    <ion-card class="coming-soon-card">
+      <ion-card-content class="coming-soon-content">
+        <div class="coming-soon-icon">
+          <ion-icon name="chatbubble-outline"></ion-icon>
+        </div>
+        <h2 class="coming-soon-title">Chat Coming Soon!</h2>
+        <p class="coming-soon-description">
+          Family chat features are currently in development. Soon you'll be able to message family members, create group chats, and share updates instantly.
+        </p>
+        <ion-button expand="block" fill="outline" disabled class="preview-button">
+          <ion-icon name="add-outline" slot="start"></ion-icon>
+          Start New Chat
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>

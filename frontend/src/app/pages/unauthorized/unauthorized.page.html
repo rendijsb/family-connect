@@ -1,0 +1,39 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Access Denied</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="error-content">
+  <div class="error-container">
+    <div class="error-icon">
+      <ion-icon name="lock-closed-outline"></ion-icon>
+    </div>
+
+    <h2 class="error-title">Access Denied</h2>
+    <p class="error-message">
+      You don't have permission to access this page. Please contact your family administrator if you think this is a mistake.
+    </p>
+
+    <div class="error-actions">
+      <ion-button
+        expand="block"
+        (click)="router.navigate(['/tabs/home'])"
+        class="primary-button">
+        <ion-icon name="home-outline" slot="start"></ion-icon>
+        Go Home
+      </ion-button>
+
+      <ion-button
+        expand="block"
+        fill="outline"
+        (click)="router.navigate(['/families'])"
+        class="secondary-button">
+        View Families
+      </ion-button>
+    </div>
+  </div>
+</ion-content>

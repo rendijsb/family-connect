@@ -1,0 +1,82 @@
+.error-content {
+  --background: linear-gradient(135deg, #1a1a1a 0%, #2d1b1b 50%, #1a1a1a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.error-container {
+  text-align: center;
+  padding: 40px 20px;
+  max-width: 400px;
+}
+
+.error-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(107, 114, 128, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+
+  ion-icon {
+    font-size: 40px;
+    color: #6b7280;
+  }
+}
+
+.error-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 16px 0;
+}
+
+.error-message {
+  font-size: 16px;
+  color: #a1a1aa;
+  line-height: 1.5;
+  margin: 0 0 16px 0;
+}
+
+.error-url {
+  background: rgba(55, 55, 55, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 0 0 32px 0;
+
+  code {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: #dc2626;
+    word-break: break-all;
+  }
+}
+
+.error-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.primary-button {
+  --background: linear-gradient(135deg, #dc2626, #b91c1c);
+  --color: white;
+  height: 48px;
+  font-weight: 600;
+}
+
+.secondary-button {
+  --border-color: rgba(255, 255, 255, 0.3);
+  --color: white;
+  height: 48px;
+}
+
+.tertiary-button {
+  --color: #6b7280;
+  height: 44px;
+}

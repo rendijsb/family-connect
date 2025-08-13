@@ -1,134 +1,126 @@
-.register-content {
-  --background: linear-gradient(135deg, #1a1a1a 0%, #2d1b1b 50%, #1a1a1a 100%);
-  --padding-top: 0;
-  --padding-bottom: 0;
-  --overflow: hidden;
-}
+@import "../../../styles";
+
+.register-content { @extend .content-bg; --overflow: hidden; }
 
 .register-container {
   min-height: 100vh;
-  min-height: 100svh; // Use small viewport height for mobile
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
-  padding: env(safe-area-inset-top, 20px) 20px env(safe-area-inset-bottom, 20px) 20px;
-  padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 20px);
+  padding: max(var(--safe-top), var(--space-xl)) var(--space-xl) calc(var(--safe-bottom) + var(--space-xl));
 }
 
-/* Header Section */
+// Header section with progress
 .header-section {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
-  padding-top: max(env(safe-area-inset-top, 0px), 10px);
+  margin-bottom: var(--space-lg);
   position: sticky;
   top: 0;
   z-index: 10;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d1b1b 50%, #1a1a1a 100%);
+  background: var(--bg-gradient);
+
+  .back-button {
+    --color: white;
+    --padding-start: 0;
+    --padding-end: 0;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+  }
+
+  .progress-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    margin-left: var(--space-lg);
+
+    .progress-bar {
+      width: min(200px, 60vw);
+      height: 4px;
+      background: var(--border-light);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 6px;
+
+      .progress-fill {
+        height: 100%;
+        background: var(--bg-primary-gradient);
+        transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+    }
+
+    .progress-text {
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: 500;
+    }
+  }
 }
 
-.back-button {
-  --color: white;
-  --padding-start: 0;
-  --padding-end: 0;
-  width: 44px;
-  height: 44px;
-  flex-shrink: 0;
-}
-
-.progress-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
-  margin-left: 16px;
-}
-
-.progress-bar {
-  width: min(200px, 60vw);
-  height: 4px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 2px;
-  overflow: hidden;
-  margin-bottom: 6px;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #dc2626, #b91c1c);
-  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.progress-text {
-  color: #a1a1aa;
-  font-size: 11px;
-  font-weight: 500;
-}
-
-/* Logo Section */
+// Logo section
 .logo-section {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: var(--space-xl);
+
+  .logo-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--bg-primary-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--space-md);
+    box-shadow: var(--shadow-primary);
+
+    .logo-icon {
+      font-size: 30px;
+      color: white;
+    }
+  }
+
+  .page-title {
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    color: white;
+    margin: 0 0 6px 0;
+    letter-spacing: -0.5px;
+  }
+
+  .page-subtitle {
+    font-size: var(--text-base);
+    color: var(--text-secondary);
+    margin: 0;
+    font-weight: 400;
+    line-height: 1.3;
+  }
 }
 
-.logo-circle {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #dc2626, #991b1b);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 12px;
-  box-shadow: 0 8px 32px rgba(220, 38, 38, 0.3);
-}
-
-.logo-icon {
-  font-size: 30px;
-  color: white;
-}
-
-.page-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: white;
-  margin: 0 0 6px 0;
-  letter-spacing: -0.5px;
-}
-
-.page-subtitle {
-  font-size: 14px;
-  color: #a1a1aa;
-  margin: 0;
-  font-weight: 400;
-  line-height: 1.3;
-}
-
-/* Register Card */
+// Main card
 .register-card {
+  @include card-base;
   width: 100%;
   max-width: 420px;
   margin: 0 auto;
   flex: 1;
   display: flex;
   flex-direction: column;
-  --background: rgba(38, 38, 38, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-  overflow: hidden;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+
+  .card-content {
+    padding: var(--space-xl);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
 }
 
-.card-content {
-  padding: 20px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0; // Important for flex children
-}
-
-/* Form Steps */
+// Form steps
 .form-step {
   flex: 1;
   display: flex;
@@ -137,224 +129,251 @@
   justify-content: flex-start;
 }
 
-/* Input Groups */
+// Input groups using existing mixins
 .input-group {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-lg);
+
+  .custom-item {
+    @include form-item;
+    margin-bottom: 6px;
+
+    &:hover { border-color: var(--border-primary); }
+    &.error {
+      border-color: var(--danger);
+      --background: rgba(239, 68, 68, 0.1);
+    }
+
+    .custom-input {
+      --color: white;
+      --placeholder-color: var(--text-secondary);
+      font-size: var(--text-lg);
+      font-weight: 400;
+    }
+
+    .input-icon {
+      color: var(--primary);
+      font-size: var(--icon-size);
+      margin-right: 10px;
+    }
+
+    .validation-icon {
+      font-size: var(--icon-size);
+
+      &.success { color: var(--success); }
+    }
+
+    .password-toggle {
+      color: var(--text-secondary);
+      font-size: var(--icon-size);
+      cursor: pointer;
+      transition: color 0.3s ease;
+
+      &:hover { color: var(--primary); }
+    }
+  }
+
+  .error-text { @extend .error-text; }
 }
 
+// Name grid layout
 .name-grid {
   padding: 0;
   margin-bottom: 0;
+
+  ion-col {
+    padding: 0;
+
+    &:first-child { padding-right: 6px; }
+    &:last-child { padding-left: 6px; }
+  }
 }
 
-.name-grid ion-col {
-  padding: 0;
-}
-
-.name-grid ion-col:first-child {
-  padding-right: 6px;
-}
-
-.name-grid ion-col:last-child {
-  padding-left: 6px;
-}
-
-.custom-item {
-  --background: rgba(55, 55, 55, 0.8);
-  --border-radius: 12px;
-  --padding-start: 14px;
-  --padding-end: 14px;
-  --min-height: 48px;
-  margin-bottom: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.3s ease;
-}
-
-.custom-item:hover {
-  --background: rgba(65, 65, 65, 0.9);
-  border-color: rgba(220, 38, 38, 0.3);
-}
-
-.custom-item.item-has-focus {
-  --background: rgba(65, 65, 65, 0.9);
-  border-color: #dc2626;
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
-}
-
-.custom-input {
-  --color: white;
-  --placeholder-color: #a1a1aa;
-  font-size: 15px;
-  font-weight: 400;
-}
-
-.custom-item.error {
-  border-color: #ef4444;
-  --background: rgba(239, 68, 68, 0.1);
-}
-
-.input-icon {
-  color: #dc2626;
-  font-size: 16px;
-  margin-right: 10px;
-}
-
-.validation-icon {
-  font-size: 16px;
-}
-
-.validation-icon.success {
-  color: #22c55e;
-}
-
-.password-toggle {
-  color: #a1a1aa;
-  font-size: 16px;
-  cursor: pointer;
-  transition: color 0.3s ease;
-}
-
-.password-toggle:hover {
-  color: #dc2626;
-}
-
-.error-text {
-  font-size: 12px;
-  color: #ef4444;
-  padding-left: 14px;
-  margin-top: 3px;
-  line-height: 1.2;
-}
-
-/* Password Strength */
+// Password strength indicator
 .password-strength {
   display: flex;
   align-items: center;
   gap: 10px;
   margin: 6px 0;
-  padding-left: 14px;
+  padding-left: var(--space-lg);
+
+  .strength-bar {
+    flex: 1;
+    height: 3px;
+    background: var(--border-light);
+    border-radius: 2px;
+    overflow: hidden;
+
+    .strength-fill {
+      height: 100%;
+      transition: all 0.3s ease;
+    }
+  }
+
+  .strength-text {
+    font-size: 11px;
+    font-weight: 500;
+    min-width: 70px;
+    text-align: right;
+  }
 }
 
-.strength-bar {
-  flex: 1;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.strength-fill {
-  height: 100%;
-  transition: all 0.3s ease;
-}
-
-.strength-text {
-  font-size: 11px;
-  font-weight: 500;
-  min-width: 70px;
-  text-align: right;
-}
-
-/* Checkbox Group */
+// Checkbox group
 .checkbox-group {
-  margin-bottom: 20px;
-  margin-top: auto; // Push to bottom of form-step
+  margin-bottom: var(--space-xl);
+  margin-top: auto;
+
+  .checkbox-item {
+    --background: transparent;
+    --padding-start: 0;
+    --inner-padding-end: 0;
+    --padding-top: 6px;
+    --padding-bottom: 6px;
+    align-items: flex-start;
+    --min-height: auto;
+
+    .custom-checkbox {
+      --background: var(--bg-secondary);
+      --background-checked: var(--primary);
+      --border-color: var(--border-light);
+      --border-color-checked: var(--primary);
+      --checkmark-color: white;
+      margin-right: 10px;
+      margin-top: 1px;
+      transform: scale(0.9);
+
+      &.error { --border-color: var(--danger); }
+    }
+
+    .checkbox-label {
+      color: var(--text-primary);
+      font-size: var(--text-sm);
+      line-height: 1.3;
+
+      .terms-link {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+
+        &:hover { color: var(--primary-light); }
+      }
+    }
+  }
 }
 
-.checkbox-item {
-  --background: transparent;
-  --padding-start: 0;
-  --inner-padding-end: 0;
-  --padding-top: 6px;
-  --padding-bottom: 6px;
-  align-items: flex-start;
-  --min-height: auto;
-}
-
-.custom-checkbox {
-  --background: rgba(55, 55, 55, 0.8);
-  --background-checked: #dc2626;
-  --border-color: rgba(255, 255, 255, 0.2);
-  --border-color-checked: #dc2626;
-  --checkmark-color: white;
-  margin-right: 10px;
-  margin-top: 1px;
-  transform: scale(0.9);
-}
-
-.custom-checkbox.error {
-  --border-color: #ef4444;
-}
-
-.checkbox-label {
-  color: #e5e5e5;
-  font-size: 12px;
-  line-height: 1.3;
-}
-
-.terms-link {
-  color: #dc2626;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.terms-link:hover {
-  color: #f87171;
-}
-
-/* Button Group - Fixed positioning */
+// Button group
 .button-group {
   display: flex;
   gap: 10px;
   margin-top: auto;
-  margin-bottom: 16px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border-light);
   position: sticky;
   bottom: 0;
-  background: rgba(38, 38, 38, 0.98);
+  background: var(--bg-overlay);
   backdrop-filter: blur(20px);
   z-index: 5;
+
+  ion-button { flex: 1; }
+
+  .primary-button {
+    @include button-primary;
+    font-size: var(--text-base);
+
+    &.button-disabled {
+      --background: rgba(107, 114, 128, 0.5);
+      --color: rgba(255, 255, 255, 0.5);
+      box-shadow: none;
+    }
+  }
+
+  .secondary-button {
+    @include button-secondary;
+    font-size: var(--text-base);
+  }
 }
 
-.button-group ion-button {
-  flex: 1;
+// Social section
+.social-section {
+  margin-bottom: var(--space-lg);
+
+  .divider {
+    position: relative;
+    text-align: center;
+    margin: var(--space-lg) 0;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-light), transparent);
+    }
+
+    .divider-text {
+      background: var(--bg-overlay);
+      padding: 0 var(--space-lg);
+      color: var(--text-secondary);
+      font-size: var(--text-sm);
+      position: relative;
+      z-index: 1;
+    }
+  }
+
+  .social-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+
+    .social-button {
+      --border-color: var(--border-medium);
+      --background: rgba(55, 55, 55, 0.5);
+      --background-hover: rgba(65, 65, 65, 0.7);
+      --color: white;
+      --border-radius: var(--radius-md);
+      height: 40px;
+      font-weight: 500;
+      font-size: var(--text-sm);
+      transition: all 0.3s ease;
+
+      &:hover { transform: translateY(-1px); }
+
+      &.google:hover {
+        --border-color: #4285f4;
+        box-shadow: 0 4px 15px rgba(66, 133, 244, 0.2);
+      }
+
+      &.apple:hover {
+        --border-color: #ffffff;
+        box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+      }
+    }
+  }
 }
 
-.primary-button {
-  --background: linear-gradient(135deg, #dc2626, #b91c1c);
-  --background-hover: linear-gradient(135deg, #b91c1c, #991b1b);
-  --color: white;
-  --border-radius: 12px;
-  height: 48px;
-  font-size: 14px;
-  font-weight: 600;
-  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4);
-  transition: all 0.3s ease;
+// Sign in section
+.signin-section {
+  text-align: center;
+  padding-bottom: var(--safe-bottom);
+
+  .signin-text {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+
+    .signin-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.3s ease;
+
+      &:hover { color: var(--primary-light); }
+    }
+  }
 }
 
-.primary-button:hover:not(.button-disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 25px rgba(220, 38, 38, 0.5);
-}
-
-.primary-button.button-disabled {
-  --background: rgba(107, 114, 128, 0.5);
-  --color: rgba(255, 255, 255, 0.5);
-  box-shadow: none;
-}
-
-.secondary-button {
-  --border-color: rgba(255, 255, 255, 0.3);
-  --background: transparent;
-  --background-hover: rgba(255, 255, 255, 0.1);
-  --color: white;
-  --border-radius: 12px;
-  height: 48px;
-  font-size: 14px;
-  font-weight: 500;
-}
-
+// Animation
 .spinning {
   animation: spin 1s linear infinite;
 }
@@ -364,188 +383,29 @@
   to { transform: rotate(360deg); }
 }
 
-/* Social Section */
-.social-section {
-  margin-bottom: 16px;
-}
-
-.divider {
-  position: relative;
-  text-align: center;
-  margin: 16px 0;
-}
-
-.divider::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-}
-
-.divider-text {
-  background: rgba(38, 38, 38, 0.95);
-  padding: 0 14px;
-  color: #a1a1aa;
-  font-size: 12px;
-  position: relative;
-  z-index: 1;
-}
-
-.social-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.social-button {
-  --border-color: rgba(255, 255, 255, 0.2);
-  --background: rgba(55, 55, 55, 0.5);
-  --background-hover: rgba(65, 65, 65, 0.7);
-  --color: white;
-  --border-radius: 12px;
-  height: 40px;
-  font-weight: 500;
-  font-size: 13px;
-  transition: all 0.3s ease;
-}
-
-.social-button:hover {
-  transform: translateY(-1px);
-}
-
-.social-button.google:hover {
-  --border-color: #4285f4;
-  box-shadow: 0 4px 15px rgba(66, 133, 244, 0.2);
-}
-
-.social-button.apple:hover {
-  --border-color: #ffffff;
-  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
-}
-
-/* Sign In Section */
-.signin-section {
-  text-align: center;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-.signin-text {
-  color: #a1a1aa;
-  font-size: 13px;
-}
-
-.signin-link {
-  color: #dc2626;
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.3s ease;
-}
-
-.signin-link:hover {
-  color: #f87171;
-}
-
-/* Responsive Design */
+// Responsive design - consolidated
 @media (max-width: 430px) {
-  .register-container {
-    padding: env(safe-area-inset-top, 16px) 16px env(safe-area-inset-bottom, 16px) 16px;
-    padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 16px);
-  }
-
-  .card-content {
-    padding: 16px;
-  }
-
-  .page-title {
-    font-size: 22px;
-  }
-
-  .progress-bar {
-    width: min(160px, 55vw);
-  }
-
-  .name-grid ion-col:first-child {
-    padding-right: 4px;
-  }
-
-  .name-grid ion-col:last-child {
-    padding-left: 4px;
-  }
-
-  .social-buttons {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
-  .button-group {
-    gap: 8px;
-  }
-
-  .custom-item {
-    --min-height: 44px;
-    --padding-start: 12px;
-    --padding-end: 12px;
-  }
-
-  .input-icon {
-    font-size: 15px;
-    margin-right: 8px;
-  }
-
-  .logo-circle {
-    width: 55px;
-    height: 55px;
-  }
-
-  .logo-icon {
-    font-size: 26px;
-  }
+  .register-container { padding: max(var(--safe-top), var(--space-lg)) var(--space-lg) calc(var(--safe-bottom) + var(--space-lg)); }
+  .card-content { padding: var(--space-lg); }
+  .page-title { font-size: 22px; }
+  .progress-container .progress-bar { width: min(160px, 55vw); }
+  .name-grid ion-col:first-child { padding-right: 4px; }
+  .name-grid ion-col:last-child { padding-left: 4px; }
+  .social-buttons { grid-template-columns: 1fr; gap: 8px; }
+  .button-group { gap: 8px; }
+  .custom-item { --min-height: 44px; --padding-start: var(--space-md); --padding-end: var(--space-md); }
+  .input-icon { font-size: 15px; margin-right: 8px; }
+  .logo-circle { width: 55px; height: 55px; .logo-icon { font-size: 26px; } }
 }
 
 @media (max-width: 375px) {
-  .register-container {
-    padding: env(safe-area-inset-top, 12px) 12px env(safe-area-inset-bottom, 12px) 12px;
-    padding-bottom: calc(env(safe-area-inset-bottom, 12px) + 12px);
-  }
-
-  .card-content {
-    padding: 14px;
-  }
-
-  .button-group {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .progress-bar {
-    width: min(140px, 50vw);
-  }
+  .register-container { padding: max(var(--safe-top), var(--space-md)) var(--space-md) calc(var(--safe-bottom) + var(--space-md)); }
+  .card-content { padding: var(--space-lg); }
+  .button-group { flex-direction: column; gap: 8px; }
+  .progress-container .progress-bar { width: min(140px, 50vw); }
 }
 
-/* iPhone 12/13/14 specific fixes */
-@media screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) {
-  .register-container {
-    padding-top: max(env(safe-area-inset-top, 0px), 44px);
-    padding-bottom: max(env(safe-area-inset-bottom, 0px), 34px);
-  }
-
-  .header-section {
-    padding-top: 0;
-  }
-}
-
-/* iPhone 12 Pro Max specific */
-@media screen and (device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) {
-  .register-container {
-    padding-top: max(env(safe-area-inset-top, 0px), 44px);
-    padding-bottom: max(env(safe-area-inset-bottom, 0px), 34px);
-  }
-}
-
-/* Dark theme adjustments */
+// Dark theme adjustments
 @media (prefers-color-scheme: dark) {
   .register-content {
     --background: linear-gradient(135deg, #0f0f0f 0%, #1f1515 50%, #0f0f0f 100%);

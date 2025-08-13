@@ -1,0 +1,521 @@
+<ion-header [translucent]="true" class="family-settings-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="'/families/' + familyId() + '/dashboard'"></ion-back-button>
+    </ion-buttons>
+
+    <ion-title class="header-title">
+      @if (family()) {
+        <div class="title-content">
+          <span class="page-title">Settings</span>
+          <span class="family-name">{{ family()!.name }}</span>
+        </div>
+      }
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button
+        fill="clear"
+        class="save-button"
+        [disabled]="!canSaveSettings"
+        (click)="onSaveSettings()">
+        @if (isSubmitting()) {
+          <ion-spinner name="crescent"></ion-spinner>
+        }
+        @if (!isSubmitting()) {
+          <ion-icon name="checkmark-outline"></ion-icon>
+        }
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="family-settings-content">
+  <div class="family-settings-container">
+
+    @if (hasUnsavedChanges()) {
+      <ion-card class="changes-alert">
+        <ion-card-content class="changes-content">
+          <div class="changes-header">
+            <ion-icon name="warning-outline" class="changes-icon"></ion-icon>
+            <span class="changes-text">You have unsaved changes</span>
+          </div>
+          <ion-button
+            size="small"
+            fill="clear"
+            class="save-changes-button"
+            (click)="onSaveSettings()"
+            [disabled]="isSubmitting()">
+            Save Now
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+    }
+
+    <!-- Settings Navigation -->
+    <ion-segment
+      [(ngModel)]="selectedTab"
+      (ionChange)="onTabChange($event)"
+      class="settings-tabs"
+      scrollable="true">
+      <ion-segment-button value="general">
+        <ion-icon name="settings-outline"></ion-icon>
+        <ion-label>General</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="privacy">
+        <ion-icon name="lock-closed-outline"></ion-icon>
+        <ion-label>Privacy</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="features">
+        <ion-icon name="options-outline"></ion-icon>
+        <ion-label>Features</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="notifications">
+        <ion-icon name="notifications-outline"></ion-icon>
+        <ion-label>Notifications</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="appearance">
+        <ion-icon name="color-palette-outline"></ion-icon>
+        <ion-label>Appearance</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+
+    <!-- Settings Form -->
+    <form [formGroup]="settingsForm" (ngSubmit)="onSaveSettings()">
+
+      @if (selectedTab() === 'general') {
+        <div class="tab-content general-tab">
+
+          <!-- Basic Information -->
+          <ion-card class="settings-card">
+            <ion-card-header>
+              <ion-card-title class="settings-title">
+                <ion-icon name="information-circle-outline"></ion-icon>
+                Basic Information
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content class="settings-content">
+
+              <!-- Family Name -->
+              <div class="setting-field">
+                <ion-item class="field-item" lines="none">
+                  <ion-label position="stacked" class="field-label">Family Name *</ion-label>
+                  <ion-input
+                    type="text"
+                    formControlName="name"
+                    placeholder="Enter family name"
+                    [class.error]="hasFieldError('name')"
+                    maxlength="100"
+                    class="field-input">
+                  </ion-input>
+                </ion-item>
+                <div class="field-help">
+                <span class="character-count">
+                  {{ settingsForm.get('name')?.value?.length || 0 }}/100
+                </span>
+                </div>
+                @if (hasFieldError('name')) {
+                  <div class="error-text">
+                    {{ getFieldError('name') }}
+                  </div>
+                }
+              </div>
+
+              <!-- Family Description -->
+              <div class="setting-field">
+                <ion-item class="field-item" lines="none">
+                  <ion-label position="stacked" class="field-label">
+                    Description <span class="optional-text">(Optional)</span>
+                  </ion-label>
+                  <ion-textarea
+                    formControlName="description"
+                    placeholder="Tell us about your family..."
+                    [class.error]="hasFieldError('description')"
+                    rows="3"
+                    maxlength="500"
+                    class="field-textarea">
+                  </ion-textarea>
+                </ion-item>
+                <div class="field-help">
+                <span class="character-count">
+                  {{ settingsForm.get('description')?.value?.length || 0 }}/500
+                </span>
+                </div>
+                @if (hasFieldError('description')) {
+                  <div class="error-text">
+                    {{ getFieldError('description') }}
+                  </div>
+                }
+              </div>
+
+            </ion-card-content>
+          </ion-card>
+
+          @if (family()) {
+            <ion-card class="settings-card">
+              <ion-card-header>
+                <ion-card-title class="settings-title">
+                  <ion-icon name="link-outline"></ion-icon>
+                  Invite Code
+                </ion-card-title>
+              </ion-card-header>
+              <ion-card-content class="settings-content">
+
+                <div class="invite-code-section">
+                  <div class="code-display">
+                    <span class="current-code">{{ family()!.inviteCode }}</span>
+                    <div class="code-actions">
+                      <ion-button fill="clear" size="small" (click)="onCopyInviteCode()">
+                        <ion-icon name="copy-outline"></ion-icon>
+                      </ion-button>
+                      <ion-button fill="clear" size="small" (click)="onShareInviteCode()">
+                        <ion-icon name="share-outline"></ion-icon>
+                      </ion-button>
+                    </div>
+                  </div>
+                  <p class="code-description">
+                    Share this code with family members so they can join instantly
+                  </p>
+                  <ion-button
+                    expand="block"
+                    fill="outline"
+                    size="small"
+                    (click)="onRegenerateInviteCode()"
+                    [disabled]="!canManage()"
+                    class="regenerate-button">
+                    <ion-icon name="refresh-outline" slot="start"></ion-icon>
+                    Generate New Code
+                  </ion-button>
+                </div>
+
+              </ion-card-content>
+            </ion-card>
+          }
+
+        </div>
+      }
+
+      @if (selectedTab() === 'privacy') {
+        <div class="tab-content privacy-tab">
+
+          <ion-card class="settings-card">
+            <ion-card-header>
+              <ion-card-title class="settings-title">
+                <ion-icon name="shield-checkmark-outline"></ion-icon>
+                Privacy Settings
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content class="settings-content">
+
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4 class="setting-name">Public Family</h4>
+                  <p class="setting-description">
+                    Allow others to discover your family and request to join
+                  </p>
+                  <div class="setting-note">
+                    <ion-icon name="information-circle-outline"></ion-icon>
+                    <span>When enabled, your family appears in public searches</span>
+                  </div>
+                </div>
+                <ion-toggle
+                  formControlName="isPublic"
+                  [disabled]="!canManage()"
+                  class="setting-toggle">
+                </ion-toggle>
+              </div>
+
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4 class="setting-name">Member Invitations</h4>
+                  <p class="setting-description">
+                    Allow family members to invite others
+                  </p>
+                </div>
+                <ion-toggle
+                  formControlName="allowMemberInvites"
+                  [disabled]="!canManage()"
+                  class="setting-toggle">
+                </ion-toggle>
+              </div>
+
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4 class="setting-name">Approval Required</h4>
+                  <p class="setting-description">
+                    Require approval for new members to join
+                  </p>
+                  <div class="setting-note">
+                    <ion-icon name="information-circle-outline"></ion-icon>
+                    <span>Admins must approve all join requests</span>
+                  </div>
+                </div>
+                <ion-toggle
+                  formControlName="requireApprovalForJoining"
+                  [disabled]="!canManage()"
+                  class="setting-toggle">
+                </ion-toggle>
+              </div>
+
+            </ion-card-content>
+          </ion-card>
+
+        </div>
+      }
+
+      @if (selectedTab() === 'features') {
+        <div class="tab-content features-tab">
+
+          <ion-card class="settings-card">
+            <ion-card-header>
+              <ion-card-title class="settings-title">
+                <ion-icon name="apps-outline"></ion-icon>
+                Family Features
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content class="settings-content">
+
+              <div class="setting-item">
+                <div class="setting-info">
+                  <div class="feature-header">
+                    <ion-icon name="location-outline" class="feature-icon location"></ion-icon>
+                    <h4 class="setting-name">Location Sharing</h4>
+                  </div>
+                  <p class="setting-description">
+                    Share real-time locations with family members
+                  </p>
+                </div>
+                <ion-toggle
+                  formControlName="enableLocationSharing"
+                  [disabled]="!canManage()"
+                  class="setting-toggle">
+                </ion-toggle>
+              </div>
+
+              <div class="setting-item">
+                <div class="setting-info">
+                  <div class="feature-header">
+                    <ion-icon name="camera-outline" class="feature-icon photos"></ion-icon>
+                    <h4 class="setting-name">Photo Sharing</h4>
+                  </div>
+                  <p class="setting-description">
+                    Share photos and create family albums
+                  </p>
+                </div>
+                <ion-toggle
+                  formControlName="enablePhotoSharing"
+                  [disabled]="!canManage()"
+                  class="setting-toggle">
+                </ion-toggle>
+              </div>
+
+              <div class="setting-item">
+                <div class="setting-info">
+                  <div class="feature-header">
+                    <ion-icon name="calendar-outline" class="feature-icon events"></ion-icon>
+                    <h4 class="setting-name">Event Planning</h4>
+                  </div>
+                  <p class="setting-description">
+                    Create and manage family events and activities
+                  </p>
+                </div>
+                <ion-toggle
+                  formControlName="enableEventPlanning"
+                  [disabled]="!canManage()"
+                  class="setting-toggle">
+                </ion-toggle>
+              </div>
+
+              <div class="setting-item">
+                <div class="setting-info">
+                  <div class="feature-header">
+                    <ion-icon name="chatbubble-outline" class="feature-icon chat"></ion-icon>
+                    <h4 class="setting-name">Family Chat</h4>
+                  </div>
+                  <p class="setting-description">
+                    Group messaging for the entire family
+                  </p>
+                </div>
+                <ion-toggle
+                  formControlName="enableFamilyChat"
+                  [disabled]="!canManage()"
+                  class="setting-toggle">
+                </ion-toggle>
+              </div>
+
+            </ion-card-content>
+          </ion-card>
+
+        </div>
+      }
+
+      @if (selectedTab() === 'notifications') {
+        <div class="tab-content notifications-tab">
+
+          <ion-card class="settings-card">
+            <ion-card-header>
+              <ion-card-title class="settings-title">
+                <ion-icon name="notifications-outline"></ion-icon>
+                Notification Preferences
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content class="settings-content">
+
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4 class="setting-name">Email Notifications</h4>
+                  <p class="setting-description">
+                    Receive updates and alerts via email
+                  </p>
+                </div>
+                <ion-toggle
+                  formControlName="emailNotifications"
+                  class="setting-toggle">
+                </ion-toggle>
+              </div>
+
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4 class="setting-name">Push Notifications</h4>
+                  <p class="setting-description">
+                    Receive push notifications on your device
+                  </p>
+                </div>
+                <ion-toggle
+                  formControlName="pushNotifications"
+                  class="setting-toggle">
+                </ion-toggle>
+              </div>
+
+              <div class="setting-item full-width">
+                <div class="setting-info">
+                  <h4 class="setting-name">Digest Frequency</h4>
+                  <p class="setting-description">
+                    How often to receive summary emails
+                  </p>
+                </div>
+                <ion-select
+                  formControlName="digestFrequency"
+                  interface="popover"
+                  placeholder="Select frequency"
+                  class="frequency-select">
+                  @for (option of digestFrequencyOptions; track option.label) {
+                    <ion-select-option
+                      [value]="option.value">
+                      {{ option.label }}
+                    </ion-select-option>
+                  }
+                </ion-select>
+              </div>
+
+            </ion-card-content>
+          </ion-card>
+
+        </div>
+      }
+
+      @if (selectedTab() === 'appearance') {
+        <div class="tab-content appearance-tab">
+
+          <ion-card class="settings-card">
+            <ion-card-header>
+              <ion-card-title class="settings-title">
+                <ion-icon name="color-palette-outline"></ion-icon>
+                Family Theme
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content class="settings-content">
+
+              <div class="theme-section">
+                <h4 class="theme-title">Color Theme</h4>
+                <p class="theme-description">
+                  Choose a color theme for your family
+                </p>
+
+                <div class="color-themes">
+                  @for (theme of colorThemes; track theme.value) {
+                    <div
+                      class="color-theme-item"
+                      [class.selected]="getSelectedTheme().value === theme.value"
+                      (click)="selectColorTheme(theme)">
+                      <div
+                        class="color-preview"
+                        [style.background]="theme.gradient">
+                      </div>
+                      <span class="color-name">{{ theme.name }}</span>
+                      @if (getSelectedTheme().value === theme.value) {
+                        <ion-icon
+                          name="checkmark-outline"
+                          class="selected-icon">
+                        </ion-icon>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+
+            </ion-card-content>
+          </ion-card>
+
+        </div>
+      }
+
+    </form>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <ion-button
+        expand="block"
+        class="save-button-main"
+        [disabled]="!canSaveSettings"
+        (click)="onSaveSettings()">
+        @if (isSubmitting()) {
+          <ion-spinner name="crescent"></ion-spinner>
+        }
+        @if (!isSubmitting()) {
+          <span>
+            <ion-icon name="save-outline" slot="start"></ion-icon>
+            Save Settings
+          </span>
+        }
+      </ion-button>
+
+      <ion-button
+        expand="block"
+        fill="outline"
+        class="reset-button"
+        [disabled]="!canManage() || isSubmitting()"
+        (click)="onResetSettings()">
+        <ion-icon name="refresh-outline" slot="start"></ion-icon>
+        Reset to Defaults
+      </ion-button>
+    </div>
+
+    @if (isOwner()) {
+      <ion-card class="danger-card">
+        <ion-card-header>
+          <ion-card-title class="danger-title">
+            <ion-icon name="warning-outline"></ion-icon>
+            Dangerous Actions
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="danger-content">
+          <p class="danger-description">
+            These actions can have permanent effects on your family.
+          </p>
+
+          <ion-button
+            expand="block"
+            fill="outline"
+            color="danger"
+            class="danger-button"
+            (click)="onShowDangerousActions()">
+            <ion-icon name="warning-outline" slot="start"></ion-icon>
+            View Dangerous Actions
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+    }
+
+  </div>
+</ion-content>
