@@ -11,8 +11,12 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware): void {
-        //
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->alias([
+            'family-member' => \App\Http\Middleware\FamilyAccessMiddleware::class,
+            'family-owner' => \App\Http\Middleware\FamilyOwnerMiddleware::class,
+            'family-admin' => \App\Http\Middleware\FamilyAdminMiddleware::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

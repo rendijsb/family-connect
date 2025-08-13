@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Validation;
 
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Exists;
+
 class ValidationRuleHelper
 {
     public const REQUIRED = 'required';
@@ -12,6 +15,7 @@ class ValidationRuleHelper
     public const INTEGER = 'integer';
     public const BOOLEAN = 'boolean';
     public const NULLABLE = 'nullable';
+    public const ARRAY = 'array';
     public const SOMETIMES = 'sometimes';
     public const UNIQUE = 'unique';
     public const MIN = 'min';
@@ -39,8 +43,8 @@ class ValidationRuleHelper
         return $rule;
     }
 
-    public static function existsOnDatabase(string $model, string $column): string
+    public static function existsOnDatabase(string $table, string $column): Exists
     {
-        return 'exists:' . (new $model)->getTable() . ',' . $column;
+        return Rule::exists($table, $column);
     }
 }
