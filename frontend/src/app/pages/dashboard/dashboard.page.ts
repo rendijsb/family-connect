@@ -1,5 +1,4 @@
-// src/app/pages/dashboard/dashboard.page.ts
-import {Component, inject, OnInit} from '@angular/core';
+import {Component, computed, inject, OnInit, signal} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -18,11 +17,13 @@ import {
   videocamOutline, giftOutline, restaurantOutline, carOutline,
   medicalOutline, schoolOutline, walletOutline, happyOutline,
   chevronForwardOutline, ellipsisHorizontalOutline, personOutline,
-  checkmarkCircleOutline, alertCircleOutline
+  checkmarkCircleOutline, alertCircleOutline, addCircleOutline, linkOutline
 } from 'ionicons/icons';
 import {Router} from '@angular/router';
-import {LoadingController} from '@ionic/angular';
+import {LoadingController, ToastController} from '@ionic/angular';
 import {AuthService} from '../../core/services/auth/auth.service';
+import { CurrentFamilyService } from '../../core/services/current-family.service';
+import {Family} from '../../models/families/family.models';
 
 interface FamilyMember {
   id: number;
@@ -172,12 +173,45 @@ export class DashboardPage implements OnInit {
   ];
 
   quickActions: QuickAction[] = [
-    { id: 'chat', title: 'Family Chat', icon: 'chatbubble-outline', color: '#3b82f6', route: '/chat' },
-    { id: 'photos', title: 'Share Photos', icon: 'camera-outline', color: '#10b981', route: '/photos' },
-    { id: 'calendar', title: 'Events', icon: 'calendar-outline', color: '#f59e0b', route: '/calendar' },
-    { id: 'location', title: 'Locations', icon: 'location-outline', color: '#8b5cf6', route: '/locations' },
-    { id: 'memories', title: 'Memories', icon: 'heart-outline', color: '#ef4444', route: '/memories' },
-    { id: 'call', title: 'Video Call', icon: 'videocam-outline', color: '#06b6d4', route: '/call' }
+    {
+      id: 'families',
+      title: 'My Families',
+      icon: 'people-outline',
+      color: '#3b82f6',
+      route: '/families'
+    },
+    {
+      id: 'create-family',
+      title: 'Create Family',
+      icon: 'add-circle-outline',
+      color: '#22c55e',
+      route: '/families/create'
+    },
+    {
+      id: 'join-family',
+      title: 'Join Family',
+      icon: 'link-outline',
+      color: '#f59e0b',
+      route: '/families/join'
+    },
+    {
+      id: 'chat',
+      title: 'Family Chat',
+      icon: 'chatbubble-outline',
+      color: '#10b981'
+    },
+    {
+      id: 'photos',
+      title: 'Share Photos',
+      icon: 'camera-outline',
+      color: '#f59e0b'
+    },
+    {
+      id: 'calendar',
+      title: 'Events',
+      icon: 'calendar-outline',
+      color: '#8b5cf6'
+    }
   ];
 
   upcomingEvents = [
@@ -216,20 +250,34 @@ export class DashboardPage implements OnInit {
       videocamOutline, giftOutline, restaurantOutline, carOutline,
       medicalOutline, schoolOutline, walletOutline, happyOutline,
       chevronForwardOutline, ellipsisHorizontalOutline, personOutline,
-      checkmarkCircleOutline, alertCircleOutline
+      checkmarkCircleOutline, alertCircleOutline, addCircleOutline, linkOutline
     });
   }
 
-  private readonly router = inject(Router)
+  protected readonly router = inject(Router)
   private readonly loadingController = inject(LoadingController)
   private readonly authService = inject(AuthService);
+  private readonly currentFamilyService = inject(CurrentFamilyService);
+  private readonly toastController = inject(ToastController);
+
+  currentFamilyId = computed(() => this.currentFamilyService.currentFamilyId());
+  currentFamily = computed(() => this.currentFamilyService.currentFamily());
 
   ngOnInit() {
-    // Initialize dashboard data
     this.loadDashboardData();
 
-    // Add navigation handling for mobile back button
     this.handleBackButton();
+    this.checkFamilySelection();
+  }
+
+  private async checkFamilySelection() {
+    // This is where you might load user's families and auto-select one
+    // if they don't have a current family selected
+    const hasFamily = this.currentFamilyId();
+    if (!hasFamily) {
+      // Optionally navigate to families list or show family selection
+      console.log('No current family selected');
+    }
   }
 
   loadDashboardData() {
@@ -259,40 +307,82 @@ export class DashboardPage implements OnInit {
   onQuickAction(action: QuickAction) {
     console.log('Quick action clicked:', action.title);
 
-    // Add basic navigation logic
+    // Handle direct routes first
+    if (action.route) {
+      this.router.navigate([action.route]);
+      return;
+    }
+
+    const familyId = this.currentFamilyId();
+
     switch (action.id) {
       case 'chat':
-        // For now, navigate to tabs since chat tab doesn't exist yet
-        this.router.navigate(['/tabs/home']);
+        if (familyId) {
+          this.router.navigate(['/families', familyId, 'dashboard']);
+          this.showToast('Family chat coming soon!', 'primary');
+        } else {
+          this.router.navigate(['/families']);
+          this.showToast('Please select a family first', 'warning');
+        }
         break;
+
       case 'photos':
-        this.router.navigate(['/tabs/home']);
+        if (familyId) {
+          this.router.navigate(['/families', familyId, 'dashboard']);
+          this.showToast('Photo sharing coming soon!', 'primary');
+        } else {
+          this.router.navigate(['/families']);
+          this.showToast('Please select a family first', 'warning');
+        }
         break;
+
       case 'calendar':
-        this.router.navigate(['/tabs/home']);
+        if (familyId) {
+          this.router.navigate(['/families', familyId, 'dashboard']);
+          this.showToast('Family events coming soon!', 'primary');
+        } else {
+          this.router.navigate(['/families']);
+          this.showToast('Please select a family first', 'warning');
+        }
         break;
+
       default:
-        this.router.navigate(['/tabs/home']);
+        this.router.navigate(['/families']);
         break;
     }
   }
 
   onViewProfile(member: FamilyMember) {
     console.log('View profile:', member.name);
-    // Navigate to profile or show modal
-    this.router.navigate(['/tabs/home']);
+    const familyId = this.currentFamilyId();
+    if (familyId) {
+      this.router.navigate(['/families', familyId, 'members', member.id]);
+    }
   }
 
   onViewActivity(activity: Activity) {
     console.log('View activity:', activity.title);
-    // Navigate to activity details
-    this.router.navigate(['/tabs/home']);
+    const familyId = this.currentFamilyId();
+    if (familyId) {
+      this.router.navigate(['/families', familyId, 'dashboard']);
+    }
   }
 
   onViewEvent(event: any) {
     console.log('View event:', event.title);
-    // Navigate to event details
-    this.router.navigate(['/tabs/home']);
+    const familyId = this.currentFamilyId();
+    if (familyId) {
+      this.router.navigate(['/families', familyId, 'dashboard']);
+    }
+  }
+
+
+  onManageFamilies() {
+    this.router.navigate(['/families']);
+  }
+
+  onCreateFamily() {
+    this.router.navigate(['/families/create']);
   }
 
   getStatusColor(status: string): string {
@@ -330,5 +420,15 @@ export class DashboardPage implements OnInit {
         await loading.dismiss();
       }
     });
+  }
+
+  private async showToast(message: string, color: 'success' | 'danger' | 'warning' | 'primary' = 'success') {
+    const toast = await this.toastController.create({
+      message,
+      duration: 3000,
+      color,
+      position: 'top'
+    });
+    await toast.present();
   }
 }

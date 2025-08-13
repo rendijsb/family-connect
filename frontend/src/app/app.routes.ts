@@ -1,4 +1,3 @@
-// src/app/app.routes.ts
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
@@ -35,18 +34,21 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadChildren: () => import('./tabs/tabs.routes').then(m => m.routes)
   },
+  {
+    path: 'unauthorized',
+    loadComponent: () => import('./pages/unauthorized/unauthorized.page').then(m => m.UnauthorizedPage)
+  },
+  {
+    path: 'not-found',
+    loadComponent: () => import('./pages/not-found/not-found.page').then(m => m.NotFoundPage)
+  },
   // {
   //   path: 'admin',
   //   canActivate: [authGuard, roleGuard([RoleEnum.ADMIN, RoleEnum.MODERATOR])],
   //   loadChildren: () => import('./admin/admin.routes').then(m => m.routes)
   // },
-  // {
-  //   path: 'unauthorized',
-  //   loadComponent: () => import('./pages/unauthorized/unauthorized.page').then(m => m.UnauthorizedPage)
-  // },
-  // {
-  //   path: 'not-found',
-  //   loadComponent: () => import('./pages/not-found/not-found.page').then(m => m.NotFoundPage)
-  // },
-  { path: '**', redirectTo: '/not-found' }
+  {
+    path: '**',
+    redirectTo: '/tabs/home'
+  }
 ];

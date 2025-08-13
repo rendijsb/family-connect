@@ -69,6 +69,97 @@
             </ion-card-content>
           </ion-card>
 
+          <ion-card class="family-access-card" *ngIf="!currentFamilyId()">
+            <ion-card-header>
+              <ion-card-title class="section-title">
+                <ion-icon name="people-outline"></ion-icon>
+                Family Connect
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content class="family-access-content">
+              <p class="family-access-description">
+                Connect with your family members, share moments, and stay in touch.
+              </p>
+
+              <div class="family-access-actions">
+                <ion-button
+                  expand="block"
+                  class="primary-button"
+                  (click)="onManageFamilies()">
+                  <ion-icon name="people-outline" slot="start"></ion-icon>
+                  View My Families
+                </ion-button>
+
+                <ion-button
+                  expand="block"
+                  fill="outline"
+                  class="secondary-button"
+                  (click)="onCreateFamily()">
+                  <ion-icon name="add-outline" slot="start"></ion-icon>
+                  Create New Family
+                </ion-button>
+
+                <ion-button
+                  expand="block"
+                  fill="clear"
+                  class="tertiary-button"
+                  routerLink="/families/join">
+                  <ion-icon name="link-outline" slot="start"></ion-icon>
+                  Join Family with Code
+                </ion-button>
+              </div>
+            </ion-card-content>
+          </ion-card>
+
+          <ion-card class="current-family-card" *ngIf="currentFamilyId()">
+            <ion-card-header>
+              <ion-card-title class="section-title">
+                <ion-icon name="home-outline"></ion-icon>
+                Family Dashboard
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content class="current-family-content">
+              <div class="family-actions-grid">
+                <div class="action-item" (click)="router.navigate(['/families', currentFamilyId(), 'dashboard'])">
+                  <div class="action-icon family">
+                    <ion-icon name="home-outline"></ion-icon>
+                  </div>
+                  <span class="action-title">Family Home</span>
+                </div>
+
+                <div class="action-item" (click)="router.navigate(['/families', currentFamilyId(), 'members'])">
+                  <div class="action-icon members">
+                    <ion-icon name="people-outline"></ion-icon>
+                  </div>
+                  <span class="action-title">Members</span>
+                </div>
+
+                <div class="action-item" (click)="router.navigate(['/families', currentFamilyId(), 'invite'])">
+                  <div class="action-icon invite">
+                    <ion-icon name="person-add-outline"></ion-icon>
+                  </div>
+                  <span class="action-title">Invite</span>
+                </div>
+
+                <div class="action-item" (click)="router.navigate(['/families', currentFamilyId(), 'settings'])">
+                  <div class="action-icon settings">
+                    <ion-icon name="settings-outline"></ion-icon>
+                  </div>
+                  <span class="action-title">Settings</span>
+                </div>
+              </div>
+
+              <ion-button
+                expand="block"
+                fill="outline"
+                class="manage-families-button"
+                (click)="onManageFamilies()">
+                <ion-icon name="list-outline" slot="start"></ion-icon>
+                Manage All Families
+              </ion-button>
+            </ion-card-content>
+          </ion-card>
+
           <ion-card class="stat-card success">
             <ion-card-content class="stat-content">
               <div class="stat-icon">
@@ -144,6 +235,13 @@
                   <span class="action-title">{{ action.title }}</span>
                 </div>
               }
+
+              <div class="action-item" (click)="onManageFamilies()">
+                <div class="action-icon" style="background-color: rgba(139, 92, 246, 0.2)">
+                  <ion-icon name="people-outline" style="color: #8b5cf6"></ion-icon>
+                </div>
+                <span class="action-title">Families</span>
+              </div>
             </div>
           </ion-card-content>
         </ion-card>

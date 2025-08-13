@@ -12,7 +12,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { addIcons } from 'ionicons';
 import {
   peopleOutline, personAddOutline, ellipsisVerticalOutline, ellipsisHorizontalOutline,
-  crownOutline, shieldOutline, personOutline, banOutline, chatbubbleOutline,
+  cropOutline, shieldOutline, personOutline, banOutline, chatbubbleOutline,
   searchOutline, checkmarkOutline, closeOutline, warningOutline, callOutline
 } from 'ionicons/icons';
 import { FamilyService } from '../../../core/services/families/family.service';
@@ -143,7 +143,7 @@ export class FamilyMembersPage implements OnInit, OnDestroy {
   constructor() {
     addIcons({
       peopleOutline, personAddOutline, ellipsisVerticalOutline, ellipsisHorizontalOutline,
-      crownOutline, shieldOutline, personOutline, banOutline, chatbubbleOutline,
+      cropOutline, shieldOutline, personOutline, banOutline, chatbubbleOutline,
       searchOutline, checkmarkOutline, closeOutline, warningOutline, callOutline
     });
   }
@@ -236,7 +236,7 @@ export class FamilyMembersPage implements OnInit, OnDestroy {
     const canRemove = this.canRemoveMember(member);
     const canBlock = this.canBlockMember(member);
 
-    const buttons = [
+    const buttons: any = [
       {
         text: 'View Profile',
         icon: 'person-outline',

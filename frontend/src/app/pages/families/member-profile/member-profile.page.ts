@@ -14,7 +14,7 @@ import {
   ellipsisVerticalOutline, chatbubbleOutline, callOutline, videocamOutline, locationOutline,
   alertCircleOutline, refreshOutline, informationCircleOutline, pulseOutline, settingsOutline,
   mailOutline, calendarOutline, timeOutline, shieldOutline, notificationsOutline, cameraOutline,
-  crownOutline, personOutline, banOutline, trashOutline, arrowUpOutline, arrowDownOutline
+  cropOutline, personOutline, banOutline, trashOutline, arrowUpOutline, arrowDownOutline
 } from 'ionicons/icons';
 import { FamilyService } from '../../../core/services/families/family.service';
 import { FamilyMemberService } from '../../../core/services/families/family-member.service';
@@ -87,7 +87,7 @@ export class MemberProfilePage implements OnInit, OnDestroy {
       ellipsisVerticalOutline, chatbubbleOutline, callOutline, videocamOutline, locationOutline,
       alertCircleOutline, refreshOutline, informationCircleOutline, pulseOutline, settingsOutline,
       mailOutline, calendarOutline, timeOutline, shieldOutline, notificationsOutline, cameraOutline,
-      crownOutline, personOutline, banOutline, trashOutline, arrowUpOutline, arrowDownOutline
+      cropOutline, personOutline, banOutline, trashOutline, arrowUpOutline, arrowDownOutline
     });
   }
 

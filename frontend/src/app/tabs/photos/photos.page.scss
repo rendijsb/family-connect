@@ -1,0 +1,39 @@
+@import "../../../styles";
+@import "../../pages/families/family-dashboard/family-dashboard.page";
+
+.photos-header { @include header-base; }
+.photos-content { @extend .content-bg; }
+.photos-container { @include responsive-container; }
+.title-content { @include title-section; }
+.greeting { @extend .greeting; }
+.username { @extend .username; }
+.settings-button { @extend .notification-button; }
+.coming-soon-card { @include card-base; }
+.coming-soon-content {
+  text-align: center;
+  padding: var(--space-3xl);
+  .coming-soon-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(245, 158, 11, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--space-xl);
+    ion-icon { font-size: 40px; color: var(--warning); }
+  }
+  .coming-soon-title {
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    color: white;
+    margin: 0 0 var(--space-lg) 0;
+  }
+  .coming-soon-description {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    margin: 0 0 var(--space-2xl) 0;
+    line-height: 1.5;
+  }
+  .preview-button { @include button-secondary; }
+}

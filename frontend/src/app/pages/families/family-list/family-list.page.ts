@@ -142,7 +142,6 @@ export class FamilyListPage implements OnInit, OnDestroy {
     this.selectedFilter.set(event.detail.value);
   }
 
-  // Navigation
   onSelectFamily(family: Family) {
     this.familyService.setCurrentFamily(family);
     this.router.navigate(['/families', family.id, 'dashboard']);

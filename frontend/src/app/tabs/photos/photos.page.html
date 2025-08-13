@@ -1,0 +1,35 @@
+<ion-header [translucent]="true" class="photos-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-title class="header-title">
+      <div class="title-content">
+        <span class="greeting">Family</span>
+        <span class="username">Photos</span>
+      </div>
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button class="settings-button">
+        <ion-icon name="settings-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="photos-content">
+  <div class="photos-container">
+    <ion-card class="coming-soon-card">
+      <ion-card-content class="coming-soon-content">
+        <div class="coming-soon-icon">
+          <ion-icon name="cameraOutline"></ion-icon>
+        </div>
+        <h2 class="coming-soon-title">Photo Sharing Coming Soon!</h2>
+        <p class="coming-soon-description">
+          Share your precious family moments, create albums, and relive memories together. Photo sharing features are being developed.
+        </p>
+        <ion-button expand="block" fill="outline" disabled class="preview-button">
+          <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
+          Upload Photos
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>

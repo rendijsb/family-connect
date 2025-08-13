@@ -1,0 +1,137 @@
+<ion-header [translucent]="true" class="family-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-title class="header-title">
+      <div class="title-content">
+        <span class="greeting">My</span>
+        <span class="username">Families</span>
+      </div>
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button class="notification-button">
+        <ion-icon name="notifications-outline"></ion-icon>
+        <ion-badge class="notification-badge">2</ion-badge>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="family-content">
+  <div class="family-container">
+
+    <!-- Quick Stats -->
+    <ion-card class="stats-card">
+      <ion-card-content class="stats-content">
+        <div class="stat-item">
+          <span class="stat-number">{{ totalFamilies }}</span>
+          <span class="stat-label">Families</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">{{ totalMembers }}</span>
+          <span class="stat-label">Members</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">3</span>
+          <span class="stat-label">Invites</span>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Quick Actions -->
+    <ion-card class="actions-card">
+      <ion-card-header>
+        <ion-card-title class="section-title">Quick Actions</ion-card-title>
+      </ion-card-header>
+      <ion-card-content class="actions-content">
+        <div class="actions-grid">
+          <div class="action-item" (click)="onCreateFamily()">
+            <div class="action-icon create">
+              <ion-icon name="add-outline"></ion-icon>
+            </div>
+            <span class="action-title">Create Family</span>
+          </div>
+
+          <div class="action-item" (click)="onJoinFamily()">
+            <div class="action-icon join">
+              <ion-icon name="link-outline"></ion-icon>
+            </div>
+            <span class="action-title">Join Family</span>
+          </div>
+
+          <div class="action-item" (click)="onViewAllFamilies()">
+            <div class="action-icon view">
+              <ion-icon name="people-outline"></ion-icon>
+            </div>
+            <span class="action-title">All Families</span>
+          </div>
+
+          <div class="action-item" (click)="onInviteMembers()">
+            <div class="action-icon invite">
+              <ion-icon name="person-add-outline"></ion-icon>
+            </div>
+            <span class="action-title">Invite</span>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Recent Families -->
+    <ion-card class="recent-families-card">
+      <ion-card-header>
+        <ion-card-title class="section-title">Recent Families</ion-card-title>
+      </ion-card-header>
+      <ion-card-content class="recent-families-content">
+
+        @if (recentFamilies.length > 0) {
+          <div class="family-list">
+            @for (family of recentFamilies; track family.id) {
+              <div class="family-item" (click)="onSelectFamily(family)">
+                <div class="family-avatar">
+                  <span class="avatar-text">{{ getFamilyInitials(family) }}</span>
+                </div>
+                <div class="family-info">
+                  <h3 class="family-name">{{ family.name }}</h3>
+                  <p class="family-members">{{ family.memberCount || 0 }} members</p>
+                </div>
+                <div class="family-actions">
+                  <ion-chip class="role-chip">
+                    <ion-label>{{ getUserRole(family) }}</ion-label>
+                  </ion-chip>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        @if (recentFamilies.length === 0) {
+          <div class="empty-state">
+            <div class="empty-icon">
+              <ion-icon name="people-outline"></ion-icon>
+            </div>
+            <h3 class="empty-title">No Families Yet</h3>
+            <p class="empty-description">
+              Create your first family or join an existing one
+            </p>
+            <ion-button
+              expand="block"
+              (click)="onCreateFamily()"
+              class="empty-action">
+              <ion-icon name="add-outline" slot="start"></ion-icon>
+              Create Family
+            </ion-button>
+          </div>
+        }
+
+      </ion-card-content>
+    </ion-card>
+
+  </div>
+
+  <!-- Floating Action Button -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button class="fab-button" (click)="onCreateFamily()">
+      <ion-icon name="add-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+
+</ion-content>

@@ -1,0 +1,62 @@
+.error-content {
+  --background: linear-gradient(135deg, #1a1a1a 0%, #2d1b1b 50%, #1a1a1a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.error-container {
+  text-align: center;
+  padding: 40px 20px;
+  max-width: 400px;
+}
+
+.error-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+
+  ion-icon {
+    font-size: 40px;
+    color: #ef4444;
+  }
+}
+
+.error-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 16px 0;
+}
+
+.error-message {
+  font-size: 16px;
+  color: #a1a1aa;
+  line-height: 1.5;
+  margin: 0 0 32px 0;
+}
+
+.error-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.primary-button {
+  --background: linear-gradient(135deg, #dc2626, #b91c1c);
+  --color: white;
+  height: 48px;
+  font-weight: 600;
+}
+
+.secondary-button {
+  --border-color: rgba(255, 255, 255, 0.3);
+  --color: white;
+  height: 48px;
+}

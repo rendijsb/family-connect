@@ -1,0 +1,53 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Page Not Found</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="error-content">
+  <div class="error-container">
+    <div class="error-icon">
+      <ion-icon name="search-outline"></ion-icon>
+    </div>
+
+    <h2 class="error-title">404 - Page Not Found</h2>
+    <p class="error-message">
+      The page you're looking for doesn't exist or has been moved.
+    </p>
+
+    <div class="error-url" *ngIf="currentUrl">
+      <code>{{ currentUrl }}</code>
+    </div>
+
+    <div class="error-actions">
+      <ion-button
+        expand="block"
+        (click)="router.navigate(['/tabs/home'])"
+        class="primary-button">
+        <ion-icon name="home-outline" slot="start"></ion-icon>
+        Go Home
+      </ion-button>
+
+      <ion-button
+        expand="block"
+        fill="outline"
+        (click)="router.navigate(['/families'])"
+        class="secondary-button">
+        <ion-icon name="people-outline" slot="start"></ion-icon>
+        View Families
+      </ion-button>
+
+      <ion-button
+        expand="block"
+        fill="clear"
+        (click)="goBack()"
+        class="tertiary-button">
+        <ion-icon name="arrow-back-outline" slot="start"></ion-icon>
+        Go Back
+      </ion-button>
+    </div>
+  </div>
+</ion-content>

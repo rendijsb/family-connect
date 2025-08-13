@@ -1,0 +1,86 @@
+@import "../../../styles";
+@import "../../pages/families/family-dashboard/family-dashboard.page";
+
+.profile-header { @include header-base; }
+.profile-content { @extend .content-bg; }
+.profile-container { @include responsive-container; }
+.title-content { @include title-section; }
+.greeting { @extend .greeting; }
+.username { @extend .username; }
+.settings-button { @extend .notification-button; }
+
+.profile-card, .options-card, .logout-card { @include card-base; margin-bottom: var(--space-xl); }
+.section-title { @extend .section-title; }
+
+.profile-card-content { padding: var(--space-xl); }
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border: 3px solid var(--primary);
+}
+
+.profile-info {
+  flex: 1;
+  .profile-name {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: white;
+    margin: 0 0 var(--space-xs) 0;
+  }
+  .profile-email {
+    font-size: var(--text-base);
+    color: var(--text-secondary);
+    margin: 0 0 var(--space-sm) 0;
+  }
+  .profile-role {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--text-sm);
+    color: var(--primary);
+    font-weight: 500;
+    ion-icon { font-size: var(--text-base); }
+  }
+}
+
+.options-content { padding: var(--space-sm) 0 var(--space-lg); }
+.option-item {
+  --background: transparent;
+  --color: white;
+  --padding-start: var(--space-lg);
+  --padding-end: var(--space-lg);
+  border-bottom: 1px solid var(--border-light);
+  &:last-child { border-bottom: none; }
+
+  .option-icon {
+    color: var(--primary);
+    margin-right: var(--space-md);
+  }
+
+  ion-label {
+    h3 {
+      font-size: var(--text-lg);
+      font-weight: 600;
+      color: white;
+      margin: 0 0 2px 0;
+    }
+    p {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      margin: 0;
+    }
+  }
+}
+
+.logout-content { padding: var(--space-lg); }
+.logout-button {
+  --color: var(--danger);
+  height: var(--button-height);
+  font-weight: 500;
+}

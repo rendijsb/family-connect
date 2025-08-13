@@ -417,3 +417,131 @@
     .action-icon { margin-right: var(--space-md); }
   }
 }
+
+// Add these styles to your dashboard.page.scss
+
+// Family access card
+.family-access-card, .current-family-card {
+  @include card-base;
+  margin-bottom: var(--space-xl);
+}
+
+.family-access-content, .current-family-content {
+  padding: var(--space-xl);
+
+  .family-access-description {
+    font-size: var(--text-base);
+    color: var(--text-secondary);
+    text-align: center;
+    margin: 0 0 var(--space-2xl) 0;
+    line-height: 1.5;
+  }
+
+  .family-access-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+
+    .primary-button {
+      @include button-primary;
+      height: var(--button-height);
+    }
+
+    .secondary-button {
+      @include button-secondary;
+      height: 44px;
+    }
+
+    .tertiary-button {
+      --color: var(--text-secondary);
+      --border-radius: var(--radius-md);
+      height: 40px;
+
+      &:hover { --color: var(--primary); }
+    }
+  }
+
+  .family-actions-grid {
+    @include action-grid(2);
+    margin-bottom: var(--space-xl);
+
+    .action-item {
+      @include action-item;
+
+      .action-icon {
+        &.family { @include action-icon(#3b82f6); }
+        &.members { @include action-icon(#22c55e); }
+        &.invite { @include action-icon(#f59e0b); }
+        &.settings { @include action-icon(#8b5cf6); }
+      }
+
+      .action-title {
+        font-size: var(--text-sm);
+        color: var(--text-primary);
+        font-weight: 500;
+        text-align: center;
+        line-height: 1.2;
+      }
+    }
+  }
+
+  .manage-families-button {
+    @include button-secondary;
+    height: 44px;
+    font-size: var(--text-sm);
+  }
+}
+
+// Update existing quick actions to include the new family action
+.quick-actions-content {
+  .actions-grid {
+    // Ensure the grid can accommodate the additional family action
+    @include action-grid(3);
+
+    @media (max-width: 430px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 320px) {
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-sm);
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 430px) {
+  .family-access-content, .current-family-content {
+    padding: var(--space-lg);
+  }
+
+  .family-actions-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+
+    .action-item {
+      flex-direction: row;
+      justify-content: flex-start;
+      text-align: left;
+      padding: var(--space-md);
+
+      .action-icon {
+        margin-right: var(--space-md);
+      }
+
+      .action-title {
+        text-align: left;
+      }
+    }
+  }
+
+  .family-access-actions {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 375px) {
+  .family-access-content, .current-family-content {
+    padding: var(--space-md);
+  }
+}
