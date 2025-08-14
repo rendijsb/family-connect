@@ -96,7 +96,7 @@
       <!-- Family Cards -->
       <div class="families-list" *ngIf="!isLoading()">
         <app-family-card
-          *ngFor="let family of filteredFamilies(); trackBy: trackByFamilyId"
+          *ngFor="let family of filteredFamilies();"
           [family]="family"
           [isSelected]="isCurrentFamily(family)"
           [showStats]="false"

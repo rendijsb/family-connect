@@ -8,6 +8,7 @@ use App\Enums\Families\FamilyPrivacyLevelEnum;
 use App\Models\Users\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Family extends Model
 {
-    public const TABLE = 'families';
+    public const TABLE = 'family';
     protected $table = self::TABLE;
 
     public const ID = 'id';
@@ -121,12 +122,14 @@ class Family extends Model
         return $this->{self::OWNER_RELATION};
     }
 
-    public function relatedMembers()
+    /** @return Collection<FamilyMember> */
+    public function relatedMembers(): Collection
     {
         return $this->{self::MEMBERS_RELATION};
     }
 
-    public function relatedInvitations()
+    /** @return Collection<FamilyInvitation> */
+    public function relatedInvitations(): Collection
     {
         return $this->{self::INVITATIONS_RELATION};
     }

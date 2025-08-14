@@ -48,14 +48,14 @@
       </ion-card-header>
       <ion-card-content class="actions-content">
         <div class="actions-grid">
-          <div class="action-item">
+          <div class="action-item" (click)="onQuickAction('family')">
             <div class="action-icon family">
               <ion-icon name="people-outline"></ion-icon>
             </div>
             <span class="action-title">Family</span>
           </div>
 
-          <div class="action-item">
+          <div class="action-item" (click)="onQuickAction('chat')">
             <div class="action-icon chat">
               <ion-icon name="chatbubble-outline"></ion-icon>
             </div>

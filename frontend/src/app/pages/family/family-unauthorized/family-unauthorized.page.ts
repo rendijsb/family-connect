@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import {
   IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardContent,
   IonCardHeader, IonCardTitle, IonButton, IonIcon, IonText,
-  IonBackButton, IonButtons, IonGrid, IonRow, IonCol
+  IonBackButton, IonButtons, IonGrid, IonRow, IonCol, IonAvatar
 } from '@ionic/angular/standalone';
 import { Router, ActivatedRoute } from '@angular/router';
 import { addIcons } from 'ionicons';
@@ -40,7 +40,7 @@ interface UnauthorizedReason {
     CommonModule,
     IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardContent,
     IonCardHeader, IonCardTitle, IonButton, IonIcon, IonText,
-    IonBackButton, IonButtons, IonGrid, IonRow, IonCol
+    IonBackButton, IonButtons, IonGrid, IonRow, IonCol, IonAvatar
   ]
 })
 export class FamilyUnauthorizedPage implements OnInit {

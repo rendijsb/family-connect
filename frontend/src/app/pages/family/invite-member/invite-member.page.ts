@@ -1,6 +1,14 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
+import {
+  FormsModule,
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+  FormArray,
+  AbstractControl, FormControl
+} from '@angular/forms';
 import {
   IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardContent,
   IonCardHeader, IonCardTitle, IonButton, IonIcon, IonText, IonInput,
@@ -41,10 +49,9 @@ interface InviteFormData {
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
     IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardContent,
-    IonCardHeader, IonCardTitle, IonButton, IonIcon, IonText, IonInput,
+    IonCardHeader, IonCardTitle, IonButton, IonIcon, IonInput,
     IonItem, IonLabel, IonTextarea, IonSelect, IonSelectOption,
-    IonBackButton, IonButtons, IonGrid, IonRow, IonCol, IonToggle,
-    IonChip, IonBadge, IonList, IonReorderGroup, IonReorder
+    IonBackButton, IonButtons, IonChip,
   ]
 })
 export class InviteMemberPage implements OnInit {
@@ -135,9 +142,14 @@ export class InviteMemberPage implements OnInit {
   }
 
   // Bulk invite methods
-  get invitesArray(): FormArray {
-    return this.bulkInviteForm.get('invites') as FormArray;
+  get invitesArray(): FormArray<FormGroup<{
+    email: FormControl<string | null>;
+    role: FormControl<FamilyRoleEnum>;
+    message: FormControl<string | null>;
+  }>> {
+    return this.bulkInviteForm.get('invites') as any;
   }
+
 
   addInviteField() {
     const inviteGroup = this.formBuilder.group({
@@ -226,8 +238,8 @@ export class InviteMemberPage implements OnInit {
       return;
     }
 
-    const invites = this.invitesArray.value.filter((invite: InviteFormData) =>
-      invite.email && invite.email.trim()
+    const invites = this.invitesArray.value.filter(
+      (invite) => !!invite.email && invite.email.trim() !== ''
     );
 
     if (invites.length === 0) {
@@ -237,9 +249,9 @@ export class InviteMemberPage implements OnInit {
 
     this.isLoading.set(true);
 
-    const inviteRequests: InviteMemberRequest[] = invites.map((invite: InviteFormData) => ({
-      email: invite.email.trim(),
-      role: invite.role,
+    const inviteRequests: InviteMemberRequest[] = invites.map((invite) => ({
+      email: (invite.email ?? '').trim(),
+      role: invite.role as FamilyRoleEnum,
       message: invite.message || undefined
     }));
 
@@ -306,7 +318,7 @@ export class InviteMemberPage implements OnInit {
   }
 
   // Form validation helpers
-  getFieldError(formGroup: FormGroup, fieldName: string): string | null {
+  getFieldError(formGroup: AbstractControl, fieldName: string): string | null {
     const field = formGroup.get(fieldName);
     if (!field || !field.touched || !field.errors) {
       return null;
@@ -328,7 +340,7 @@ export class InviteMemberPage implements OnInit {
     return displayNames[fieldName] || fieldName;
   }
 
-  hasFieldError(formGroup: FormGroup, fieldName: string): boolean {
+  hasFieldError(formGroup: AbstractControl, fieldName: string): boolean {
     return !!this.getFieldError(formGroup, fieldName);
   }
 

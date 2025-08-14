@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
             'password' => Hash::make('password'),
-            'role_id' => RoleEnum::FAMILY_OWNER->value,
+            'role_id' => RoleEnum::ADMIN->value,
         ]);
     }
 }

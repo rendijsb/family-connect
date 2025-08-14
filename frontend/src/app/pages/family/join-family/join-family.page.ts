@@ -331,4 +331,8 @@ export class JoinFamilyPage implements OnInit, OnDestroy {
     });
     await toast.present();
   }
+
+  getPrivacyIcon() {
+    return '';
+  }
 }

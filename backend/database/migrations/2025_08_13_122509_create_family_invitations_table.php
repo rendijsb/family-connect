@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('family_invitations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('family_id')->constrained('families')->onDelete('cascade');
+            $table->foreignId('family_id')->constrained('family')->onDelete('cascade');
             $table->string('email');
             $table->foreignId('invited_by')->constrained('users')->onDelete('cascade');
             $table->string('token', 64)->unique();

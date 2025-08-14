@@ -141,7 +141,7 @@ export class FamilyMembersPage implements OnInit, OnDestroy {
     this.applyFilters();
   }
 
-  private applyFilters() {
+  protected applyFilters() {
     let filtered = [...this.members()];
     const search = this.searchTerm().toLowerCase();
     const filter = this.selectedFilter();
@@ -406,6 +406,7 @@ export class FamilyMembersPage implements OnInit, OnDestroy {
   }
 
   // Stats and Helpers
+  showSearch: any;
   get totalMembers(): number {
     return this.members().length;
   }
@@ -439,5 +440,9 @@ export class FamilyMembersPage implements OnInit, OnDestroy {
       position: 'top'
     });
     await toast.present();
+  }
+
+  canUserManageMember(currentUserMember: FamilyMember | null, member: FamilyMember) {
+    return false;
   }
 }

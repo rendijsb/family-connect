@@ -6,7 +6,7 @@ import {
   IonCardHeader, IonCardTitle, IonButton, IonIcon, IonText,
   IonBackButton, IonButtons, IonSegment, IonSegmentButton,
   IonBadge, IonRefresher, IonRefresherContent, IonSearchbar,
-  IonFab, IonFabButton, ToastController, AlertController
+  IonFab, IonFabButton, ToastController, AlertController, IonChip, IonLabel
 } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
 import { Subject, takeUntil, finalize, combineLatest } from 'rxjs';
@@ -38,7 +38,7 @@ import {
     IonCardHeader, IonCardTitle, IonButton, IonIcon, IonText,
     IonBackButton, IonButtons, IonSegment, IonSegmentButton,
     IonBadge, IonRefresher, IonRefresherContent, IonSearchbar,
-    IonFab, IonFabButton, InvitationCardComponent
+    IonFab, IonFabButton, InvitationCardComponent, IonChip, IonLabel
   ]
 })
 export class InvitationsPage implements OnInit, OnDestroy {
@@ -145,7 +145,7 @@ export class InvitationsPage implements OnInit, OnDestroy {
     this.applyFilters();
   }
 
-  private applyFilters() {
+  protected applyFilters() {
     const segment = this.selectedSegment();
     const filter = this.selectedFilter();
     const search = this.searchTerm().toLowerCase();
@@ -349,5 +349,13 @@ export class InvitationsPage implements OnInit, OnDestroy {
       position: 'top'
     });
     await toast.present();
+  }
+
+  getEmptyStateTitle() {
+    return "";
+  }
+
+  getEmptyStateDescription() {
+    return "";
   }
 }

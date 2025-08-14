@@ -453,4 +453,14 @@ export class InvitationService {
       await alert.present();
     });
   }
+
+  getInvitationById(invitationId: number): Observable<FamilyInvitation> {
+    return this.http.get<InvitationResponse>(
+      this.apiUrlService.getUrl(`invitations/${invitationId}`)
+    ).pipe(
+      map(response => response.data),
+      map(invitation => this.processInvitation(invitation)),
+      catchError(error => this.handleError(error))
+    );
+  }
 }

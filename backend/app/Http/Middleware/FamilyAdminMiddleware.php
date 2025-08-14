@@ -79,7 +79,7 @@ class FamilyAdminMiddleware
     private function getFamilyIdFromRequest(Request $request): ?int
     {
         // Try to get family ID from route parameters
-        $familyId = $request->route('family') ?? $request->route('familyId');
+        $familyId = $request->route('family_id') ?? $request->route('familyId');
 
         if ($familyId instanceof Family) {
             return $familyId->getId();

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Requests\Families;
 
 use App\DataTransferObjects\Families\UpdateFamilyRequestData;
+use App\Enums\Families\FamilyPrivacyLevelEnum;
 use App\Http\Resources\Families\FamilyResource;
 use App\Models\Families\Family;
 use App\Services\Validation\ValidationRuleHelper;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateFamilyRequest extends FormRequest
 {
@@ -36,7 +38,7 @@ class UpdateFamilyRequest extends FormRequest
             ],
             self::PRIVACY_LEVEL => [
                 ValidationRuleHelper::REQUIRED,
-                ValidationRuleHelper::STRING
+                Rule::enum(FamilyPrivacyLevelEnum::class)
             ],
             self::SETTINGS => [
                 ValidationRuleHelper::NULLABLE,
@@ -54,10 +56,12 @@ class UpdateFamilyRequest extends FormRequest
 
     public function dto(): UpdateFamilyRequestData
     {
+        $privacyLevel = $this->input(self::PRIVACY_LEVEL);
+
         return new UpdateFamilyRequestData(
             name: $this->input(self::NAME),
             description: $this->input(self::DESCRIPTION),
-            privacyLevel: $this->input(self::PRIVACY_LEVEL),
+            privacyLevel: FamilyPrivacyLevelEnum::from($privacyLevel),
             settings: $this->array(self::SETTINGS),
             familyId: $this->getFamilyId(),
         );

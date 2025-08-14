@@ -6,6 +6,8 @@ namespace App\Http\Routes\Api\Families;
 
 use App\Contracts\Http\Routes\RouteContract;
 use App\Http\Controllers\Families\FamilyController;
+use App\Http\Controllers\Families\FamilyInvitationController;
+use App\Http\Controllers\Families\FamilyMemberController;
 use Illuminate\Support\Facades\Route;
 
 class FamiliesRoutes implements RouteContract
@@ -13,7 +15,7 @@ class FamiliesRoutes implements RouteContract
     public static function api(): void
     {
 
-        Route::middleware('auth:sanctum')->group(function () {
+//        Route::middleware('auth:sanctum')->group(function () {
 
             Route::prefix('families')->group(function () {
                 Route::get('/', [FamilyController::class, 'getAllFamilies']);
@@ -28,8 +30,8 @@ class FamiliesRoutes implements RouteContract
                     Route::delete('/{family_id}/leave', [FamilyController::class, 'leaveFamily']);
 
                     // Member routes
-//                    Route::get('/{family_id}/members', [FamilyMemberController::class, 'getFamilyMembers']);
-//                    Route::get('/{family_id}/my-membership', [FamilyMemberController::class, 'getMyMembership']);
+                    Route::get('/{family_id}/members', [FamilyMemberController::class, 'getFamilyMembers']);
+                    Route::get('/{family_id}/my-membership', [FamilyMemberController::class, 'getUserFamilyMember']);
 //                    Route::get('/{family_id}/members/online', [FamilyMemberController::class, 'getOnlineMembers']);
 //                    Route::post('/{family_id}/members/activity', [FamilyMemberController::class, 'updateActivity']);
 //                    Route::get('/{family_id}/members/search', [FamilyMemberController::class, 'searchMembers']);
@@ -38,15 +40,15 @@ class FamiliesRoutes implements RouteContract
 
                 Route::middleware('family-admin')->group(function () {
                     Route::put('/{family_id}', [FamilyController::class, 'updateFamily']);
-//                    Route::put('/{family_id}/members/{member_id}', [FamilyMemberController::class, 'updateFamilyMember']);
-//                    Route::delete('/{family_id}/members/{member_id}', [FamilyMemberController::class, 'deleteFamilyMember']);
+                    Route::put('/{family_id}/members/{member_id}', [FamilyMemberController::class, 'updateFamilyMember']);
+                    Route::delete('/{family_id}/members/{member_id}', [FamilyMemberController::class, 'deleteFamilyMember']);
 
                     // Invitation routes
-//                    Route::get('/{family_id}/invitations', [FamilyInvitationController::class, 'getAllInvitations']);
-//                    Route::post('/{family_id}/invitations', [FamilyInvitationController::class, 'createInvitation']);
+                    Route::get('/{family_id}/invitations', [FamilyInvitationController::class, 'getAllInvitations']);
+                    Route::post('/{family_id}/invitations', [FamilyInvitationController::class, 'createInvitation']);
 //                    Route::post('/{family_id}/invitations/batch', [FamilyInvitationController::class, 'createMultipleInvites']);
 //                    Route::post('/invitations/{invitation_id}/resend', [FamilyInvitationController::class, 'resendInvite']);
-//                    Route::delete('/invitations/{invitation_id}', [FamilyInvitationController::class, 'cancelInvite']);
+                    Route::delete('/invitations/{invitation_id}', [FamilyInvitationController::class, 'deleteInvitation']);
                 });
 
                 Route::middleware('family-owner')->group(function () {
@@ -56,8 +58,8 @@ class FamiliesRoutes implements RouteContract
 
             // User-specific routes
             Route::prefix('user')->group(function () {
-                Route::get('/families', [FamilyController::class, 'getUserFamilies']);
-//                Route::get('/invitations', [FamilyInvitationController::class, 'getUserInvitations']);
+                Route::get('/family', [FamilyController::class, 'getUserFamilies']);
+                Route::get('/invitations', [FamilyInvitationController::class, 'getUserInvitations']);
             });
 
             // Public invitation routes
@@ -66,6 +68,6 @@ class FamiliesRoutes implements RouteContract
 //                Route::put('/{invitation_id}/accept', [FamilyInvitationController::class, 'acceptInvite']);
 //                Route::put('/{invitation_id}/decline', [FamilyInvitationController::class, 'declineInvite']);
             });
-        });
+//        });
     }
 }

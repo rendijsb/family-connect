@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Requests\Families;
 
 use App\DataTransferObjects\Families\CreateFamilyRequestData;
+use App\Enums\Families\FamilyPrivacyLevelEnum;
 use App\Http\Resources\Families\FamilyResource;
 use App\Models\Families\Family;
 use App\Services\Validation\ValidationRuleHelper;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class CreateFamilyRequest extends FormRequest
 {
@@ -16,6 +18,11 @@ class CreateFamilyRequest extends FormRequest
     private const DESCRIPTION = 'description';
     private const PRIVACY_LEVEL = 'privacyLevel';
     private const SETTINGS = 'settings';
+
+    public function authorize(): bool
+    {
+        return true;
+    }
 
     public function rules(): array
     {
@@ -30,7 +37,7 @@ class CreateFamilyRequest extends FormRequest
             ],
             self::PRIVACY_LEVEL => [
                 ValidationRuleHelper::REQUIRED,
-                ValidationRuleHelper::STRING
+                Rule::enum(FamilyPrivacyLevelEnum::class)
             ],
             self::SETTINGS => [
                 ValidationRuleHelper::NULLABLE,
@@ -41,10 +48,12 @@ class CreateFamilyRequest extends FormRequest
 
     public function dto(): CreateFamilyRequestData
     {
+        $privacyLevel = $this->input(self::PRIVACY_LEVEL);
+
         return new CreateFamilyRequestData(
             name: $this->input(self::NAME),
             description: $this->input(self::DESCRIPTION),
-            privacyLevel: $this->input(self::PRIVACY_LEVEL),
+            privacyLevel: FamilyPrivacyLevelEnum::from($privacyLevel),
             settings: $this->array(self::SETTINGS),
         );
     }

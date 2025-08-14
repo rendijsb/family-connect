@@ -7,7 +7,7 @@ import {
   IonItem, IonLabel, IonTextarea, IonSelect, IonSelectOption, IonToggle,
   IonBackButton, IonButtons, IonGrid, IonRow, IonCol, IonRange,
   IonChip, IonBadge, IonList, IonAlert, AlertController, IonActionSheet,
-  ActionSheetController, IonModal, ModalController
+  ActionSheetController, IonModal, ModalController, IonAvatar
 } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
 import { Subject, takeUntil, combineLatest } from 'rxjs';
@@ -41,7 +41,7 @@ import { catchError, EMPTY, finalize, tap } from 'rxjs';
     IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardContent,
     IonCardHeader, IonCardTitle, IonButton, IonIcon, IonInput,
     IonItem, IonLabel, IonTextarea, IonSelect, IonSelectOption, IonToggle,
-    IonBackButton, IonButtons, IonRange, IonList
+    IonBackButton, IonButtons, IonRange, IonList, IonAvatar
   ]
 })
 export class FamilySettingsPage implements OnInit, OnDestroy {

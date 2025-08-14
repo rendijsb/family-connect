@@ -112,20 +112,18 @@ export class InvitationDetailPage implements OnInit, OnDestroy {
 
     this.isLoading.set(true);
 
-    // For this example, we'll use a placeholder method
-    // In a real app, you'd have a getInvitationById method
-    // this.loadInvitationFromService(invitationId).pipe(
-    //   finalize(() => this.isLoading.set(false)),
-    //   takeUntil(this.destroy$)
-    // ).subscribe({
-    //   next: (invitation) => {
-    //     this.invitation.set(invitation);
-    //   },
-    //   error: async () => {
-    //     await this.showToast('Failed to load invitation details', 'danger');
-    //     this.router.navigate(['/family/invitations']);
-    //   }
-    // });
+    this.invitationService.getInvitationById(invitationId).pipe(
+      finalize(() => this.isLoading.set(false)),
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (invitation) => {
+        this.invitation.set(invitation);
+      },
+      error: async () => {
+        await this.showToast('Failed to load invitation details', 'danger');
+        this.router.navigate(['/family/invitations']);
+      }
+    });
   }
 
   // private loadInvitationFromService(id: number) {

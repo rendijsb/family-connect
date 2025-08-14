@@ -13,6 +13,7 @@ import {
   addOutline, settingsOutline, logOutOutline, heartOutline,
   calendarOutline, locationOutline, notificationsOutline
 } from 'ionicons/icons';
+import {Router} from '@angular/router';
 
 @Component({
   selector: 'app-home',
@@ -29,6 +30,7 @@ import {
 })
 export class HomePage {
   private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
 
   user = this.authService.user();
 
@@ -48,5 +50,30 @@ export class HomePage {
 
   onLogout() {
     this.authService.logout().subscribe();
+  }
+
+  onQuickAction(actionType: string) {
+    switch (actionType) {
+      case 'family':
+        this.router.navigate(['/tabs/family']);
+        break;
+      case 'chat':
+        this.router.navigate(['/family/chat']);
+        break;
+      case 'photos':
+        this.router.navigate(['/family/photos']);
+        break;
+      case 'events':
+        this.router.navigate(['/family/events']);
+        break;
+      case 'location':
+        this.router.navigate(['/family/locations']);
+        break;
+      case 'memories':
+        this.router.navigate(['/family/memories']);
+        break;
+      default:
+        console.log('Action not implemented:', actionType);
+    }
   }
 }

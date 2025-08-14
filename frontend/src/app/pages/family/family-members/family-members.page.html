@@ -116,7 +116,7 @@
 
       <!-- Member Cards -->
       <app-member-card
-        *ngFor="let member of filteredMembers(); trackBy: trackByMemberId"
+        *ngFor="let member of filteredMembers();"
         [member]="member"
         [canManage]="canUserManageMember(currentUserMember(), member)"
         (memberClicked)="onMemberClick($event)"

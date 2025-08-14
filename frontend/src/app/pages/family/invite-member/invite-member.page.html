@@ -64,10 +64,10 @@
                   placeholder="Enter email address"
                   formControlName="email"
                   class="custom-input"
-                  [class.error]="hasFieldError(singleInviteForm, 'email')">
+                  [class.error]="hasFieldError(singleInviteForm,'email')">
                 </ion-input>
               </ion-item>
-              <div class="error-text" *ngIf="hasFieldError(singleInviteForm, 'email')">
+              <div class="error-text" *ngIf="hasFieldError(singleInviteForm,'email')">
                 {{ getFieldError(singleInviteForm, 'email') }}
               </div>
             </div>
@@ -229,7 +229,7 @@
                         [class.error]="hasFieldError(inviteGroup, 'email')">
                       </ion-input>
                     </ion-item>
-                    <div class="error-text" *ngIf="hasFieldError(inviteGroup, 'email')">
+                    <div class="error-text" *ngIf="hasFieldError(inviteGroup,'email')">
                       {{ getFieldError(inviteGroup, 'email') }}
                     </div>
                   </div>
