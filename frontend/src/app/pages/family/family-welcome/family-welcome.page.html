@@ -1,0 +1,122 @@
+<ion-header [translucent]="true" class="welcome-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-title class="header-title">
+      <div class="title-content">
+        <span class="page-title">Welcome to Families</span>
+        <span class="user-name" *ngIf="currentUser()">{{ currentUser()?.name }}</span>
+      </div>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="welcome-content">
+  <div class="welcome-container">
+
+    <!-- Welcome Hero -->
+    <div class="hero-section">
+      <div class="hero-icon">
+        <ion-icon name="people-outline"></ion-icon>
+      </div>
+      <h1 class="hero-title">Your Family Hub</h1>
+      <p class="hero-description">
+        Connect with your loved ones, share memories, and stay close no matter the distance.
+      </p>
+    </div>
+
+    <!-- User's Families -->
+    <div class="families-section" *ngIf="userFamilies().length > 0">
+      <h2 class="section-title">Your Families</h2>
+      <div class="families-grid">
+        <app-family-card
+          *ngFor="let family of userFamilies()"
+          [family]="family"
+          [showStats]="false"
+          (familySelected)="onFamilySelected($event)"
+          (settingsClicked)="onFamilySettings($event)"
+          (membersClicked)="onFamilyMembers($event)">
+        </app-family-card>
+      </div>
+    </div>
+
+    <!-- Getting Started -->
+    <div class="actions-section">
+      <h2 class="section-title">
+        {{ userFamilies().length > 0 ? 'Manage Families' : 'Get Started' }}
+      </h2>
+
+      <ion-grid class="actions-grid">
+        <ion-row>
+          <ion-col size="12" size-md="6">
+            <ion-card class="action-card create-card" (click)="onCreateFamily()">
+              <ion-card-content class="action-content">
+                <div class="action-icon create-icon">
+                  <ion-icon name="add-outline"></ion-icon>
+                </div>
+                <div class="action-info">
+                  <h3 class="action-title">Create Family</h3>
+                  <p class="action-description">Start a new family and invite your loved ones</p>
+                </div>
+                <ion-icon name="chevron-forward-outline" class="action-arrow"></ion-icon>
+              </ion-card-content>
+            </ion-card>
+          </ion-col>
+
+          <ion-col size="12" size-md="6">
+            <ion-card class="action-card join-card" (click)="onJoinFamily()">
+              <ion-card-content class="action-content">
+                <div class="action-icon join-icon">
+                  <ion-icon name="enter-outline"></ion-icon>
+                </div>
+                <div class="action-info">
+                  <h3 class="action-title">Join Family</h3>
+                  <p class="action-description">Join an existing family with an invitation</p>
+                </div>
+                <ion-icon name="chevron-forward-outline" class="action-arrow"></ion-icon>
+              </ion-card-content>
+            </ion-card>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </div>
+
+    <!-- Features Preview -->
+    <div class="features-section" *ngIf="userFamilies().length === 0">
+      <h2 class="section-title">What You Can Do</h2>
+
+      <div class="features-grid">
+        <div class="feature-item">
+          <div class="feature-icon">
+            <ion-icon name="chatbubbles-outline"></ion-icon>
+          </div>
+          <h4 class="feature-title">Stay Connected</h4>
+          <p class="feature-description">Chat and share moments with family members</p>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-icon">
+            <ion-icon name="images-outline"></ion-icon>
+          </div>
+          <h4 class="feature-title">Share Memories</h4>
+          <p class="feature-description">Upload and organize family photos</p>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-icon">
+            <ion-icon name="calendar-outline"></ion-icon>
+          </div>
+          <h4 class="feature-title">Plan Together</h4>
+          <p class="feature-description">Create events and coordinate schedules</p>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-icon">
+            <ion-icon name="location-outline"></ion-icon>
+          </div>
+          <h4 class="feature-title">Stay Safe</h4>
+          <p class="feature-description">Optional location sharing for peace of mind</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</ion-content>

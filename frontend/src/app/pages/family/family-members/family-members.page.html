@@ -1,0 +1,156 @@
+<ion-header [translucent]="true" class="members-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button class="back-button" defaultHref="/tabs/family"></ion-back-button>
+    </ion-buttons>
+
+    <ion-title class="header-title">
+      <div class="title-content">
+        <span class="page-title">Family Members</span>
+        <span class="member-count" *ngIf="currentFamily()">
+          {{ totalMembers }} members • {{ onlineMembers }} online
+        </span>
+      </div>
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button fill="clear" class="search-button" (click)="showSearch = !showSearch">
+        <ion-icon name="search-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+
+  <!-- Search Bar -->
+  <ion-toolbar class="search-toolbar" *ngIf="showSearch">
+    <ion-searchbar
+      placeholder="Search members..."
+      [debounce]="300"
+      (ionInput)="onSearchChange($event)"
+      class="custom-searchbar">
+    </ion-searchbar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="members-content">
+
+  <!-- Pull to Refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="onRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="members-container">
+
+    <!-- Family Stats -->
+    <ion-card class="stats-card">
+      <ion-card-content class="stats-content">
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-icon total-icon">
+              <ion-icon name="people-outline"></ion-icon>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ totalMembers }}</span>
+              <span class="stat-label">Total</span>
+            </div>
+          </div>
+
+          <div class="stat-item">
+            <div class="stat-icon online-icon">
+              <ion-icon name="radio-button-on-outline"></ion-icon>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ onlineMembers }}</span>
+              <span class="stat-label">Online</span>
+            </div>
+          </div>
+
+          <div class="stat-item">
+            <div class="stat-icon admin-icon">
+              <ion-icon name="shield-checkmark-outline"></ion-icon>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ adminCount }}</span>
+              <span class="stat-label">Admins</span>
+            </div>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Filter Segment -->
+    <ion-segment
+      [value]="selectedFilter()"
+      (ionChange)="onFilterChange($event)"
+      class="filter-segment"
+      scrollable="true">
+      <ion-segment-button
+        *ngFor="let filter of filterOptions"
+        [value]="filter.value"
+        class="filter-button">
+        <ion-icon [name]="filter.icon"></ion-icon>
+        <ion-label>{{ filter.label }}</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+
+    <!-- Members List -->
+    <div class="members-list">
+      <div class="list-header" *ngIf="filteredMembers().length > 0">
+        <h3 class="list-title">
+          {{ filteredMembers().length }}
+          {{ filteredMembers().length === 1 ? 'Member' : 'Members' }}
+        </h3>
+      </div>
+
+      <!-- Loading State -->
+      <div class="loading-state" *ngIf="isLoading()">
+        <ion-card class="loading-card" *ngFor="let item of [1,2,3]">
+          <ion-card-content class="loading-content">
+            <div class="loading-avatar"></div>
+            <div class="loading-info">
+              <div class="loading-line long"></div>
+              <div class="loading-line short"></div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+
+      <!-- Member Cards -->
+      <app-member-card
+        *ngFor="let member of filteredMembers(); trackBy: trackByMemberId"
+        [member]="member"
+        [canManage]="canUserManageMember(currentUserMember(), member)"
+        (memberClicked)="onMemberClick($event)"
+        (chatClicked)="onChatClick($event)"
+        (callClicked)="onCallClick($event)"
+        (videoCallClicked)="onVideoCallClick($event)"
+        (manageClicked)="onManageClick($event)">
+      </app-member-card>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="!isLoading() && filteredMembers().length === 0">
+        <div class="empty-icon">
+          <ion-icon name="people-outline"></ion-icon>
+        </div>
+        <h3 class="empty-title">No Members Found</h3>
+        <p class="empty-description">
+          {{ searchTerm() ? 'No members match your search criteria' : 'No members in this category' }}
+        </p>
+        <ion-button fill="clear" (click)="searchTerm.set(''); selectedFilter.set('all'); applyFilters()">
+          Clear Filters
+        </ion-button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Floating Action Button -->
+  <ion-fab slot="fixed" vertical="bottom" horizontal="end" class="invite-fab">
+    <ion-fab-button
+      class="invite-button"
+      (click)="onInviteMembers()"
+      *ngIf="canUserInviteMembers()">
+      <ion-icon name="person-add-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+
+</ion-content>

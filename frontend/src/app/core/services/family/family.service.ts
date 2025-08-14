@@ -2,7 +2,7 @@
 
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, BehaviorSubject, throwError, tap, catchError, map } from 'rxjs';
+import {Observable, BehaviorSubject, throwError, tap, catchError, map, from, switchMap, EMPTY} from 'rxjs';
 import { ToastController, LoadingController, AlertController } from '@ionic/angular';
 import { ApiUrlService } from '../api.service';
 import {
@@ -108,37 +108,34 @@ export class FamilyService {
     );
   }
 
-  async deleteFamily(familyId: number): Promise<Observable<void>> {
-    return await this.showConfirmDialog(
+  deleteFamily(familyId: number): Observable<void> {
+    // Convert Promise to Observable and chain the HTTP request
+    return from(this.showConfirmDialog(
       'Delete Family',
       'Are you sure you want to delete this family? This action cannot be undone.',
       ['Cancel', 'Delete']
-    ).then(async (confirmed) => {
-      if (!confirmed) {
-        return throwError(() => new Error('User cancelled'));
-      }
+    )).pipe(
+      switchMap(confirmed => {
+        if (!confirmed) {
+          return EMPTY;
+        }
 
-      this.isLoadingSignal.set(true);
+        this.isLoadingSignal.set(true);
 
-      return this.http.delete<{ success: boolean; message: string }>(
-        this.apiUrlService.getUrl(`families/${familyId}`)
-      ).pipe(
-        tap(async () => {
-          this.currentFamilySubject.next(null);
-          await this.loadUserFamilies();
-          await this.showToast('Family deleted successfully', 'success');
-        }),
-        map(() => void 0),
-        catchError(error => this.handleError(error)),
-        tap(() => this.isLoadingSignal.set(false))
-      ).toPromise() as Promise<void>;
-    }).then(() => {
-      // Return empty observable since promise was used above
-      return new Observable<void>(subscriber => {
-        subscriber.next();
-        subscriber.complete();
-      });
-    });
+        return this.http.delete<{ success: boolean; message: string }>(
+          this.apiUrlService.getUrl(`families/${familyId}`)
+        ).pipe(
+          tap(async () => {
+            this.currentFamilySubject.next(null);
+            await this.loadUserFamilies();
+            await this.showToast('Family deleted successfully', 'success');
+          }),
+          map(() => void 0),
+          catchError(error => this.handleError(error)),
+          tap(() => this.isLoadingSignal.set(false))
+        );
+      })
+    );
   }
 
   // Family retrieval
@@ -156,13 +153,13 @@ export class FamilyService {
 
   loadUserFamilies(): Observable<Family[]> {
     return this.http.get<FamilyListResponse>(
-      this.apiUrlService.getUrl('user/families')
+      this.apiUrlService.getUrl('user/family')
     ).pipe(
       map(response => response.data),
       tap(families => {
         this.familiesSubject.next(families);
 
-        // Set current family if none selected but user has families
+        // Set current family if none selected but user has family
         if (!this.currentFamilySignal() && families.length > 0) {
           this.currentFamilySubject.next(families[0]);
         }
@@ -228,7 +225,7 @@ export class FamilyService {
     }
 
     return this.http.get<FamilyListResponse>(
-      this.apiUrlService.getUrl('families/search'),
+      this.apiUrlService.getUrl('family/search'),
       { params }
     ).pipe(
       map(response => response.data),
@@ -243,7 +240,7 @@ export class FamilyService {
     const payload = { token, nickname };
 
     return this.http.post<FamilyResponse>(
-      this.apiUrlService.getUrl('families/join'),
+      this.apiUrlService.getUrl('family/join'),
       payload
     ).pipe(
       map(response => response.data),
@@ -257,44 +254,40 @@ export class FamilyService {
     );
   }
 
-  // Leave family
-  async leaveFamily(familyId: number): Promise<Observable<void>> {
-    return await this.showConfirmDialog(
+  leaveFamily(familyId: number): Observable<void> {
+    return from(this.showConfirmDialog(
       'Leave Family',
       'Are you sure you want to leave this family?',
       ['Cancel', 'Leave']
-    ).then(async (confirmed) => {
-      if (!confirmed) {
-        return throwError(() => new Error('User cancelled'));
-      }
+    )).pipe(
+      switchMap(confirmed => {
+        if (!confirmed) {
+          return EMPTY;
+        }
 
-      this.isLoadingSignal.set(true);
+        this.isLoadingSignal.set(true);
 
-      return this.http.delete<{ success: boolean; message: string }>(
-        this.apiUrlService.getUrl(`families/${familyId}/leave`)
-      ).pipe(
-        tap(async () => {
-          // Remove family from list
-          const families = this.familiesSignal().filter(f => f.id !== familyId);
-          this.familiesSubject.next(families);
+        return this.http.delete<{ success: boolean; message: string }>(
+          this.apiUrlService.getUrl(`families/${familyId}/leave`)
+        ).pipe(
+          tap(async () => {
+            // Remove family from list
+            const families = this.familiesSignal().filter(f => f.id !== familyId);
+            this.familiesSubject.next(families);
 
-          // Switch to another family or clear current
-          if (this.currentFamilySignal()?.id === familyId) {
-            this.currentFamilySubject.next(families.length > 0 ? families[0] : null);
-          }
+            // Switch to another family or clear current
+            if (this.currentFamilySignal()?.id === familyId) {
+              this.currentFamilySubject.next(families.length > 0 ? families[0] : null);
+            }
 
-          await this.showToast('Left family successfully', 'success');
-        }),
-        map(() => void 0),
-        catchError(error => this.handleError(error)),
-        tap(() => this.isLoadingSignal.set(false))
-      ).toPromise() as Promise<void>;
-    }).then(() => {
-      return new Observable<void>(subscriber => {
-        subscriber.next();
-        subscriber.complete();
-      });
-    });
+            await this.showToast('Left family successfully', 'success');
+          }),
+          map(() => void 0),
+          catchError(error => this.handleError(error)),
+          tap(() => this.isLoadingSignal.set(false))
+        );
+      })
+    );
   }
 
   // Utility methods

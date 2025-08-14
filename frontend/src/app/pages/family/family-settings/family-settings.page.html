@@ -1,0 +1,430 @@
+<ion-header [translucent]="true" class="settings-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button class="back-button" defaultHref="/tabs/family"></ion-back-button>
+    </ion-buttons>
+
+    <ion-title class="header-title">
+      <div class="title-content">
+        <span class="page-title">Family Settings</span>
+        <span class="family-name" *ngIf="currentFamily()">{{ currentFamily()?.name }}</span>
+      </div>
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button
+        fill="clear"
+        class="save-button"
+        [disabled]="!canSave"
+        (click)="onSaveAll()">
+        <ion-icon name="save-outline" *ngIf="!isSaving()"></ion-icon>
+        <ion-icon name="reload-outline" class="spinning" *ngIf="isSaving()"></ion-icon>
+      </ion-button>
+
+      <ion-button fill="clear" class="more-button" (click)="onMoreActions()">
+        <ion-icon name="ellipsis-vertical-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="settings-content">
+  <div class="settings-container">
+
+    <!-- Unsaved Changes Banner -->
+    <div class="unsaved-banner" *ngIf="hasUnsavedChanges()">
+      <div class="banner-content">
+        <ion-icon name="warning-outline" class="banner-icon"></ion-icon>
+        <span class="banner-text">You have unsaved changes</span>
+        <ion-button size="small" fill="clear" class="save-banner-button" (click)="onSaveAll()">
+          Save
+        </ion-button>
+      </div>
+    </div>
+
+    <!-- Basic Information -->
+    <ion-card class="settings-card">
+      <ion-card-header class="card-header-with-action">
+        <ion-card-title class="card-title">
+          <ion-icon name="information-circle-outline" class="title-icon"></ion-icon>
+          Basic Information
+        </ion-card-title>
+        <ion-button
+          fill="clear"
+          size="small"
+          class="section-save-button"
+          [disabled]="!basicInfoForm.valid || isSaving()"
+          (click)="onSaveBasicInfo()">
+          Save
+        </ion-button>
+      </ion-card-header>
+      <ion-card-content class="card-content">
+
+        <form [formGroup]="basicInfoForm">
+
+          <!-- Family Avatar -->
+          <div class="avatar-section">
+            <div class="avatar-container">
+              <ion-avatar class="family-avatar">
+                <img [src]="currentFamily()?.avatar || '/assets/icons/icon.svg'" [alt]="currentFamily()?.name" />
+              </ion-avatar>
+              <ion-button fill="clear" class="avatar-edit-button" (click)="onChangeAvatar()">
+                <ion-icon name="camera-outline"></ion-icon>
+              </ion-button>
+            </div>
+            <div class="avatar-info">
+              <h4 class="avatar-title">Family Photo</h4>
+              <p class="avatar-description">Choose a photo that represents your family</p>
+            </div>
+          </div>
+
+          <!-- Family Name -->
+          <div class="input-group">
+            <ion-item class="custom-item" lines="none">
+              <ion-label position="stacked" class="input-label">Family Name</ion-label>
+              <ion-input
+                type="text"
+                placeholder="Enter family name"
+                formControlName="name"
+                class="custom-input"
+                [class.error]="hasFieldError(basicInfoForm, 'name')">
+              </ion-input>
+            </ion-item>
+            <div class="error-text" *ngIf="hasFieldError(basicInfoForm, 'name')">
+              {{ getFieldError(basicInfoForm, 'name') }}
+            </div>
+          </div>
+
+          <!-- Family Description -->
+          <div class="input-group">
+            <ion-item class="custom-item textarea-item" lines="none">
+              <ion-label position="stacked" class="input-label">Description (Optional)</ion-label>
+              <ion-textarea
+                placeholder="Describe your family..."
+                formControlName="description"
+                class="custom-textarea"
+                rows="3"
+                maxlength="200"
+                [class.error]="hasFieldError(basicInfoForm, 'description')">
+              </ion-textarea>
+            </ion-item>
+            <div class="error-text" *ngIf="hasFieldError(basicInfoForm, 'description')">
+              {{ getFieldError(basicInfoForm, 'description') }}
+            </div>
+            <div class="helper-text">
+              {{ basicInfoForm.get('description')?.value?.length || 0 }}/200 characters
+            </div>
+          </div>
+
+        </form>
+
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Privacy Settings -->
+    <ion-card class="settings-card">
+      <ion-card-header class="card-header-with-action">
+        <ion-card-title class="card-title">
+          <ion-icon name="shield-checkmark-outline" class="title-icon"></ion-icon>
+          Privacy & Security
+        </ion-card-title>
+        <ion-button
+          fill="clear"
+          size="small"
+          class="section-save-button"
+          [disabled]="!privacyForm.valid || isSaving()"
+          (click)="onSavePrivacy()">
+          Save
+        </ion-button>
+      </ion-card-header>
+      <ion-card-content class="card-content">
+
+        <form [formGroup]="privacyForm">
+
+          <h4 class="section-subtitle">Who can join your family?</h4>
+
+          <div class="privacy-options">
+            <div
+              *ngFor="let privacy of privacyLevels"
+              class="privacy-option"
+              [class.selected]="privacyForm.get('privacyLevel')?.value === privacy.value"
+              (click)="selectPrivacyLevel(privacy.value)">
+
+              <div class="privacy-icon" [style.background-color]="privacy.color + '20'">
+                <ion-icon [name]="privacy.icon" [style.color]="privacy.color"></ion-icon>
+              </div>
+
+              <div class="privacy-info">
+                <h5 class="privacy-title">{{ privacy.title }}</h5>
+                <p class="privacy-description">{{ privacy.description }}</p>
+              </div>
+
+              <div class="privacy-indicator">
+                <ion-icon
+                  name="checkmark-circle-outline"
+                  class="selected-icon"
+                  *ngIf="privacyForm.get('privacyLevel')?.value === privacy.value">
+                </ion-icon>
+                <div
+                  class="unselected-circle"
+                  *ngIf="privacyForm.get('privacyLevel')?.value !== privacy.value">
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </form>
+
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Family Settings -->
+    <ion-card class="settings-card">
+      <ion-card-header class="card-header-with-action">
+        <ion-card-title class="card-title">
+          <ion-icon name="settings-outline" class="title-icon"></ion-icon>
+          Family Settings
+        </ion-card-title>
+        <ion-button
+          fill="clear"
+          size="small"
+          class="section-save-button"
+          [disabled]="!settingsForm.valid || isSaving()"
+          (click)="onSaveSettings()">
+          Save
+        </ion-button>
+      </ion-card-header>
+      <ion-card-content class="card-content">
+
+        <form [formGroup]="settingsForm">
+
+          <!-- Member Permissions -->
+          <div class="settings-section">
+            <h4 class="section-subtitle">Member Permissions</h4>
+
+            <ion-list class="settings-list">
+
+              <ion-item class="setting-item" lines="none">
+                <ion-icon name="person-add-outline" slot="start" class="setting-icon"></ion-icon>
+                <ion-label class="setting-label">
+                  <h5>Allow members to invite others</h5>
+                  <p>Members can send invitations to join the family</p>
+                </ion-label>
+                <ion-toggle
+                  formControlName="allowMemberInvites"
+                  class="setting-toggle">
+                </ion-toggle>
+              </ion-item>
+
+              <ion-item class="setting-item" lines="none">
+                <ion-icon name="checkmark-circle-outline" slot="start" class="setting-icon"></ion-icon>
+                <ion-label class="setting-label">
+                  <h5>Require approval for new members</h5>
+                  <p>Family owner must approve new member requests</p>
+                </ion-label>
+                <ion-toggle
+                  formControlName="requireApprovalForJoin"
+                  class="setting-toggle">
+                </ion-toggle>
+              </ion-item>
+
+              <ion-item class="setting-item" lines="none">
+                <ion-icon name="location-outline" slot="start" class="setting-icon"></ion-icon>
+                <ion-label class="setting-label">
+                  <h5>Show member locations</h5>
+                  <p>Allow family members to see each other's locations</p>
+                </ion-label>
+                <ion-toggle
+                  formControlName="showMemberLocation"
+                  class="setting-toggle">
+                </ion-toggle>
+              </ion-item>
+
+            </ion-list>
+          </div>
+
+          <!-- Features -->
+          <div class="settings-section">
+            <h4 class="section-subtitle">Family Features</h4>
+
+            <ion-list class="settings-list">
+
+              <ion-item class="setting-item" lines="none">
+                <ion-icon name="notifications-outline" slot="start" class="setting-icon"></ion-icon>
+                <ion-label class="setting-label">
+                  <h5>Enable notifications</h5>
+                  <p>Send family activity notifications</p>
+                </ion-label>
+                <ion-toggle
+                  formControlName="enableNotifications"
+                  class="setting-toggle">
+                </ion-toggle>
+              </ion-item>
+
+              <ion-item class="setting-item" lines="none">
+                <ion-icon name="camera-outline" slot="start" class="setting-icon"></ion-icon>
+                <ion-label class="setting-label">
+                  <h5>Allow photo sharing</h5>
+                  <p>Members can share photos with the family</p>
+                </ion-label>
+                <ion-toggle
+                  formControlName="allowPhotoSharing"
+                  class="setting-toggle">
+                </ion-toggle>
+              </ion-item>
+
+              <ion-item class="setting-item" lines="none">
+                <ion-icon name="calendar-outline" slot="start" class="setting-icon"></ion-icon>
+                <ion-label class="setting-label">
+                  <h5>Allow event creation</h5>
+                  <p>Members can create family events</p>
+                </ion-label>
+                <ion-toggle
+                  formControlName="allowEventCreation"
+                  class="setting-toggle">
+                </ion-toggle>
+              </ion-item>
+
+            </ion-list>
+          </div>
+
+          <!-- Family Limits -->
+          <div class="settings-section">
+            <h4 class="section-subtitle">Family Limits</h4>
+
+            <div class="input-group">
+              <ion-item class="custom-item" lines="none">
+                <ion-label position="stacked" class="input-label">
+                  Maximum Members (Currently: {{ memberCount }})
+                </ion-label>
+                <ion-range
+                  formControlName="maxMembers"
+                  min="2"
+                  max="100"
+                  step="1"
+                  pin="true"
+                  ticks="false"
+                  class="member-range">
+                  <ion-label slot="start">2</ion-label>
+                  <ion-label slot="end">100</ion-label>
+                </ion-range>
+              </ion-item>
+              <div class="error-text" *ngIf="hasFieldError(settingsForm, 'maxMembers')">
+                {{ getFieldError(settingsForm, 'maxMembers') }}
+              </div>
+              <div class="helper-text">
+                Set the maximum number of family members
+              </div>
+            </div>
+          </div>
+
+          <!-- Localization -->
+          <div class="settings-section">
+            <h4 class="section-subtitle">Localization</h4>
+
+            <div class="localization-grid">
+              <div class="input-group">
+                <ion-item class="custom-item" lines="none">
+                  <ion-label position="stacked" class="input-label">Timezone</ion-label>
+                  <ion-select
+                    formControlName="timezone"
+                    interface="popover"
+                    class="custom-select">
+                    <ion-select-option
+                      *ngFor="let tz of timezones"
+                      [value]="tz.value">
+                      {{ tz.label }}
+                    </ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </div>
+
+              <div class="input-group">
+                <ion-item class="custom-item" lines="none">
+                  <ion-label position="stacked" class="input-label">Language</ion-label>
+                  <ion-select
+                    formControlName="language"
+                    interface="popover"
+                    class="custom-select">
+                    <ion-select-option
+                      *ngFor="let lang of languages"
+                      [value]="lang.value">
+                      {{ lang.label }}
+                    </ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </div>
+            </div>
+          </div>
+
+        </form>
+
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Danger Zone -->
+    <ion-card class="danger-card" *ngIf="isOwner">
+      <ion-card-header>
+        <ion-card-title class="card-title danger-title">
+          <ion-icon name="warning-outline" class="title-icon danger-icon"></ion-icon>
+          Danger Zone
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content class="card-content">
+
+        <div class="danger-actions">
+          <div class="danger-item">
+            <div class="danger-info">
+              <h5 class="danger-action-title">Delete Family</h5>
+              <p class="danger-action-description">
+                Permanently delete this family and all its data. This action cannot be undone.
+              </p>
+            </div>
+            <ion-button
+              fill="outline"
+              color="danger"
+              class="danger-button"
+              (click)="onDeleteFamily()">
+              <ion-icon name="trash-outline" slot="start"></ion-icon>
+              Delete
+            </ion-button>
+          </div>
+        </div>
+
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Leave Family (for non-owners) -->
+    <ion-card class="danger-card" *ngIf="!isOwner">
+      <ion-card-header>
+        <ion-card-title class="card-title danger-title">
+          <ion-icon name="exit-outline" class="title-icon danger-icon"></ion-icon>
+          Leave Family
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content class="card-content">
+
+        <div class="danger-actions">
+          <div class="danger-item">
+            <div class="danger-info">
+              <h5 class="danger-action-title">Leave this family</h5>
+              <p class="danger-action-description">
+                You will need to be re-invited to rejoin this family.
+              </p>
+            </div>
+            <ion-button
+              fill="outline"
+              color="danger"
+              class="danger-button"
+              (click)="onLeaveFamily()">
+              <ion-icon name="exit-outline" slot="start"></ion-icon>
+              Leave
+            </ion-button>
+          </div>
+        </div>
+
+      </ion-card-content>
+    </ion-card>
+
+  </div>
+</ion-content>

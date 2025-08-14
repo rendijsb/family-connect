@@ -1,0 +1,350 @@
+<ion-header [translucent]="true" class="invite-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button class="back-button" defaultHref="/tabs/family"></ion-back-button>
+    </ion-buttons>
+
+    <ion-title class="header-title">
+      <div class="title-content">
+        <span class="page-title">Invite Members</span>
+        <span class="family-name" *ngIf="currentFamily()">{{ currentFamily()?.name }}</span>
+      </div>
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button fill="clear" class="invitations-button" (click)="onViewInvitations()">
+        <ion-icon name="mail-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="invite-content">
+  <div class="invite-container">
+
+    <!-- Mode Toggle -->
+    <ion-card class="mode-card">
+      <ion-card-content class="mode-content">
+        <div class="mode-toggle">
+          <ion-button
+            [fill]="!isBulkMode() ? 'solid' : 'outline'"
+            class="mode-button"
+            (click)="isBulkMode() && toggleBulkMode()">
+            <ion-icon name="person-add-outline" slot="start"></ion-icon>
+            Single Invite
+          </ion-button>
+
+          <ion-button
+            [fill]="isBulkMode() ? 'solid' : 'outline'"
+            class="mode-button"
+            (click)="!isBulkMode() && toggleBulkMode()">
+            <ion-icon name="people-outline" slot="start"></ion-icon>
+            Bulk Invite
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Single Invite Form -->
+    <div *ngIf="!isBulkMode()">
+      <form [formGroup]="singleInviteForm" (ngSubmit)="onSendSingleInvite()">
+
+        <!-- Email Input -->
+        <ion-card class="form-card">
+          <ion-card-header>
+            <ion-card-title class="card-title">Invite by Email</ion-card-title>
+          </ion-card-header>
+          <ion-card-content class="card-content">
+
+            <div class="input-group">
+              <ion-item class="custom-item" lines="none">
+                <ion-icon name="mail-outline" slot="start" class="input-icon"></ion-icon>
+                <ion-input
+                  type="email"
+                  placeholder="Enter email address"
+                  formControlName="email"
+                  class="custom-input"
+                  [class.error]="hasFieldError(singleInviteForm, 'email')">
+                </ion-input>
+              </ion-item>
+              <div class="error-text" *ngIf="hasFieldError(singleInviteForm, 'email')">
+                {{ getFieldError(singleInviteForm, 'email') }}
+              </div>
+            </div>
+
+            <!-- Role Selection -->
+            <div class="role-selection">
+              <h4 class="selection-title">Select Role</h4>
+              <div class="role-options">
+                <div
+                  *ngFor="let role of availableRoles"
+                  class="role-option"
+                  [class.selected]="singleInviteForm.get('role')?.value === role.value"
+                  (click)="singleInviteForm.patchValue({ role: role.value })">
+
+                  <div class="role-icon" [style.background-color]="role.color + '20'">
+                    <ion-icon [name]="role.icon" [style.color]="role.color"></ion-icon>
+                  </div>
+
+                  <div class="role-info">
+                    <h5 class="role-title">{{ role.title }}</h5>
+                    <p class="role-description">{{ role.description }}</p>
+                  </div>
+
+                  <div class="role-indicator">
+                    <ion-icon
+                      name="checkmark-circle-outline"
+                      class="selected-icon"
+                      *ngIf="singleInviteForm.get('role')?.value === role.value">
+                    </ion-icon>
+                    <div
+                      class="unselected-circle"
+                      *ngIf="singleInviteForm.get('role')?.value !== role.value">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Personal Message -->
+            <div class="input-group">
+              <ion-item class="custom-item textarea-item" lines="none">
+                <ion-label position="stacked" class="input-label">Personal Message (Optional)</ion-label>
+                <ion-textarea
+                  placeholder="Add a personal message..."
+                  formControlName="message"
+                  class="custom-textarea"
+                  rows="3"
+                  maxlength="200">
+                </ion-textarea>
+              </ion-item>
+              <div class="helper-text">
+                Make your invitation more personal with a custom message
+              </div>
+            </div>
+
+          </ion-card-content>
+        </ion-card>
+
+        <!-- Send Button -->
+        <ion-button
+          expand="block"
+          type="submit"
+          class="send-button"
+          [disabled]="!canSendSingleInvite">
+          <ion-icon name="send-outline" slot="start" *ngIf="!isLoading()"></ion-icon>
+          <ion-icon name="reload-outline" slot="start" class="spinning" *ngIf="isLoading()"></ion-icon>
+          {{ isLoading() ? 'Sending...' : 'Send Invitation' }}
+        </ion-button>
+
+      </form>
+    </div>
+
+    <!-- Bulk Invite Form -->
+    <div *ngIf="isBulkMode()">
+      <form [formGroup]="bulkInviteForm" (ngSubmit)="onSendBulkInvites()">
+
+        <!-- Default Settings -->
+        <ion-card class="form-card">
+          <ion-card-header>
+            <ion-card-title class="card-title">Default Settings</ion-card-title>
+          </ion-card-header>
+          <ion-card-content class="card-content">
+
+            <div class="default-settings">
+              <ion-item class="setting-item" lines="none">
+                <ion-label>Default Role</ion-label>
+                <ion-select
+                  formControlName="defaultRole"
+                  interface="popover"
+                  class="role-select">
+                  <ion-select-option
+                    *ngFor="let role of availableRoles"
+                    [value]="role.value">
+                    {{ role.title }}
+                  </ion-select-option>
+                </ion-select>
+              </ion-item>
+
+              <div class="input-group">
+                <ion-item class="custom-item textarea-item" lines="none">
+                  <ion-label position="stacked" class="input-label">Default Message</ion-label>
+                  <ion-textarea
+                    placeholder="Default message for all invites..."
+                    formControlName="defaultMessage"
+                    class="custom-textarea"
+                    rows="2"
+                    maxlength="200">
+                  </ion-textarea>
+                </ion-item>
+              </div>
+
+              <ion-button
+                fill="outline"
+                class="apply-defaults-button"
+                (click)="applyDefaultsToAll()"
+                [disabled]="invitesArray.length === 0">
+                <ion-icon name="refresh-outline" slot="start"></ion-icon>
+                Apply to All
+              </ion-button>
+            </div>
+
+          </ion-card-content>
+        </ion-card>
+
+        <!-- Invite List -->
+        <ion-card class="form-card">
+          <ion-card-header class="card-header-with-action">
+            <ion-card-title class="card-title">
+              Email Addresses
+              <ion-chip class="count-chip" *ngIf="validInvitesCount > 0">
+                {{ validInvitesCount }}
+              </ion-chip>
+            </ion-card-title>
+            <ion-button
+              fill="clear"
+              class="add-button"
+              (click)="addInviteField()">
+              <ion-icon name="add-outline"></ion-icon>
+            </ion-button>
+          </ion-card-header>
+          <ion-card-content class="card-content">
+
+            <div class="invite-list" *ngIf="invitesArray.length > 0; else noInvites">
+              <div
+                *ngFor="let inviteGroup of invitesArray.controls; let i = index"
+                class="invite-item"
+                [formGroup]="inviteGroup">
+
+                <div class="invite-number">{{ i + 1 }}</div>
+
+                <div class="invite-fields">
+                  <div class="input-group">
+                    <ion-item class="custom-item compact" lines="none">
+                      <ion-input
+                        type="email"
+                        placeholder="Email address"
+                        formControlName="email"
+                        class="custom-input"
+                        [class.error]="hasFieldError(inviteGroup, 'email')">
+                      </ion-input>
+                    </ion-item>
+                    <div class="error-text" *ngIf="hasFieldError(inviteGroup, 'email')">
+                      {{ getFieldError(inviteGroup, 'email') }}
+                    </div>
+                  </div>
+
+                  <div class="invite-meta">
+                    <ion-select
+                      formControlName="role"
+                      interface="popover"
+                      class="role-select compact">
+                      <ion-select-option
+                        *ngFor="let role of availableRoles"
+                        [value]="role.value">
+                        {{ role.title }}
+                      </ion-select-option>
+                    </ion-select>
+                  </div>
+                </div>
+
+                <ion-button
+                  fill="clear"
+                  color="danger"
+                  class="remove-button"
+                  (click)="removeInviteField(i)">
+                  <ion-icon name="remove-outline"></ion-icon>
+                </ion-button>
+              </div>
+            </div>
+
+            <ng-template #noInvites>
+              <div class="no-invites">
+                <ion-icon name="mail-outline" class="no-invites-icon"></ion-icon>
+                <p class="no-invites-text">No email addresses added yet</p>
+                <ion-button fill="outline" class="add-first-button" (click)="addInviteField()">
+                  <ion-icon name="add-outline" slot="start"></ion-icon>
+                  Add First Email
+                </ion-button>
+              </div>
+            </ng-template>
+
+          </ion-card-content>
+        </ion-card>
+
+        <!-- Send Button -->
+        <ion-button
+          expand="block"
+          type="submit"
+          class="send-button"
+          [disabled]="!canSendBulkInvites">
+          <ion-icon name="send-outline" slot="start" *ngIf="!isLoading()"></ion-icon>
+          <ion-icon name="reload-outline" slot="start" class="spinning" *ngIf="isLoading()"></ion-icon>
+          {{ isLoading() ? 'Sending...' : `Send ${validInvitesCount} Invitation${validInvitesCount !== 1 ? 's' : ''}` }}
+        </ion-button>
+
+      </form>
+    </div>
+
+    <!-- Share Link Section -->
+    <ion-card class="share-card">
+      <ion-card-header>
+        <ion-card-title class="card-title">
+          <ion-icon name="link-outline" class="title-icon"></ion-icon>
+          Share Invite Link
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content class="card-content">
+
+        <div class="share-options">
+          <p class="share-description">
+            Share this link to let people join your family directly
+          </p>
+
+          <div class="link-container">
+            <div class="invite-link">{{ inviteLink() }}</div>
+            <ion-button fill="clear" class="copy-button" (click)="onCopyInviteLink()">
+              <ion-icon name="copy-outline"></ion-icon>
+            </ion-button>
+          </div>
+
+          <div class="share-buttons">
+            <ion-button
+              fill="outline"
+              class="share-button"
+              (click)="onShareInviteLink()">
+              <ion-icon name="share-outline" slot="start"></ion-icon>
+              Share Link
+            </ion-button>
+
+            <ion-button
+              fill="outline"
+              class="qr-button"
+              (click)="onGenerateQRCode()">
+              <ion-icon name="qr-code-outline" slot="start"></ion-icon>
+              QR Code
+            </ion-button>
+          </div>
+        </div>
+
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Info Card -->
+    <ion-card class="info-card">
+      <ion-card-content class="info-content">
+        <div class="info-header">
+          <ion-icon name="information-circle-outline" class="info-icon"></ion-icon>
+          <span class="info-title">Invitation Guidelines</span>
+        </div>
+        <ul class="info-list">
+          <li>Invitations expire after 7 days</li>
+          <li>Members will receive role permissions immediately upon joining</li>
+          <li>You can track invitation status in the Invitations page</li>
+          <li>Admins and owners can manage member roles after they join</li>
+        </ul>
+      </ion-card-content>
+    </ion-card>
+
+  </div>
+</ion-content>

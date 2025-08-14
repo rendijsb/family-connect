@@ -1,0 +1,788 @@
+.settings-content {
+  --background: linear-gradient(135deg, #1a1a1a 0%, #2d1b1b 50%, #1a1a1a 100%);
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+.settings-container {
+  padding: 16px;
+  padding-top: 0;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+  min-height: calc(100vh - 60px);
+}
+
+// Header Styles
+.settings-header {
+  --background: rgba(38, 38, 38, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-toolbar {
+  --background: transparent;
+  --color: white;
+  --padding-top: max(env(safe-area-inset-top, 0px), 8px);
+  --padding-bottom: 8px;
+  --min-height: 56px;
+}
+
+.back-button {
+  --color: white;
+  --icon-font-size: 24px;
+}
+
+.save-button,
+.more-button {
+  --color: white;
+  width: 40px;
+  height: 40px;
+
+  &.button-disabled {
+    --color: rgba(255, 255, 255, 0.5);
+  }
+}
+
+.save-button:not(.button-disabled) {
+  --color: #22c55e;
+}
+
+.title-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.page-title {
+  font-size: 16px;
+  color: white;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.family-name {
+  font-size: 12px;
+  color: #a1a1aa;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+// Unsaved Changes Banner
+.unsaved-banner {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.9), rgba(217, 119, 6, 0.9));
+  border-radius: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.banner-icon {
+  font-size: 20px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.banner-text {
+  flex: 1;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.save-banner-button {
+  --color: white;
+  --background: rgba(255, 255, 255, 0.2);
+  height: 32px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+// Shared card styles
+%card-base {
+  --background: rgba(55, 55, 55, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  margin: 0 0 20px 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.settings-card {
+  @extend %card-base;
+}
+
+.danger-card {
+  @extend %card-base;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1));
+  border-color: rgba(239, 68, 68, 0.3);
+  margin-bottom: 0;
+}
+
+.card-title {
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.danger-title {
+  color: #ef4444;
+}
+
+.title-icon {
+  font-size: 18px;
+  color: #3b82f6;
+}
+
+.danger-icon {
+  color: #ef4444;
+}
+
+.card-content {
+  padding: 20px;
+}
+
+ion-card-header {
+  padding: 16px 20px 8px 20px;
+}
+
+.card-header-with-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px 8px 20px !important;
+}
+
+.section-save-button {
+  --color: #22c55e;
+  height: 28px;
+  font-size: 12px;
+  font-weight: 600;
+
+  &.button-disabled {
+    --color: rgba(255, 255, 255, 0.5);
+  }
+}
+
+// Avatar Section
+.avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: rgba(75, 75, 75, 0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.avatar-container {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.family-avatar {
+  width: 64px;
+  height: 64px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+}
+
+.avatar-edit-button {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 28px;
+  height: 28px;
+  --background: #3b82f6;
+  --color: white;
+  --border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.avatar-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.avatar-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.avatar-description {
+  font-size: 13px;
+  color: #a1a1aa;
+  margin: 0;
+  line-height: 1.3;
+}
+
+// Input Groups
+.input-group {
+  margin-bottom: 16px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.custom-item {
+  --background: rgba(75, 75, 75, 0.8);
+  --border-radius: 12px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --min-height: 52px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+
+  &.textarea-item {
+    --min-height: auto;
+    --padding-top: 12px;
+    --padding-bottom: 12px;
+  }
+
+  &:hover {
+    --background: rgba(85, 85, 85, 0.9);
+    border-color: rgba(220, 38, 38, 0.3);
+  }
+
+  &.item-has-focus {
+    --background: rgba(85, 85, 85, 0.9);
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+  }
+
+  &.error {
+    border-color: #ef4444;
+    --background: rgba(239, 68, 68, 0.1);
+  }
+}
+
+.input-label {
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.custom-input,
+.custom-textarea,
+.custom-select {
+  --color: white;
+  --placeholder-color: #a1a1aa;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.error-text {
+  font-size: 12px;
+  color: #ef4444;
+  padding-left: 16px;
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+
+.helper-text {
+  font-size: 12px;
+  color: #6b7280;
+  padding-left: 16px;
+  line-height: 1.3;
+}
+
+// Privacy Options
+.privacy-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.privacy-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(75, 75, 75, 0.5);
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(85, 85, 85, 0.7);
+    border-color: rgba(220, 38, 38, 0.3);
+  }
+
+  &.selected {
+    background: rgba(220, 38, 38, 0.1);
+    border-color: #dc2626;
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
+  }
+}
+
+.privacy-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  ion-icon {
+    font-size: 20px;
+  }
+}
+
+.privacy-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.privacy-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 2px 0;
+  line-height: 1.2;
+}
+
+.privacy-description {
+  font-size: 12px;
+  color: #a1a1aa;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.privacy-indicator {
+  flex-shrink: 0;
+}
+
+.selected-icon {
+  font-size: 20px;
+  color: #dc2626;
+}
+
+.unselected-circle {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #6b7280;
+  border-radius: 50%;
+}
+
+// Settings Sections
+.settings-section {
+  margin-bottom: 24px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.section-subtitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 12px 0;
+  padding: 0 4px;
+}
+
+.settings-list {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.setting-item {
+  --background: transparent;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --color: white;
+  --min-height: auto;
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+  transition: --background 0.3s ease;
+
+  &:hover {
+    --background: rgba(75, 75, 75, 0.3);
+  }
+}
+
+.setting-icon {
+  color: #3b82f6;
+  font-size: 18px;
+  margin-right: 16px;
+}
+
+.setting-label {
+  flex: 1;
+  margin-right: 16px;
+
+  h5 {
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    margin: 0 0 4px 0;
+    line-height: 1.2;
+  }
+
+  p {
+    font-size: 13px;
+    color: #a1a1aa;
+    margin: 0;
+    line-height: 1.3;
+  }
+}
+
+.setting-toggle {
+  --background: rgba(107, 114, 128, 0.5);
+  --background-checked: #dc2626;
+  --handle-background: white;
+  --handle-background-checked: white;
+  flex-shrink: 0;
+}
+
+// Member Range
+.member-range {
+  --bar-background: rgba(255, 255, 255, 0.2);
+  --bar-background-active: #dc2626;
+  --knob-background: #dc2626;
+  --knob-border: 3px solid white;
+  --pin-background: #dc2626;
+  --pin-color: white;
+  padding: 16px 0;
+}
+
+// Localization Grid
+.localization-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+// Danger Zone
+.danger-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.danger-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(239, 68, 68, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.danger-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.danger-action-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ef4444;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.danger-action-description {
+  font-size: 12px;
+  color: #a1a1aa;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.danger-button {
+  --border-color: #ef4444;
+  --color: #ef4444;
+  --border-radius: 8px;
+  height: 36px;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+// Loading Animation
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// Responsive Design - Mobile First
+@media (max-width: 430px) {
+  .settings-container {
+    padding: 12px;
+    padding-top: 0;
+  }
+
+  .card-content {
+    padding: 16px;
+  }
+
+  ion-card-header {
+    padding: 12px 16px 6px 16px;
+  }
+
+  .card-header-with-action {
+    padding: 12px 16px 6px 16px !important;
+  }
+
+  .avatar-section {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+
+  .family-avatar {
+    width: 56px;
+    height: 56px;
+  }
+
+  .avatar-edit-button {
+    width: 24px;
+    height: 24px;
+    bottom: -2px;
+    right: -2px;
+  }
+
+  .privacy-option {
+    padding: 10px;
+  }
+
+  .privacy-icon {
+    width: 32px;
+    height: 32px;
+
+    ion-icon {
+      font-size: 16px;
+    }
+  }
+
+  .privacy-title {
+    font-size: 13px;
+  }
+
+  .privacy-description {
+    font-size: 11px;
+  }
+
+  .localization-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .danger-item {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    gap: 12px;
+  }
+
+  .danger-button {
+    align-self: center;
+    width: auto;
+    min-width: 120px;
+  }
+
+  .page-title {
+    font-size: 15px;
+  }
+
+  .family-name {
+    font-size: 11px;
+  }
+
+  .section-save-button {
+    font-size: 11px;
+    height: 24px;
+  }
+}
+
+@media (max-width: 375px) {
+  .settings-container {
+    padding: 10px;
+    padding-top: 0;
+  }
+
+  .card-content {
+    padding: 14px;
+  }
+
+  .unsaved-banner {
+    padding: 10px 12px;
+  }
+
+  .banner-content {
+    gap: 8px;
+  }
+
+  .save-banner-button {
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .privacy-options {
+    gap: 6px;
+  }
+
+  .setting-item {
+    --padding-top: 10px;
+    --padding-bottom: 10px;
+  }
+
+  .setting-icon {
+    font-size: 16px;
+    margin-right: 12px;
+  }
+
+  .setting-label {
+    h5 {
+      font-size: 14px;
+    }
+
+    p {
+      font-size: 12px;
+    }
+  }
+}
+
+// iPhone specific optimizations
+@media screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) {
+  .header-toolbar {
+    --padding-top: max(env(safe-area-inset-top, 0px), 8px);
+  }
+
+  .settings-container {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+  }
+}
+
+// iPad and larger screens
+@media (min-width: 768px) {
+  .settings-container {
+    padding: 24px;
+    padding-top: 0;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .card-content {
+    padding: 24px;
+  }
+
+  .avatar-section {
+    padding: 20px;
+  }
+
+  .family-avatar {
+    width: 80px;
+    height: 80px;
+  }
+
+  .avatar-edit-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .avatar-title {
+    font-size: 18px;
+  }
+
+  .avatar-description {
+    font-size: 14px;
+  }
+
+  .privacy-option {
+    padding: 16px;
+  }
+
+  .privacy-icon {
+    width: 48px;
+    height: 48px;
+
+    ion-icon {
+      font-size: 24px;
+    }
+  }
+
+  .privacy-title {
+    font-size: 16px;
+  }
+
+  .privacy-description {
+    font-size: 14px;
+  }
+
+  .localization-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .danger-item {
+    padding: 20px;
+  }
+}
+
+// Dark mode enhancements
+@media (prefers-color-scheme: dark) {
+  .settings-content {
+    --background: linear-gradient(135deg, #0f0f0f 0%, #1f1515 50%, #0f0f0f 100%);
+  }
+}
+
+// Reduce motion for accessibility
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .privacy-option:hover,
+  .setting-item:hover {
+    transform: none !important;
+  }
+}
+
+// High contrast mode
+@media (prefers-contrast: high) {
+  .settings-card,
+  .danger-card {
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .privacy-option {
+    border-width: 3px;
+  }
+
+  .danger-card {
+    border-color: #ef4444;
+  }
+}

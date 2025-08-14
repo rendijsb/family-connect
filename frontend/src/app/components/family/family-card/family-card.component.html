@@ -1,0 +1,76 @@
+<ion-card
+  class="family-card"
+  [class.selected]="isSelected"
+  [class.compact]="compact"
+  (click)="onFamilyClick()">
+
+  <ion-card-content class="card-content">
+
+    <!-- Family Header -->
+    <div class="family-header">
+      <ion-avatar class="family-avatar">
+        <img [src]="family.avatar || '/assets/icons/icon.svg'" [alt]="family.name" />
+      </ion-avatar>
+
+      <div class="family-info">
+        <h3 class="family-name">{{ family.name }}</h3>
+        <p class="family-description" *ngIf="family.description && !compact">
+          {{ family.description }}
+        </p>
+
+        <div class="family-meta">
+          <ion-chip class="privacy-chip">
+            <ion-icon [name]="getPrivacyIcon()" [style.color]="getPrivacyColor()"></ion-icon>
+            <ion-label>{{ family.privacyLevel }}</ion-label>
+          </ion-chip>
+
+          <ion-chip class="members-chip">
+            <ion-icon name="people-outline"></ion-icon>
+            <ion-label>{{ family.memberCount }}</ion-label>
+          </ion-chip>
+        </div>
+      </div>
+
+      <div class="family-actions" *ngIf="showActions">
+        <ion-button
+          fill="clear"
+          class="action-button settings-btn"
+          (click)="onSettingsClick($event)"
+          *ngIf="family.canManage">
+          <ion-icon name="settings-outline"></ion-icon>
+        </ion-button>
+
+        <ion-button
+          fill="clear"
+          class="action-button members-btn"
+          (click)="onMembersClick($event)">
+          <ion-icon name="people-outline"></ion-icon>
+        </ion-button>
+      </div>
+    </div>
+
+    <!-- Family Stats -->
+    <div class="family-stats" *ngIf="showStats && !compact">
+      <div class="stat-item">
+        <span class="stat-label">Owner</span>
+        <span class="stat-value">{{ family.owner?.displayName || 'Unknown' }}</span>
+      </div>
+
+      <div class="stat-item">
+        <span class="stat-label">Created</span>
+        <span class="stat-value">{{ family.createdAt | date:'MMM yyyy' }}</span>
+      </div>
+
+      <div class="stat-item">
+        <span class="stat-label">Last Activity</span>
+        <span class="stat-value">{{ formatLastActivity() }}</span>
+      </div>
+    </div>
+
+    <!-- Selection Indicator -->
+    <div class="selection-indicator" *ngIf="isSelected">
+      <ion-icon name="checkmark-circle-outline"></ion-icon>
+    </div>
+
+  </ion-card-content>
+</ion-card>

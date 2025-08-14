@@ -1,0 +1,355 @@
+<ion-header [translucent]="true" class="detail-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button class="back-button" defaultHref="/family/invitations"></ion-back-button>
+    </ion-buttons>
+
+    <ion-title class="header-title">
+      <span class="page-title">Invitation Details</span>
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button
+        fill="clear"
+        class="share-button"
+        (click)="shareInvitation()"
+        *ngIf="invitation() && !invitation()?.isExpired">
+        <ion-icon name="share-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="detail-content">
+  <div class="detail-container">
+
+    <!-- Loading State -->
+    <div class="loading-state" *ngIf="isLoading()">
+      <ion-card class="loading-card">
+        <ion-card-content class="loading-content">
+          <div class="loading-header">
+            <div class="loading-avatar"></div>
+            <div class="loading-info">
+              <div class="loading-line long"></div>
+              <div class="loading-line medium"></div>
+              <div class="loading-line short"></div>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Invitation Details -->
+    <div class="invitation-details" *ngIf="invitation() && !isLoading()">
+
+      <!-- Status Card -->
+      <ion-card class="status-card" [style.background]="'linear-gradient(135deg, ' + getStatusColor() + '20, ' + getStatusColor() + '10)'">
+        <ion-card-content class="status-content">
+
+          <div class="status-header">
+            <div class="status-icon" [style.background-color]="getStatusColor() + '20'">
+              <ion-icon [name]="getStatusIcon()" [style.color]="getStatusColor()"></ion-icon>
+            </div>
+
+            <div class="status-info">
+              <h2 class="status-title">{{ getStatusText() }}</h2>
+              <p class="status-description" *ngIf="!invitation()?.isExpired">
+                {{ getViewType() === 'received' ? 'You have been invited to join' : 'Invitation sent to' }}
+              </p>
+              <p class="status-description" *ngIf="invitation()?.isExpired">
+                This invitation has expired
+              </p>
+            </div>
+          </div>
+
+          <!-- Expiry Info -->
+          <div class="expiry-info" *ngIf="!invitation()?.isExpired">
+            <ion-chip class="expiry-chip" [style.color]="getStatusColor()">
+              <ion-icon name="time-outline"></ion-icon>
+              <ion-label>{{ formatTimeRemaining() }}</ion-label>
+            </ion-chip>
+          </div>
+
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Family Information -->
+      <ion-card class="family-card">
+        <ion-card-header>
+          <ion-card-title class="card-title">
+            <ion-icon name="people-outline"></ion-icon>
+            Family Information
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="family-content">
+
+          <div class="family-header">
+            <ion-avatar class="family-avatar">
+              <img [src]="invitation()?.family?.avatar || '/assets/icons/icon.svg'"
+                   [alt]="invitation()?.family?.name" />
+            </ion-avatar>
+
+            <div class="family-info">
+              <h3 class="family-name">{{ invitation()?.family?.name }}</h3>
+              <p class="family-description" *ngIf="invitation()?.family?.description">
+                {{ invitation()?.family?.description }}
+              </p>
+
+              <div class="family-meta">
+                <ion-chip class="role-chip" [style.color]="getRoleColor()">
+                  <ion-icon [name]="getRoleIcon()"></ion-icon>
+                  <ion-label>Invited as {{ invitation()?.role }}</ion-label>
+                </ion-chip>
+
+                <ion-chip class="members-chip">
+                  <ion-icon name="people-outline"></ion-icon>
+                  <ion-label>{{ invitation()?.family?.memberCount }} members</ion-label>
+                </ion-chip>
+              </div>
+            </div>
+          </div>
+
+          <div class="family-stats" *ngIf="invitation()?.family">
+            <div class="stat-item">
+              <span class="stat-label">Privacy</span>
+              <span class="stat-value">{{ invitation()?.family?.privacyLevel }}</span>
+            </div>
+
+            <div class="stat-item">
+              <span class="stat-label">Created</span>
+              <span class="stat-value">{{ formatDate(invitation()?.family?.createdAt!) }}</span>
+            </div>
+          </div>
+
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Invitation Details -->
+      <ion-card class="details-card">
+        <ion-card-header>
+          <ion-card-title class="card-title">
+            <ion-icon name="information-circle-outline"></ion-icon>
+            Invitation Details
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="details-content">
+
+          <ion-list class="details-list">
+
+            <!-- Email -->
+            <ion-item class="detail-item" lines="none">
+              <ion-icon name="mail-outline" slot="start" class="detail-icon"></ion-icon>
+              <ion-label class="detail-label">
+                <h4>Email Address</h4>
+                <p>{{ invitation()?.email }}</p>
+              </ion-label>
+            </ion-item>
+
+            <!-- Inviter -->
+            <ion-item class="detail-item" lines="none" *ngIf="invitation()?.inviter">
+              <ion-icon name="person-outline" slot="start" class="detail-icon"></ion-icon>
+              <ion-label class="detail-label">
+                <h4>Invited By</h4>
+                <p>{{ invitation()?.inviter?.displayName }}</p>
+              </ion-label>
+            </ion-item>
+
+            <!-- Sent Date -->
+            <ion-item class="detail-item" lines="none">
+              <ion-icon name="calendar-outline" slot="start" class="detail-icon"></ion-icon>
+              <ion-label class="detail-label">
+                <h4>Sent</h4>
+                <p>{{ formatDate(invitation()?.createdAt!) }}</p>
+              </ion-label>
+            </ion-item>
+
+            <!-- Expires -->
+            <ion-item class="detail-item" lines="none">
+              <ion-icon name="time-outline" slot="start" class="detail-icon"></ion-icon>
+              <ion-label class="detail-label">
+                <h4>{{ invitation()?.isExpired ? 'Expired' : 'Expires' }}</h4>
+                <p [style.color]="invitation()?.isExpired ? '#ef4444' : 'inherit'">
+                  {{ formatDate(invitation()?.expiresAt!) }}
+                </p>
+              </ion-label>
+            </ion-item>
+
+          </ion-list>
+
+          <!-- Personal Message -->
+          <div class="message-section" *ngIf="invitation()?.message">
+            <h4 class="message-title">Personal Message</h4>
+            <div class="message-content">
+              <p class="message-text">{{ invitation()?.message }}</p>
+            </div>
+          </div>
+
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Quick Actions -->
+      <ion-card class="actions-card" *ngIf="!invitation()?.isExpired">
+        <ion-card-header>
+          <ion-card-title class="card-title">Quick Actions</ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="actions-content">
+
+          <ion-grid class="actions-grid">
+            <ion-row>
+              <ion-col size="6">
+                <ion-button
+                  expand="block"
+                  fill="outline"
+                  class="action-button copy-button"
+                  (click)="copyInvitationLink()">
+                  <ion-icon name="copy-outline" slot="start"></ion-icon>
+                  Copy Link
+                </ion-button>
+              </ion-col>
+
+              <ion-col size="6">
+                <ion-button
+                  expand="block"
+                  fill="outline"
+                  class="action-button share-button"
+                  (click)="shareInvitation()">
+                  <ion-icon name="share-outline" slot="start"></ion-icon>
+                  Share
+                </ion-button>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Main Actions -->
+      <div class="main-actions">
+
+        <!-- Received Invitation Actions -->
+        <div class="received-actions" *ngIf="getViewType() === 'received'">
+          <ion-button
+            expand="block"
+            class="accept-button"
+            [disabled]="!canAccept() || isProcessing()"
+            (click)="openAcceptModal()"
+            *ngIf="canAccept()">
+            <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>
+            Accept Invitation
+          </ion-button>
+
+          <ion-button
+            expand="block"
+            fill="outline"
+            class="decline-button"
+            [disabled]="!canDecline() || isProcessing()"
+            (click)="onDeclineInvitation()"
+            *ngIf="canDecline()">
+            <ion-icon name="close-circle-outline" slot="start"></ion-icon>
+            Decline
+          </ion-button>
+        </div>
+
+        <!-- Sent Invitation Actions -->
+        <div class="sent-actions" *ngIf="getViewType() === 'sent'">
+          <ion-button
+            expand="block"
+            fill="outline"
+            class="resend-button"
+            [disabled]="!canResend() || isProcessing()"
+            (click)="onResendInvitation()"
+            *ngIf="canResend()">
+            <ion-icon name="refresh-outline" slot="start"></ion-icon>
+            Resend Invitation
+          </ion-button>
+
+          <ion-button
+            expand="block"
+            fill="clear"
+            color="danger"
+            class="cancel-button"
+            [disabled]="!canCancel() || isProcessing()"
+            (click)="onCancelInvitation()"
+            *ngIf="canCancel()">
+            <ion-icon name="trash-outline" slot="start"></ion-icon>
+            Cancel Invitation
+          </ion-button>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Accept Modal -->
+  <ion-modal [isOpen]="isAcceptModalOpen()" (didDismiss)="closeAcceptModal()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Join Family</ion-title>
+          <ion-buttons slot="end">
+            <ion-button fill="clear" (click)="closeAcceptModal()">
+              <ion-icon name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="modal-content">
+        <div class="modal-container">
+
+          <div class="modal-header">
+            <h2>Welcome to {{ invitation()?.family?.name }}!</h2>
+            <p>You're about to join this family. You can optionally set a nickname for how family members will know you.</p>
+          </div>
+
+          <form [formGroup]="acceptForm">
+            <div class="input-group">
+              <ion-item class="custom-item" lines="none">
+                <ion-label position="stacked" class="input-label">
+                  Nickname (Optional)
+                </ion-label>
+                <ion-input
+                  type="text"
+                  placeholder="How should family members know you?"
+                  formControlName="nickname"
+                  class="custom-input"
+                  [class.error]="hasFieldError('nickname')">
+                </ion-input>
+              </ion-item>
+              <div class="error-text" *ngIf="hasFieldError('nickname')">
+                {{ getFieldError('nickname') }}
+              </div>
+              <div class="helper-text">
+                If not provided, your account name will be used
+              </div>
+            </div>
+          </form>
+
+          <div class="modal-actions">
+            <ion-button
+              expand="block"
+              class="join-button"
+              [disabled]="isProcessing()"
+              (click)="onAcceptInvitation()">
+              <ion-icon name="checkmark-circle-outline" slot="start" *ngIf="!isProcessing()"></ion-icon>
+              <ion-icon name="reload-outline" class="spinning" slot="start" *ngIf="isProcessing()"></ion-icon>
+              {{ isProcessing() ? 'Joining...' : 'Join Family' }}
+            </ion-button>
+
+            <ion-button
+              expand="block"
+              fill="outline"
+              (click)="closeAcceptModal()"
+              [disabled]="isProcessing()">
+              Cancel
+            </ion-button>
+          </div>
+
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
+</ion-content>

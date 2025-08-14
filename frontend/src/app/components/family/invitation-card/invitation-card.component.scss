@@ -1,0 +1,268 @@
+.invitation-card {
+  --background: rgba(55, 55, 55, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  margin: 0 0 12px 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    border-color: rgba(220, 38, 38, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  &.pending {
+    border-left: 3px solid #f59e0b;
+  }
+
+  &.accepted {
+    border-left: 3px solid #22c55e;
+  }
+
+  &.declined {
+    border-left: 3px solid #ef4444;
+  }
+
+  &.expired {
+    border-left: 3px solid #6b7280;
+    opacity: 0.7;
+  }
+
+  &.compact {
+    .card-content {
+      padding: 12px;
+    }
+
+    .invitation-icon {
+      width: 32px;
+      height: 32px;
+
+      ion-icon {
+        font-size: 16px;
+      }
+    }
+
+    .invitation-email {
+      font-size: 14px;
+    }
+  }
+}
+
+.card-content {
+  padding: 16px;
+}
+
+.invitation-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.invitation-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  ion-icon {
+    font-size: 20px;
+  }
+}
+
+.invitation-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.invitation-email {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.invitation-family,
+.invitation-inviter {
+  font-size: 13px;
+  color: #a1a1aa;
+  margin: 0 0 2px 0;
+  line-height: 1.3;
+}
+
+.invitation-meta {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.role-chip,
+.status-chip {
+  font-size: 10px;
+  height: 18px;
+  --background: rgba(75, 75, 75, 0.6);
+
+  ion-icon {
+    font-size: 10px;
+    margin-right: 2px;
+  }
+}
+
+.invitation-status {
+  flex-shrink: 0;
+}
+
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #373737;
+}
+
+.invitation-message {
+  margin-bottom: 12px;
+  padding: 12px;
+  background: rgba(75, 75, 75, 0.3);
+  border-radius: 8px;
+  border-left: 3px solid #3b82f6;
+}
+
+.message-text {
+  font-size: 13px;
+  color: #e5e5e5;
+  margin: 0;
+  line-height: 1.4;
+  font-style: italic;
+}
+
+.invitation-details {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detail-label {
+  font-size: 10px;
+  color: #6b7280;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.detail-value {
+  font-size: 12px;
+  color: #e5e5e5;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.invitation-actions {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.received-actions,
+.sent-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.accept-button {
+  --background: linear-gradient(135deg, #22c55e, #16a34a);
+  --color: white;
+  --border-radius: 8px;
+  height: 36px;
+  font-size: 13px;
+  font-weight: 600;
+  flex: 1;
+
+  &.button-disabled {
+    --background: rgba(107, 114, 128, 0.5);
+    --color: rgba(255, 255, 255, 0.5);
+  }
+}
+
+.decline-button {
+  --border-color: #ef4444;
+  --color: #ef4444;
+  --border-radius: 8px;
+  height: 36px;
+  font-size: 13px;
+  font-weight: 600;
+  flex: 1;
+
+  &.button-disabled {
+    --border-color: rgba(107, 114, 128, 0.5);
+    --color: rgba(255, 255, 255, 0.5);
+  }
+}
+
+.resend-button {
+  --border-color: #3b82f6;
+  --color: #3b82f6;
+  --border-radius: 8px;
+  height: 36px;
+  font-size: 13px;
+  font-weight: 600;
+  flex: 1;
+
+  &.button-disabled {
+    --border-color: rgba(107, 114, 128, 0.5);
+    --color: rgba(255, 255, 255, 0.5);
+  }
+}
+
+.cancel-button {
+  --color: #ef4444;
+  --border-radius: 8px;
+  height: 36px;
+  font-size: 13px;
+  font-weight: 600;
+
+  &.button-disabled {
+    --color: rgba(255, 255, 255, 0.5);
+  }
+}
+
+// Responsive
+@media (max-width: 430px) {
+  .invitation-details {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .detail-item {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .received-actions,
+  .sent-actions {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .accept-button,
+  .decline-button,
+  .resend-button {
+    flex: none;
+  }
+}

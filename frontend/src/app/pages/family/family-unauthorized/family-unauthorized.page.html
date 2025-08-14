@@ -1,0 +1,121 @@
+<ion-header [translucent]="true" class="unauthorized-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button class="back-button" defaultHref="/tabs/family"></ion-back-button>
+    </ion-buttons>
+
+    <ion-title class="header-title">
+      <span class="page-title">Access Denied</span>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="unauthorized-content">
+  <div class="unauthorized-container">
+
+    <!-- Main Error Card -->
+    <ion-card class="error-card" [style.background]="getBackgroundGradient()">
+      <ion-card-content class="error-content">
+
+        <!-- Error Icon -->
+        <div class="error-icon" [style.color]="getIconColor()">
+          <ion-icon [name]="unauthorizedReason()?.icon || 'warning-outline'"></ion-icon>
+        </div>
+
+        <!-- Error Message -->
+        <div class="error-message">
+          <h1 class="error-title">{{ unauthorizedReason()?.title || 'Access Denied' }}</h1>
+          <p class="error-description">
+            {{ unauthorizedReason()?.description || 'You don\'t have permission to access this feature.' }}
+          </p>
+        </div>
+
+        <!-- Current Family Context -->
+        <div class="family-context" *ngIf="currentFamily()">
+          <div class="context-header">
+            <ion-icon name="information-circle-outline"></ion-icon>
+            <span>Current Family</span>
+          </div>
+          <div class="family-info">
+            <ion-avatar class="family-avatar">
+              <img [src]="currentFamily()?.avatar || '/assets/icons/icon.svg'"
+                   [alt]="currentFamily()?.name" />
+            </ion-avatar>
+            <div class="family-details">
+              <h4 class="family-name">{{ currentFamily()?.name }}</h4>
+              <p class="family-role">{{ currentFamily()?.isOwner ? 'Owner' : (currentFamily()?.isAdmin ? 'Admin' : 'Member') }}</p>
+            </div>
+          </div>
+        </div>
+
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Action Buttons -->
+    <div class="action-section" *ngIf="unauthorizedReason()">
+      <h2 class="actions-title">What can you do?</h2>
+
+      <div class="actions-list">
+        <ion-button
+          *ngFor="let action of unauthorizedReason()?.actions"
+          [fill]="action.primary ? 'solid' : 'outline'"
+          [class]="action.primary ? 'primary-action' : 'secondary-action'"
+          expand="block"
+          (click)="onActionClick(action)">
+          <ion-icon [name]="action.icon" slot="start"></ion-icon>
+          {{ action.label }}
+        </ion-button>
+      </div>
+    </div>
+
+    <!-- Help Section -->
+    <ion-card class="help-card">
+      <ion-card-header>
+        <ion-card-title class="help-title">
+          <ion-icon name="information-circle-outline"></ion-icon>
+          Understanding Permissions
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content class="help-content">
+
+        <div class="permission-levels">
+          <div class="permission-item">
+            <div class="permission-icon owner-icon">
+              <ion-icon name="shield-outline"></ion-icon>
+            </div>
+            <div class="permission-info">
+              <h4 class="permission-name">Owner</h4>
+              <p class="permission-desc">Can manage all family settings, members, and delete the family</p>
+            </div>
+          </div>
+
+          <div class="permission-item">
+            <div class="permission-icon admin-icon">
+              <ion-icon name="settings-outline"></ion-icon>
+            </div>
+            <div class="permission-info">
+              <h4 class="permission-name">Admin</h4>
+              <p class="permission-desc">Can manage members, send invitations, and modify family settings</p>
+            </div>
+          </div>
+
+          <div class="permission-item">
+            <div class="permission-icon member-icon">
+              <ion-icon name="person-outline"></ion-icon>
+            </div>
+            <div class="permission-info">
+              <h4 class="permission-name">Member</h4>
+              <p class="permission-desc">Can participate in family activities and view family content</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="help-note">
+          <p>If you need additional permissions, contact your family administrator or owner.</p>
+        </div>
+
+      </ion-card-content>
+    </ion-card>
+
+  </div>
+</ion-content>

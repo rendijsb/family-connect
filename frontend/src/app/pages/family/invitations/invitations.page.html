@@ -1,0 +1,207 @@
+<ion-header [translucent]="true" class="invitations-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button class="back-button" defaultHref="/tabs/family"></ion-back-button>
+    </ion-buttons>
+
+    <ion-title class="header-title">
+      <div class="title-content">
+        <span class="page-title">Invitations</span>
+        <span class="invitation-count" *ngIf="currentFamily()">
+          {{ selectedSegment() === 'received' ? receivedStats.total : sentStats.total }} total
+        </span>
+      </div>
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button fill="clear" class="search-button" (click)="showSearch.set(!showSearch())">
+        <ion-icon name="search-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+
+  <!-- Search Bar -->
+  <ion-toolbar class="search-toolbar" *ngIf="showSearch()">
+    <ion-searchbar
+      placeholder="Search invitations..."
+      [debounce]="300"
+      (ionInput)="onSearchChange($event)"
+      class="custom-searchbar">
+    </ion-searchbar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="invitations-content">
+
+  <!-- Pull to Refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="onRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="invitations-container">
+
+    <!-- Segment Control -->
+    <ion-segment
+      [value]="selectedSegment()"
+      (ionChange)="onSegmentChange($event)"
+      class="invitation-segment">
+      <ion-segment-button value="received" class="segment-button">
+        <ion-icon name="download-outline"></ion-icon>
+        <ion-label>Received</ion-label>
+        <ion-badge class="segment-badge" *ngIf="receivedStats.pending > 0">
+          {{ receivedStats.pending }}
+        </ion-badge>
+      </ion-segment-button>
+
+      <ion-segment-button value="sent" class="segment-button">
+        <ion-icon name="send-outline"></ion-icon>
+        <ion-label>Sent</ion-label>
+        <ion-badge class="segment-badge" *ngIf="sentStats.pending > 0">
+          {{ sentStats.pending }}
+        </ion-badge>
+      </ion-segment-button>
+    </ion-segment>
+
+    <!-- Filter Chips -->
+    <div class="filter-section">
+      <div class="filter-chips">
+        <ion-chip
+          *ngFor="let option of filterOptions"
+          [class.selected]="selectedFilter() === option.value"
+          class="filter-chip"
+          (click)="onFilterChange(option.value)">
+          <ion-icon [name]="option.icon"></ion-icon>
+          <ion-label>{{ option.label }}</ion-label>
+          <ion-badge *ngIf="getFilterBadgeCount(option.value) > 0">
+            {{ getFilterBadgeCount(option.value) }}
+          </ion-badge>
+        </ion-chip>
+      </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-section">
+      <ion-card class="stats-card">
+        <ion-card-content class="stats-content">
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-icon pending-icon">
+                <ion-icon name="time-outline"></ion-icon>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">
+                  {{ selectedSegment() === 'received' ? receivedStats.pending : sentStats.pending }}
+                </span>
+                <span class="stat-label">Pending</span>
+              </div>
+            </div>
+
+            <div class="stat-item">
+              <div class="stat-icon accepted-icon">
+                <ion-icon name="checkmark-circle-outline"></ion-icon>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">
+                  {{ selectedSegment() === 'received' ? receivedStats.accepted : sentStats.accepted }}
+                </span>
+                <span class="stat-label">Accepted</span>
+              </div>
+            </div>
+
+            <div class="stat-item">
+              <div class="stat-icon expired-icon">
+                <ion-icon name="warning-outline"></ion-icon>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">
+                  {{ selectedSegment() === 'received' ? receivedStats.expired : sentStats.expired }}
+                </span>
+                <span class="stat-label">Expired</span>
+              </div>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Invitations List -->
+    <div class="invitations-section">
+      <div class="section-header">
+        <h3 class="section-title">
+          {{ selectedSegment() === 'received' ? 'Received Invitations' : 'Sent Invitations' }}
+        </h3>
+        <span class="invitation-count">
+          {{ getCurrentInvitations().length }}
+          {{ getCurrentInvitations().length === 1 ? 'invitation' : 'invitations' }}
+        </span>
+      </div>
+
+      <!-- Loading State -->
+      <div class="loading-state" *ngIf="isLoading()">
+        <ion-card class="loading-card" *ngFor="let item of [1,2,3]">
+          <ion-card-content class="loading-content">
+            <div class="loading-icon"></div>
+            <div class="loading-info">
+              <div class="loading-line long"></div>
+              <div class="loading-line short"></div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+
+      <!-- Invitation Cards -->
+      <div class="invitations-list" *ngIf="!isLoading()">
+        <app-invitation-card
+          *ngFor="let invitation of getCurrentInvitations(); trackBy: trackByInvitationId"
+          [invitation]="invitation"
+          [viewType]="selectedSegment()"
+          (invitationClicked)="onInvitationClicked($event)"
+          (acceptClicked)="onAcceptClicked($event)"
+          (declineClicked)="onDeclineClicked($event)"
+          (resendClicked)="onResendClicked($event)"
+          (cancelClicked)="onCancelClicked($event)">
+        </app-invitation-card>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="getCurrentInvitations().length === 0">
+          <div class="empty-icon">
+            <ion-icon [name]="selectedSegment() === 'received' ? 'download-outline' : 'send-outline'"></ion-icon>
+          </div>
+          <h3 class="empty-title">
+            {{ getEmptyStateTitle() }}
+          </h3>
+          <p class="empty-description">
+            {{ getEmptyStateDescription() }}
+          </p>
+
+          <div class="empty-actions" *ngIf="selectedSegment() === 'sent'">
+            <ion-button fill="solid" (click)="onInviteMembers()">
+              <ion-icon name="person-add-outline" slot="start"></ion-icon>
+              Invite Members
+            </ion-button>
+          </div>
+
+          <ion-button
+            fill="clear"
+            (click)="searchTerm.set(''); selectedFilter.set('all'); applyFilters()"
+            *ngIf="searchTerm() || selectedFilter() !== 'all'">
+            Clear Filters
+          </ion-button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <ion-fab
+    slot="fixed"
+    vertical="bottom"
+    horizontal="end"
+    class="invite-fab"
+    *ngIf="selectedSegment() === 'sent'">
+    <ion-fab-button class="invite-button" (click)="onInviteMembers()">
+      <ion-icon name="person-add-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+
+</ion-content>

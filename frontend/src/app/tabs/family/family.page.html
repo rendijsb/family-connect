@@ -1,0 +1,389 @@
+<!-- frontend/src/app/tabs/family/family.page.html -->
+
+<ion-header [translucent]="true" class="family-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-title class="header-title">
+      <div class="title-content">
+        <span class="page-title">Family</span>
+        <span class="family-name" *ngIf="currentFamily()">{{ currentFamily()?.name }}</span>
+      </div>
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button class="notification-button" *ngIf="pendingInvitationsCount > 0">
+        <ion-icon name="mail-outline"></ion-icon>
+        <ion-badge class="notification-badge">{{ pendingInvitationsCount }}</ion-badge>
+      </ion-button>
+
+      <ion-button class="settings-button" (click)="onFamilySettings()" *ngIf="hasFamily">
+        <ion-icon name="settings-outline"></ion-icon>
+      </ion-button>
+
+      <ion-button class="menu-button" (click)="onSwitchFamily()" *ngIf="hasFamily">
+        <ion-icon name="ellipsis-vertical-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="family-content">
+  <!-- Refresher -->
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Loading Spinner -->
+  <div class="loading-container" *ngIf="isLoading() && !hasFamily">
+    <ion-spinner name="crescent" class="loading-spinner"></ion-spinner>
+    <p class="loading-text">Loading family data...</p>
+  </div>
+
+  <!-- No Family State -->
+  <div class="no-family-container" *ngIf="!hasFamily && !isLoading()">
+    <div class="no-family-content">
+      <div class="no-family-icon">
+        <ion-icon name="people-outline"></ion-icon>
+      </div>
+      <h2 class="no-family-title">Welcome to Family Connect</h2>
+      <p class="no-family-subtitle">
+        Create your first family or join an existing one to get started
+      </p>
+
+      <div class="no-family-actions">
+        <ion-button expand="block" class="create-family-button" (click)="onCreateFamily()">
+          <ion-icon name="add-outline" slot="start"></ion-icon>
+          Create Family
+        </ion-button>
+
+        <ion-button expand="block" fill="outline" class="join-family-button" routerLink="/family/join">
+          <ion-icon name="person-add-outline" slot="start"></ion-icon>
+          Join Family
+        </ion-button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Family Content -->
+  <div class="family-container" *ngIf="hasFamily">
+
+    <!-- Segment Navigation -->
+    <ion-segment
+      [(ngModel)]="selectedSegment"
+      (ionChange)="segmentChanged($event)"
+      class="family-segment">
+      <ion-segment-button value="overview">
+        <ion-icon name="home-outline"></ion-icon>
+        <ion-label>Overview</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="members">
+        <ion-icon name="people-outline"></ion-icon>
+        <ion-label>Members</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="activity">
+        <ion-icon name="stats-chart-outline"></ion-icon>
+        <ion-label>Activity</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+
+    <!-- Overview Tab -->
+    <div *ngIf="selectedSegment() === 'overview'" class="tab-content">
+
+      <!-- Family Overview Card -->
+      <ion-card class="family-overview-card">
+        <ion-card-content class="overview-content">
+          <div class="family-info">
+            <div class="family-avatar">
+              <img [src]="currentFamily()?.avatar || '/assets/icons/icon.svg'" [alt]="currentFamily()?.name" />
+            </div>
+            <div class="family-details">
+              <h2 class="family-title">{{ currentFamily()?.name }}</h2>
+              <p class="family-description" *ngIf="currentFamily()?.description">
+                {{ currentFamily()?.description }}
+              </p>
+              <div class="family-meta">
+                <ion-chip class="member-count-chip">
+                  <ion-icon name="people-outline"></ion-icon>
+                  <ion-label>{{ currentFamily()?.memberCount }} members</ion-label>
+                </ion-chip>
+                <ion-chip class="online-chip" *ngIf="onlineMembersCount > 0">
+                  <ion-icon name="radio-button-on-outline"></ion-icon>
+                  <ion-label>{{ onlineMembersCount }} online</ion-label>
+                </ion-chip>
+              </div>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Quick Actions -->
+      <ion-card class="quick-actions-card">
+        <ion-card-header>
+          <ion-card-title class="section-title">Quick Actions</ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="quick-actions-content">
+          <div class="actions-grid">
+            <div
+              *ngFor="let action of quickActions"
+              class="action-item"
+              (click)="onQuickAction(action)">
+              <div class="action-icon" [style.background-color]="action.color + '20'">
+                <ion-icon [name]="action.icon" [style.color]="action.color"></ion-icon>
+              </div>
+              <span class="action-title">{{ action.title }}</span>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Family Stats -->
+      <ion-card class="stats-card" *ngIf="familyStats()">
+        <ion-card-header>
+          <ion-card-title class="section-title">Family Stats</ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="stats-content">
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-icon photos">
+                <ion-icon name="camera-outline"></ion-icon>
+              </div>
+              <div class="stat-info">
+                <span class="stat-number">{{ familyStats()?.photosShared || 0 }}</span>
+                <span class="stat-label">Photos Shared</span>
+              </div>
+            </div>
+
+            <div class="stat-item">
+              <div class="stat-icon events">
+                <ion-icon name="calendar-outline"></ion-icon>
+              </div>
+              <div class="stat-info">
+                <span class="stat-number">{{ familyStats()?.eventsPlanned || 0 }}</span>
+                <span class="stat-label">Events Planned</span>
+              </div>
+            </div>
+
+            <div class="stat-item">
+              <div class="stat-icon messages">
+                <ion-icon name="chatbubble-outline"></ion-icon>
+              </div>
+              <div class="stat-info">
+                <span class="stat-number">{{ familyStats()?.messagesExchanged || 0 }}</span>
+                <span class="stat-label">Messages</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Connection Strength -->
+          <div class="connection-strength" *ngIf="familyStats()?.connectionStrength">
+            <div class="connection-header">
+              <span class="connection-title">Connection Strength</span>
+              <span class="connection-percentage" [style.color]="getConnectionStrengthColor(familyStats()!.connectionStrength)">
+                {{ familyStats()?.connectionStrength }}%
+              </span>
+            </div>
+            <ion-progress-bar
+              [value]="(familyStats()?.connectionStrength || 0) / 100"
+              [color]="getConnectionStrengthColor(familyStats()!.connectionStrength)"
+              class="connection-bar">
+            </ion-progress-bar>
+            <span class="connection-label" [style.color]="getConnectionStrengthColor(familyStats()!.connectionStrength)">
+              {{ getConnectionStrengthText(familyStats()!.connectionStrength) }}
+            </span>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Recent Members -->
+      <ion-card class="members-preview-card" *ngIf="recentMembersPreview.length > 0">
+        <ion-card-header class="card-header-with-action">
+          <ion-card-title class="section-title">Family Members</ion-card-title>
+          <ion-button fill="clear" class="view-all-button" (click)="onViewAllMembers()">
+            <ion-icon name="chevron-forward-outline"></ion-icon>
+          </ion-button>
+        </ion-card-header>
+        <ion-card-content class="members-content">
+          <div class="members-preview">
+            <div
+              *ngFor="let member of recentMembersPreview"
+              class="member-item"
+              (click)="onViewMember(member)">
+              <ion-avatar class="member-avatar">
+                <img [src]="member.user.avatar || '/assets/avatars/default-avatar.jpg'" [alt]="member.displayName" />
+                <div class="status-indicator" [style.background-color]="getMemberStatusColor(member)"></div>
+              </ion-avatar>
+              <div class="member-info">
+                <span class="member-name">{{ member.displayName }}</span>
+                <span class="member-role">{{ member.role }}</span>
+              </div>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Recent Activity -->
+      <ion-card class="activity-preview-card" *ngIf="recentActivitiesPreview.length > 0">
+        <ion-card-header class="card-header-with-action">
+          <ion-card-title class="section-title">Recent Activity</ion-card-title>
+          <ion-button fill="clear" class="view-all-button" (click)="onViewAllActivities()">
+            <ion-icon name="chevron-forward-outline"></ion-icon>
+          </ion-button>
+        </ion-card-header>
+        <ion-card-content class="activity-content">
+          <div class="activity-list">
+            <div
+              *ngFor="let activity of recentActivitiesPreview"
+              class="activity-item"
+              (click)="onViewActivity(activity)">
+              <div class="activity-icon" [style.background-color]="activity.color + '20'">
+                <ion-icon [name]="getActivityIcon(activity)" [style.color]="activity.color"></ion-icon>
+              </div>
+              <div class="activity-details">
+                <span class="activity-title">{{ activity.title }}</span>
+                <span class="activity-time">{{ formatTimeAgo(activity.createdAt) }}</span>
+              </div>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Pending Invitations -->
+      <ion-card class="invitations-card" *ngIf="pendingInvitations().length > 0">
+        <ion-card-header class="card-header-with-action">
+          <ion-card-title class="section-title">
+            <ion-icon name="mail-outline" class="title-icon"></ion-icon>
+            Pending Invitations
+          </ion-card-title>
+          <ion-button fill="clear" class="view-all-button" (click)="onViewAllInvitations()">
+            <ion-icon name="chevron-forward-outline"></ion-icon>
+          </ion-button>
+        </ion-card-header>
+        <ion-card-content class="invitations-content">
+          <div class="invitations-list">
+            <div
+              *ngFor="let invitation of pendingInvitations().slice(0, 3)"
+              class="invitation-item"
+              (click)="onViewInvitation(invitation)">
+              <div class="invitation-icon">
+                <ion-icon [name]="getInvitationStatusIcon(invitation.status)"></ion-icon>
+              </div>
+              <div class="invitation-details">
+                <span class="invitation-email">{{ invitation.email }}</span>
+                <span class="invitation-role">{{ invitation.role }}</span>
+              </div>
+              <div class="invitation-status">
+                <ion-chip [color]="invitation.status === 'pending' ? 'warning' : 'medium'" class="status-chip">
+                  {{ invitation.status }}
+                </ion-chip>
+              </div>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+    </div>
+
+    <!-- Members Tab -->
+    <div *ngIf="selectedSegment() === 'members'" class="tab-content">
+      <ion-card class="members-card">
+        <ion-card-header class="card-header-with-action">
+          <ion-card-title class="section-title">All Members</ion-card-title>
+          <ion-button fill="clear" class="invite-button" (click)="onInviteMember()" *ngIf="canInviteMembers">
+            <ion-icon name="person-add-outline"></ion-icon>
+          </ion-button>
+        </ion-card-header>
+        <ion-card-content class="members-list-content">
+          <ion-list class="members-list">
+            <ion-item
+              *ngFor="let member of familyMembers()"
+              class="member-list-item"
+              button
+              (click)="onViewMember(member)">
+
+              <ion-avatar slot="start" class="member-avatar">
+                <img [src]="member.user.avatar || '/assets/avatars/default-avatar.jpg'" [alt]="member.displayName" />
+                <div class="status-indicator" [style.background-color]="getMemberStatusColor(member)"></div>
+              </ion-avatar>
+
+              <ion-label class="member-label">
+                <h3 class="member-name">{{ member.displayName }}</h3>
+                <p class="member-role">{{ member.role }}</p>
+                <p class="member-status" *ngIf="!member.isOnline && member.lastActiveAt">
+                  Last seen: {{ formatTimeAgo(member.lastActiveAt) }}
+                </p>
+                <p class="member-status online" *ngIf="member.isOnline">
+                  Online now
+                </p>
+              </ion-label>
+
+              <div class="member-actions" slot="end">
+                <ion-button fill="clear" class="action-btn chat-btn">
+                  <ion-icon name="chatbubble-outline"></ion-icon>
+                </ion-button>
+                <ion-button fill="clear" class="action-btn call-btn">
+                  <ion-icon name="call-outline"></ion-icon>
+                </ion-button>
+              </div>
+
+            </ion-item>
+          </ion-list>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Activity Tab -->
+    <div *ngIf="selectedSegment() === 'activity'" class="tab-content">
+      <ion-card class="activity-card">
+        <ion-card-header>
+          <ion-card-title class="section-title">Family Activity</ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="activity-list-content">
+          <div class="activity-timeline">
+            <div
+              *ngFor="let activity of recentActivities(); let i = index"
+              class="timeline-item"
+              (click)="onViewActivity(activity)">
+
+              <div class="timeline-connector">
+                <div class="timeline-dot" [style.background-color]="activity.color"></div>
+                <div class="timeline-line" *ngIf="i < recentActivities().length - 1"></div>
+              </div>
+
+              <div class="timeline-content">
+                <div class="activity-header">
+                  <div class="activity-icon" [style.background-color]="activity.color + '20'">
+                    <ion-icon [name]="getActivityIcon(activity)" [style.color]="activity.color"></ion-icon>
+                  </div>
+                  <div class="activity-meta">
+                    <h4 class="activity-title">{{ activity.title }}</h4>
+                    <p class="activity-time">{{ formatTimeAgo(activity.createdAt) }}</p>
+                  </div>
+                </div>
+                <p class="activity-description">{{ activity.description }}</p>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Load More Activities -->
+          <ion-button
+            expand="block"
+            fill="outline"
+            class="load-more-button"
+            (click)="onViewAllActivities()"
+            *ngIf="recentActivities().length >= 10">
+            View All Activities
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+  </div>
+
+  <!-- Floating Action Button -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button class="fab-button" (click)="onFabActions()">
+      <ion-icon name="add-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+
+</ion-content>

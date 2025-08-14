@@ -1,0 +1,272 @@
+<ion-header [translucent]="true" class="profile-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button class="back-button" defaultHref="/family/members"></ion-back-button>
+    </ion-buttons>
+
+    <ion-title class="header-title">
+      <div class="title-content">
+        <span class="page-title">Member Profile</span>
+        <span class="member-name" *ngIf="member()">{{ member()?.displayName }}</span>
+      </div>
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button
+        fill="clear"
+        class="manage-button"
+        (click)="onManageClick()"
+        *ngIf="canManageMember() || !isCurrentUser()">
+        <ion-icon name="ellipsis-vertical-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="profile-content">
+  <div class="profile-container">
+
+    <!-- Loading State -->
+    <div class="loading-state" *ngIf="isLoading()">
+      <ion-card class="loading-card">
+        <ion-card-content class="loading-content">
+          <div class="loading-avatar"></div>
+          <div class="loading-info">
+            <div class="loading-line long"></div>
+            <div class="loading-line medium"></div>
+            <div class="loading-line short"></div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Member Profile -->
+    <div class="member-profile" *ngIf="member() && !isLoading()">
+
+      <!-- Header Card -->
+      <ion-card class="header-card">
+        <ion-card-content class="header-content">
+
+          <!-- Avatar and Basic Info -->
+          <div class="profile-header">
+            <div class="avatar-container">
+              <ion-avatar class="member-avatar">
+                <img [src]="member()?.user.avatar || '/assets/avatars/default-avatar.jpg'"
+                     [alt]="member()?.displayName" />
+              </ion-avatar>
+              <div class="status-indicator" [style.background-color]="getStatusColor()"></div>
+              <div class="role-badge" [style.background-color]="getRoleColor()">
+                <ion-icon [name]="getRoleIcon()"></ion-icon>
+              </div>
+            </div>
+
+            <div class="profile-info">
+              <h1 class="member-name">{{ member()?.displayName }}</h1>
+              <p class="member-email">{{ member()?.user.email }}</p>
+
+              <div class="member-meta">
+                <ion-chip class="role-chip" [style.color]="getRoleColor()">
+                  <ion-icon [name]="getRoleIcon()"></ion-icon>
+                  <ion-label>{{ member()?.role }}</ion-label>
+                </ion-chip>
+
+                <ion-chip class="status-chip" [style.color]="getStatusColor()">
+                  <ion-icon name="radio-button-on-outline" *ngIf="member()?.isOnline"></ion-icon>
+                  <ion-icon name="radio-button-off-outline" *ngIf="!member()?.isOnline"></ion-icon>
+                  <ion-label>{{ member()?.isOnline ? 'Online' : 'Offline' }}</ion-label>
+                </ion-chip>
+              </div>
+
+              <p class="role-description">{{ getRoleDescription() }}</p>
+            </div>
+          </div>
+
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Quick Actions -->
+      <ion-card class="actions-card" *ngIf="!isCurrentUser()">
+        <ion-card-header>
+          <ion-card-title class="card-title">Quick Actions</ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="actions-content">
+
+          <ion-grid class="actions-grid">
+            <ion-row>
+              <ion-col size="3">
+                <ion-button fill="clear" class="action-button chat-button" (click)="onChatClick()">
+                  <ion-icon name="chatbubble-outline"></ion-icon>
+                </ion-button>
+                <span class="action-label">Chat</span>
+              </ion-col>
+
+              <ion-col size="3">
+                <ion-button fill="clear" class="action-button call-button" (click)="onCallClick()">
+                  <ion-icon name="call-outline"></ion-icon>
+                </ion-button>
+                <span class="action-label">Call</span>
+              </ion-col>
+
+              <ion-col size="3">
+                <ion-button fill="clear" class="action-button video-button" (click)="onVideoCallClick()">
+                  <ion-icon name="videocam-outline"></ion-icon>
+                </ion-button>
+                <span class="action-label">Video</span>
+              </ion-col>
+
+              <ion-col size="3">
+                <ion-button
+                  fill="clear"
+                  class="action-button email-button"
+                  (click)="onEmailClick()"
+                  *ngIf="member()?.user.email">
+                  <ion-icon name="mail-outline"></ion-icon>
+                </ion-button>
+                <span class="action-label">Email</span>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Member Details -->
+      <ion-card class="details-card">
+        <ion-card-header>
+          <ion-card-title class="card-title">
+            <ion-icon name="information-circle-outline"></ion-icon>
+            Member Details
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="details-content">
+
+          <ion-list class="details-list">
+
+            <!-- Real Name -->
+            <ion-item class="detail-item" lines="none" *ngIf="member()?.nickname">
+              <ion-icon name="person-outline" slot="start" class="detail-icon"></ion-icon>
+              <ion-label class="detail-label">
+                <h3>Real Name</h3>
+                <p>{{ member()?.user.name }}</p>
+              </ion-label>
+            </ion-item>
+
+            <!-- Phone -->
+            <ion-item
+              class="detail-item clickable"
+              lines="none"
+              (click)="onPhoneClick()"
+              *ngIf="member()?.user.phone">
+              <ion-icon name="phone-portrait-outline" slot="start" class="detail-icon"></ion-icon>
+              <ion-label class="detail-label">
+                <h3>Phone</h3>
+                <p>{{ member()?.user.phone }}</p>
+              </ion-label>
+              <ion-icon name="chevron-forward-outline" slot="end" class="chevron-icon"></ion-icon>
+            </ion-item>
+
+            <!-- Joined Date -->
+            <ion-item class="detail-item" lines="none">
+              <ion-icon name="calendar-outline" slot="start" class="detail-icon"></ion-icon>
+              <ion-label class="detail-label">
+                <h3>Joined Family</h3>
+                <p>{{ formatJoinDate() }}</p>
+              </ion-label>
+            </ion-item>
+
+            <!-- Last Seen -->
+            <ion-item class="detail-item" lines="none">
+              <ion-icon name="time-outline" slot="start" class="detail-icon"></ion-icon>
+              <ion-label class="detail-label">
+                <h3>Last Seen</h3>
+                <p [style.color]="getStatusColor()">{{ formatLastSeen() }}</p>
+              </ion-label>
+            </ion-item>
+
+            <!-- Member Status -->
+            <ion-item class="detail-item" lines="none">
+              <ion-icon name="checkmark-circle-outline" slot="start" class="detail-icon"></ion-icon>
+              <ion-label class="detail-label">
+                <h3>Status</h3>
+                <p>{{ member()?.status === 'active' ? 'Active Member' : 'Inactive' }}</p>
+              </ion-label>
+            </ion-item>
+
+          </ion-list>
+
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Permissions (for admins viewing other members) -->
+      <ion-card class="permissions-card" *ngIf="canManageMember() && !isCurrentUser()">
+        <ion-card-header>
+          <ion-card-title class="card-title">
+            <ion-icon name="shield-checkmark-outline"></ion-icon>
+            Permissions
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="permissions-content">
+
+          <ion-list class="permissions-list">
+
+            <ion-item class="permission-item" lines="none">
+              <ion-icon name="person-add-outline" slot="start" class="permission-icon"></ion-icon>
+              <ion-label class="permission-label">
+                <h4>Invite Members</h4>
+                <p>Can send family invitations</p>
+              </ion-label>
+              <ion-toggle
+                [checked]="member()?.permissions.canInviteMembers"
+                [disabled]="true"
+                class="permission-toggle">
+              </ion-toggle>
+            </ion-item>
+
+            <ion-item class="permission-item" lines="none">
+              <ion-icon name="camera-outline" slot="start" class="permission-icon"></ion-icon>
+              <ion-label class="permission-label">
+                <h4>Share Photos</h4>
+                <p>Can share family photos</p>
+              </ion-label>
+              <ion-toggle
+                [checked]="member()?.permissions.canSharePhotos"
+                [disabled]="true"
+                class="permission-toggle">
+              </ion-toggle>
+            </ion-item>
+
+            <ion-item class="permission-item" lines="none">
+              <ion-icon name="location-outline" slot="start" class="permission-icon"></ion-icon>
+              <ion-label class="permission-label">
+                <h4>View Locations</h4>
+                <p>Can see member locations</p>
+              </ion-label>
+              <ion-toggle
+                [checked]="member()?.permissions.canViewLocations"
+                [disabled]="true"
+                class="permission-toggle">
+              </ion-toggle>
+            </ion-item>
+
+            <ion-item class="permission-item" lines="none">
+              <ion-icon name="calendar-outline" slot="start" class="permission-icon"></ion-icon>
+              <ion-label class="permission-label">
+                <h4>Manage Events</h4>
+                <p>Can create and edit family events</p>
+              </ion-label>
+              <ion-toggle
+                [checked]="member()?.permissions.canManageEvents"
+                [disabled]="true"
+                class="permission-toggle">
+              </ion-toggle>
+            </ion-item>
+
+          </ion-list>
+
+        </ion-card-content>
+      </ion-card>
+
+    </div>
+
+  </div>
+</ion-content>

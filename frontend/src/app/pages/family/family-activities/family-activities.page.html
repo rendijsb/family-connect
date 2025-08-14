@@ -1,0 +1,232 @@
+<ion-header [translucent]="true" class="activities-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button class="back-button" defaultHref="/tabs/family"></ion-back-button>
+    </ion-buttons>
+
+    <ion-title class="header-title">
+      <div class="title-content">
+        <span class="page-title">Family Activities</span>
+        <span class="family-name" *ngIf="currentFamily()">{{ currentFamily()?.name }}</span>
+      </div>
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button fill="clear" class="filter-button">
+        <ion-icon name="filter-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="activities-content">
+
+  <!-- Pull to Refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="onRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="activities-container">
+
+    <!-- Family Stats -->
+    <ion-card class="stats-card" *ngIf="familyStats()">
+      <ion-card-content class="stats-content">
+        <div class="stats-header">
+          <h3 class="stats-title">
+            <ion-icon name="trending-up-outline"></ion-icon>
+            Family Insights
+          </h3>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-icon members-icon">
+              <ion-icon name="people-outline"></ion-icon>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ familyStats()?.totalMembers }}</span>
+              <span class="stat-label">Members</span>
+            </div>
+          </div>
+
+          <div class="stat-item">
+            <div class="stat-icon photos-icon">
+              <ion-icon name="camera-outline"></ion-icon>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ familyStats()?.photosShared }}</span>
+              <span class="stat-label">Photos</span>
+            </div>
+          </div>
+
+          <div class="stat-item">
+            <div class="stat-icon events-icon">
+              <ion-icon name="calendar-outline"></ion-icon>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ familyStats()?.eventsPlanned }}</span>
+              <span class="stat-label">Events</span>
+            </div>
+          </div>
+
+          <div class="stat-item">
+            <div class="stat-icon messages-icon">
+              <ion-icon name="chatbubble-outline"></ion-icon>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ familyStats()?.messagesExchanged }}</span>
+              <span class="stat-label">Messages</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="connection-strength" *ngIf="familyStats()?.connectionStrength">
+          <div class="strength-header">
+            <span class="strength-label">Connection Strength</span>
+            <span class="strength-value">{{ familyStats()?.connectionStrength }}%</span>
+          </div>
+          <div class="strength-bar">
+            <div class="strength-fill" [style.width.%]="familyStats()?.connectionStrength"></div>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Filter Chips -->
+    <div class="filter-section">
+      <div class="filter-chips">
+        <ion-chip
+          *ngFor="let option of filterOptions"
+          [class.selected]="selectedFilter() === option.value"
+          class="filter-chip"
+          (click)="onFilterChange(option.value)">
+          <ion-icon [name]="option.icon"></ion-icon>
+          <ion-label>{{ option.label }}</ion-label>
+        </ion-chip>
+      </div>
+    </div>
+
+    <!-- Activities Timeline -->
+    <div class="activities-section">
+
+      <!-- Loading State -->
+      <div class="loading-state" *ngIf="isLoading()">
+        <ion-card class="loading-card" *ngFor="let item of [1,2,3,4]">
+          <ion-card-content class="loading-content">
+            <div class="loading-activity">
+              <div class="loading-avatar"></div>
+              <div class="loading-info">
+                <div class="loading-line long"></div>
+                <div class="loading-line medium"></div>
+                <div class="loading-line short"></div>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+
+      <!-- Activity Groups -->
+      <div class="activities-timeline" *ngIf="!isLoading()">
+        <div
+          *ngFor="let group of groupedActivities(); trackBy: trackByGroupDate"
+          class="activity-group">
+
+          <!-- Date Header -->
+          <div class="date-header">
+            <h3 class="date-title">{{ group.displayDate }}</h3>
+            <div class="date-line"></div>
+          </div>
+
+          <!-- Activities -->
+          <div class="group-activities">
+            <ion-card
+              *ngFor="let activity of group.activities; trackBy: trackByActivityId"
+              class="activity-card"
+              (click)="onActivityClick(activity)">
+
+              <ion-card-content class="activity-content">
+                <div class="activity-header">
+
+                  <!-- Activity Icon -->
+                  <div class="activity-icon" [style.background-color]="getActivityColor(activity.type) + '20'">
+                    <ion-icon
+                      [name]="getActivityIcon(activity.type)"
+                      [style.color]="getActivityColor(activity.type)">
+                    </ion-icon>
+                  </div>
+
+                  <!-- Activity Info -->
+                  <div class="activity-info">
+                    <h4 class="activity-title">{{ activity.title }}</h4>
+                    <p class="activity-description">{{ activity.description }}</p>
+
+                    <div class="activity-meta">
+                      <span class="activity-time">{{ formatActivityTime(activity.createdAt) }}</span>
+                      <span class="activity-user" *ngIf="activity.user">
+                        by {{ activity.user.displayName }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Activity Actions -->
+                  <div class="activity-actions">
+                    <ion-button
+                      fill="clear"
+                      size="small"
+                      class="action-button like-button"
+                      (click)="onLikeActivity(activity, $event)">
+                      <ion-icon name="heart-outline"></ion-icon>
+                    </ion-button>
+
+                    <ion-button
+                      fill="clear"
+                      size="small"
+                      class="action-button share-button"
+                      (click)="onShareActivity(activity, $event)">
+                      <ion-icon name="share-outline"></ion-icon>
+                    </ion-button>
+                  </div>
+                </div>
+
+                <!-- Activity Metadata (if any) -->
+                <div class="activity-metadata" *ngIf="activity.metadata">
+                  <!-- This would show additional info based on activity type -->
+                  <div class="metadata-content">
+                    <!-- Example: Photo preview, event details, etc. -->
+                  </div>
+                </div>
+
+              </ion-card-content>
+            </ion-card>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="groupedActivities().length === 0">
+          <div class="empty-icon">
+            <ion-icon name="stats-chart-outline"></ion-icon>
+          </div>
+          <h3 class="empty-title">No Recent Activity</h3>
+          <p class="empty-description">
+            Start engaging with your family to see activities here
+          </p>
+          <ion-button fill="solid" routerLink="/family/members">
+            <ion-icon name="people-outline" slot="start"></ion-icon>
+            View Members
+          </ion-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Infinite Scroll -->
+    <ion-infinite-scroll
+      (ionInfinite)="onInfiniteScroll($event)"
+      [disabled]="!hasMoreActivities()">
+      <ion-infinite-scroll-content
+        loadingSpinner="crescent"
+        loadingText="Loading more activities...">
+      </ion-infinite-scroll-content>
+    </ion-infinite-scroll>
+
+  </div>
+</ion-content>

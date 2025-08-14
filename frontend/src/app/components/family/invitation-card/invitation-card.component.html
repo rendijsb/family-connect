@@ -1,0 +1,119 @@
+<ion-card
+  class="invitation-card"
+  [class.compact]="compact"
+  [class.pending]="invitation.status === InvitationStatusEnum.PENDING"
+  [class.accepted]="invitation.status === InvitationStatusEnum.ACCEPTED"
+  [class.declined]="invitation.status === InvitationStatusEnum.DECLINED"
+  [class.expired]="invitation.isExpired"
+  (click)="onInvitationClick()">
+
+  <ion-card-content class="card-content">
+
+    <!-- Invitation Header -->
+    <div class="invitation-header">
+      <div class="invitation-icon" [style.background-color]="getStatusColor() + '20'">
+        <ion-icon [name]="getStatusIcon()" [style.color]="getStatusColor()"></ion-icon>
+      </div>
+
+      <div class="invitation-info">
+        <h3 class="invitation-email">{{ invitation.email }}</h3>
+        <p class="invitation-family" *ngIf="invitation.family && viewType === 'received'">
+          Invited to join {{ invitation.family.name }}
+        </p>
+        <p class="invitation-inviter" *ngIf="invitation.inviter && viewType === 'received'">
+          Invited by {{ invitation.inviter.displayName }}
+        </p>
+
+        <div class="invitation-meta">
+          <ion-chip class="role-chip" [style.color]="getRoleColor()">
+            <ion-icon name="person-outline"></ion-icon>
+            <ion-label>{{ invitation.role }}</ion-label>
+          </ion-chip>
+
+          <ion-chip class="status-chip" [style.color]="getStatusColor()">
+            <ion-icon [name]="getStatusIcon()"></ion-icon>
+            <ion-label>{{ getStatusText() }}</ion-label>
+          </ion-chip>
+        </div>
+      </div>
+
+      <div class="invitation-status">
+        <div class="status-indicator" [style.background-color]="getStatusColor()"></div>
+      </div>
+    </div>
+
+    <!-- Invitation Message -->
+    <div class="invitation-message" *ngIf="invitation.message && !compact">
+      <p class="message-text">{{ invitation.message }}</p>
+    </div>
+
+    <!-- Invitation Details -->
+    <div class="invitation-details" *ngIf="!compact">
+      <div class="detail-item">
+        <span class="detail-label">Sent</span>
+        <span class="detail-value">{{ invitation.createdAt | date:'MMM dd, yyyy' }}</span>
+      </div>
+
+      <div class="detail-item">
+        <span class="detail-label">{{ invitation.isExpired ? 'Expired' : 'Expires' }}</span>
+        <span class="detail-value" [style.color]="invitation.isExpired ? '#ef4444' : '#e5e5e5'">
+  {{ formatTimeRemaining() }}
+</span>
+      </div>
+    </div>
+
+    <!-- Invitation Actions -->
+    <div class="invitation-actions" *ngIf="showActions">
+
+      <!-- Received invitation actions -->
+      <div class="received-actions" *ngIf="viewType === 'received'">
+        <ion-button
+          expand="block"
+          class="accept-button"
+          [disabled]="!canAccept()"
+          (click)="onAcceptClick($event)"
+          *ngIf="canAccept()">
+          <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>
+          Accept
+        </ion-button>
+
+        <ion-button
+          expand="block"
+          fill="outline"
+          class="decline-button"
+          [disabled]="!canDecline()"
+          (click)="onDeclineClick($event)"
+          *ngIf="canDecline()">
+          <ion-icon name="close-circle-outline" slot="start"></ion-icon>
+          Decline
+        </ion-button>
+      </div>
+
+      <!-- Sent invitation actions -->
+      <div class="sent-actions" *ngIf="viewType === 'sent'">
+        <ion-button
+          fill="outline"
+          class="resend-button"
+          [disabled]="!canResend()"
+          (click)="onResendClick($event)"
+          *ngIf="canResend()">
+          <ion-icon name="refresh-outline" slot="start"></ion-icon>
+          Resend
+        </ion-button>
+
+        <ion-button
+          fill="clear"
+          color="danger"
+          class="cancel-button"
+          [disabled]="!canCancel()"
+          (click)="onCancelClick($event)"
+          *ngIf="canCancel()">
+          <ion-icon name="trash-outline" slot="start"></ion-icon>
+          Cancel
+        </ion-button>
+      </div>
+
+    </div>
+
+  </ion-card-content>
+</ion-card>

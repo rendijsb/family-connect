@@ -1,0 +1,82 @@
+<ion-card
+  class="member-card"
+  [class.compact]="compact"
+  [class.online]="member.isOnline"
+  (click)="onMemberClick()">
+
+  <ion-card-content class="card-content">
+
+    <!-- Member Header -->
+    <div class="member-header">
+      <div class="member-avatar-container">
+        <ion-avatar class="member-avatar">
+          <img [src]="member.user.avatar || '/assets/avatars/default-avatar.jpg'" [alt]="member.displayName" />
+        </ion-avatar>
+        <div class="status-indicator" [style.background-color]="getStatusColor()"></div>
+        <div class="role-badge" [style.background-color]="getRoleColor()">
+          <ion-icon [name]="getRoleIcon()"></ion-icon>
+        </div>
+      </div>
+
+      <div class="member-info">
+        <h3 class="member-name">{{ member.displayName }}</h3>
+        <p class="member-email" *ngIf="!compact">{{ member.user.email }}</p>
+
+        <div class="member-meta">
+          <ion-chip class="role-chip" [style.color]="getRoleColor()">
+            <ion-icon [name]="getRoleIcon()"></ion-icon>
+            <ion-label>{{ member.role }}</ion-label>
+          </ion-chip>
+
+          <span class="last-seen">{{ formatLastSeen() }}</span>
+        </div>
+      </div>
+
+      <div class="member-actions" *ngIf="showActions">
+        <ion-button
+          fill="clear"
+          class="action-button chat-btn"
+          (click)="onChatClick($event)">
+          <ion-icon name="chatbubble-outline"></ion-icon>
+        </ion-button>
+
+        <ion-button
+          fill="clear"
+          class="action-button call-btn"
+          (click)="onCallClick($event)">
+          <ion-icon name="call-outline"></ion-icon>
+        </ion-button>
+
+        <ion-button
+          fill="clear"
+          class="action-button video-btn"
+          (click)="onVideoCallClick($event)"
+          *ngIf="!compact">
+          <ion-icon name="videocam-outline"></ion-icon>
+        </ion-button>
+
+        <ion-button
+          fill="clear"
+          class="action-button manage-btn"
+          (click)="onManageClick($event)"
+          *ngIf="canManage">
+          <ion-icon name="ellipsis-vertical-outline"></ion-icon>
+        </ion-button>
+      </div>
+    </div>
+
+    <!-- Member Details -->
+    <div class="member-details" *ngIf="!compact">
+      <div class="detail-item" *ngIf="member.user.phone">
+        <span class="detail-label">Phone</span>
+        <span class="detail-value">{{ member.user.phone }}</span>
+      </div>
+
+      <div class="detail-item">
+        <span class="detail-label">Joined</span>
+        <span class="detail-value">{{ member.joinedAt | date:'MMM dd, yyyy' }}</span>
+      </div>
+    </div>
+
+  </ion-card-content>
+</ion-card>

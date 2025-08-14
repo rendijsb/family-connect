@@ -1,0 +1,165 @@
+<ion-header [translucent]="true" class="switch-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button class="back-button" defaultHref="/tabs/family"></ion-back-button>
+    </ion-buttons>
+
+    <ion-title class="header-title">
+      <div class="title-content">
+        <span class="page-title">Switch Family</span>
+        <span class="current-family" *ngIf="currentFamily()">
+          Currently: {{ currentFamily()?.name }}
+        </span>
+      </div>
+    </ion-title>
+  </ion-toolbar>
+
+  <!-- Search Bar -->
+  <ion-toolbar class="search-toolbar">
+    <ion-searchbar
+      placeholder="Search families..."
+      [debounce]="300"
+      (ionInput)="onSearchChange($event)"
+      class="custom-searchbar">
+    </ion-searchbar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="switch-content">
+
+  <!-- Pull to Refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="onRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="switch-container">
+
+    <!-- Current Family -->
+    <div class="current-section" *ngIf="currentFamily()">
+      <h2 class="section-title">Current Family</h2>
+      <ion-card class="current-family-card">
+        <ion-card-content class="current-content">
+          <div class="current-header">
+            <ion-avatar class="family-avatar">
+              <img [src]="currentFamily()?.avatar || '/assets/icons/icon.svg'"
+                   [alt]="currentFamily()?.name" />
+            </ion-avatar>
+            <div class="family-info">
+              <h3 class="family-name">{{ currentFamily()?.name }}</h3>
+              <p class="family-description" *ngIf="currentFamily()?.description">
+                {{ currentFamily()?.description }}
+              </p>
+              <div class="family-meta">
+                <ion-chip class="privacy-chip">
+                  <ion-icon [name]="getPrivacyIcon(currentFamily()?.privacyLevel!)"
+                            [style.color]="getPrivacyColor(currentFamily()?.privacyLevel!)"></ion-icon>
+                  <ion-label>{{ currentFamily()?.privacyLevel }}</ion-label>
+                </ion-chip>
+                <ion-chip class="members-chip">
+                  <ion-icon name="people-outline"></ion-icon>
+                  <ion-label>{{ currentFamily()?.memberCount }} members</ion-label>
+                </ion-chip>
+              </div>
+            </div>
+            <div class="current-indicator">
+              <ion-icon name="checkmark-circle-outline"></ion-icon>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Available Families -->
+    <div class="families-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          {{ filteredFamilies().length > 0 ? 'Your Families' : 'No Families Found' }}
+        </h2>
+        <span class="family-count" *ngIf="filteredFamilies().length > 0">
+          {{ filteredFamilies().length }} available
+        </span>
+      </div>
+
+      <!-- Loading State -->
+      <div class="loading-state" *ngIf="isLoading()">
+        <ion-card class="loading-card" *ngFor="let item of [1,2,3]">
+          <ion-card-content class="loading-content">
+            <div class="loading-avatar"></div>
+            <div class="loading-info">
+              <div class="loading-line long"></div>
+              <div class="loading-line short"></div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+
+      <!-- Family Cards -->
+      <div class="families-list" *ngIf="!isLoading()">
+        <app-family-card
+          *ngFor="let family of filteredFamilies(); trackBy: trackByFamilyId"
+          [family]="family"
+          [isSelected]="isCurrentFamily(family)"
+          [showStats]="false"
+          (familySelected)="onFamilySelected($event)"
+          (settingsClicked)="onFamilySettings($event)"
+          (membersClicked)="onFamilyMembers($event)">
+        </app-family-card>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="filteredFamilies().length === 0 && !isLoading()">
+          <div class="empty-icon">
+            <ion-icon name="people-outline"></ion-icon>
+          </div>
+          <h3 class="empty-title">
+            {{ searchTerm() ? 'No Matching Families' : 'No Families Available' }}
+          </h3>
+          <p class="empty-description">
+            {{ searchTerm()
+            ? 'Try adjusting your search terms'
+            : 'Create a new family or join an existing one to get started' }}
+          </p>
+
+          <div class="empty-actions" *ngIf="!searchTerm()">
+            <ion-button fill="solid" (click)="onCreateFamily()">
+              <ion-icon name="add-outline" slot="start"></ion-icon>
+              Create Family
+            </ion-button>
+            <ion-button fill="outline" (click)="onJoinFamily()">
+              <ion-icon name="person-add-outline" slot="start"></ion-icon>
+              Join Family
+            </ion-button>
+          </div>
+
+          <ion-button
+            fill="clear"
+            (click)="searchTerm.set(''); onSearchChange({detail: {value: ''}})"
+            *ngIf="searchTerm()">
+            Clear Search
+          </ion-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions" *ngIf="!isLoading() && filteredFamilies().length > 0">
+      <h3 class="actions-title">Quick Actions</h3>
+      <ion-grid class="actions-grid">
+        <ion-row>
+          <ion-col size="6">
+            <ion-button expand="block" fill="outline" (click)="onCreateFamily()">
+              <ion-icon name="add-outline" slot="start"></ion-icon>
+              Create New
+            </ion-button>
+          </ion-col>
+          <ion-col size="6">
+            <ion-button expand="block" fill="outline" (click)="onJoinFamily()">
+              <ion-icon name="person-add-outline" slot="start"></ion-icon>
+              Join Family
+            </ion-button>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </div>
+
+  </div>
+</ion-content>

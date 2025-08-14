@@ -1,0 +1,177 @@
+<ion-header [translucent]="true" class="join-header">
+  <ion-toolbar class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button class="back-button" defaultHref="/family/welcome"></ion-back-button>
+    </ion-buttons>
+
+    <ion-title class="header-title">
+      <span class="page-title">Join Family</span>
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button fill="clear" class="cancel-button" (click)="onCancel()">
+        Cancel
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="join-content">
+  <div class="join-container">
+
+    <!-- Header Section -->
+    <div class="header-section">
+      <div class="join-icon">
+        <ion-icon name="people-outline"></ion-icon>
+      </div>
+      <h1 class="join-title">Join a Family</h1>
+      <p class="join-description">
+        Enter your invitation token or link to join an existing family
+      </p>
+    </div>
+
+    <!-- Join Form -->
+    <ion-card class="join-card">
+      <ion-card-content>
+        <form [formGroup]="joinForm">
+
+          <!-- Invitation Token -->
+          <div class="input-group">
+            <ion-item class="custom-item" lines="none">
+              <ion-label position="stacked" class="input-label">
+                Invitation Token *
+              </ion-label>
+              <ion-input
+                type="text"
+                placeholder="Enter invitation token or paste link"
+                formControlName="token"
+                class="custom-input"
+                [class.error]="hasFieldError('token')"
+                (ionInput)="onTokenChange()">
+              </ion-input>
+            </ion-item>
+            <div class="error-text" *ngIf="hasFieldError('token')">
+              {{ getFieldError('token') }}
+            </div>
+          </div>
+
+          <!-- Invitation Status -->
+          <div class="invitation-status" *ngIf="joinForm.get('token')?.value">
+            <div class="status-indicator">
+              <ion-spinner name="crescent" *ngIf="isLoadingInvitation()"></ion-spinner>
+              <ion-icon
+                [name]="getInvitationStatusIcon()"
+                [style.color]="getInvitationStatusColor()"
+                *ngIf="!isLoadingInvitation()">
+              </ion-icon>
+              <span class="status-text" [style.color]="getInvitationStatusColor()">
+                {{ getInvitationStatusText() }}
+              </span>
+            </div>
+            <div class="status-details" *ngIf="invitation() && !isLoadingInvitation()">
+              <p class="invitation-time">{{ formatTimeRemaining() }}</p>
+            </div>
+          </div>
+
+          <!-- Invitation Preview -->
+          <div class="invitation-preview" *ngIf="invitation() && !invitation()?.isExpired">
+            <div class="preview-header">
+              <ion-avatar class="family-avatar">
+                <img [src]="invitation()?.family?.avatar || '/assets/icons/icon.svg'"
+                     [alt]="invitation()?.family?.name" />
+              </ion-avatar>
+              <div class="family-info">
+                <h3 class="family-name">{{ invitation()?.family?.name }}</h3>
+                <p class="invitation-role">Invited as {{ invitation()?.role }}</p>
+                <p class="invitation-inviter" *ngIf="invitation()?.inviter">
+                  by {{ invitation()?.inviter?.displayName }}
+                </p>
+              </div>
+            </div>
+
+            <div class="preview-details" *ngIf="invitation()?.family?.description">
+              <p class="family-description">{{ invitation()?.family?.description }}</p>
+            </div>
+
+            <div class="family-stats">
+              <div class="stat-item">
+                <ion-icon name="people-outline"></ion-icon>
+                <span>{{ invitation()?.family?.memberCount }} members</span>
+              </div>
+              <div class="stat-item">
+                <ion-icon [name]="getPrivacyIcon()"></ion-icon>
+                <span>{{ invitation()?.family?.privacyLevel }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nickname (Optional) -->
+          <div class="input-group" *ngIf="invitation() && !invitation()?.isExpired">
+            <ion-item class="custom-item" lines="none">
+              <ion-label position="stacked" class="input-label">
+                Nickname (Optional)
+              </ion-label>
+              <ion-input
+                type="text"
+                placeholder="How should family members know you?"
+                formControlName="nickname"
+                class="custom-input"
+                [class.error]="hasFieldError('nickname')">
+              </ion-input>
+            </ion-item>
+            <div class="error-text" *ngIf="hasFieldError('nickname')">
+              {{ getFieldError('nickname') }}
+            </div>
+            <div class="helper-text">
+              If not provided, your account name will be used
+            </div>
+          </div>
+
+        </form>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <ion-button
+        expand="block"
+        class="join-button"
+        (click)="onJoinFamily()"
+        [disabled]="isLoading() || !invitation() || invitation()?.isExpired || !joinForm.valid">
+        <ion-icon name="checkmark-circle-outline" slot="start" *ngIf="!isLoading()"></ion-icon>
+        <ion-icon name="reload-outline" class="spinning" slot="start" *ngIf="isLoading()"></ion-icon>
+        {{ isLoading() ? 'Joining...' : 'Join Family' }}
+      </ion-button>
+
+      <ion-button
+        expand="block"
+        fill="outline"
+        class="request-button"
+        (click)="onRequestInvitation()">
+        <ion-icon name="mail-outline" slot="start"></ion-icon>
+        Request Invitation
+      </ion-button>
+    </div>
+
+    <!-- Help Section -->
+    <div class="help-section">
+      <h3 class="help-title">Need Help?</h3>
+      <div class="help-items">
+        <div class="help-item">
+          <ion-icon name="link-outline"></ion-icon>
+          <span>Ask a family member to share their invitation link</span>
+        </div>
+        <div class="help-item">
+          <ion-icon name="mail-outline"></ion-icon>
+          <span>Check your email for invitation messages</span>
+        </div>
+        <div class="help-item">
+          <ion-icon name="time-outline"></ion-icon>
+          <span>Invitations expire after 7 days</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</ion-content>
+

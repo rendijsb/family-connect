@@ -1,0 +1,1162 @@
+// frontend/src/app/tabs/family/family.page.scss
+
+.family-content {
+  --background: linear-gradient(135deg, #1a1a1a 0%, #2d1b1b 50%, #1a1a1a 100%);
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+.family-container {
+  padding: 16px;
+  padding-top: 0;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 90px); // Space for FAB and tab bar
+  min-height: calc(100vh - 60px); // Account for header
+}
+
+// Header Styles - Mobile First
+.family-header {
+  --background: rgba(38, 38, 38, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-toolbar {
+  --background: transparent;
+  --color: white;
+  --padding-top: max(env(safe-area-inset-top, 0px), 8px);
+  --padding-bottom: 8px;
+  --min-height: 56px;
+}
+
+.title-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+
+.page-title {
+  font-size: 12px;
+  color: #a1a1aa;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.family-name {
+  font-size: 16px;
+  color: white;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: -1px;
+}
+
+.notification-button,
+.settings-button,
+.menu-button {
+  --color: white;
+  margin-right: 6px;
+  width: 40px;
+  height: 40px;
+  position: relative;
+}
+
+.notification-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  --background: #dc2626;
+  --color: white;
+  min-width: 16px;
+  height: 16px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+// Loading State
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  padding: 32px;
+}
+
+.loading-spinner {
+  --color: #dc2626;
+  transform: scale(1.5);
+  margin-bottom: 16px;
+}
+
+.loading-text {
+  color: #a1a1aa;
+  font-size: 14px;
+  text-align: center;
+}
+
+// No Family State
+.no-family-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 200px);
+  padding: 32px;
+}
+
+.no-family-content {
+  text-align: center;
+  max-width: 320px;
+  width: 100%;
+}
+
+.no-family-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(220, 38, 38, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+
+  ion-icon {
+    font-size: 40px;
+    color: #dc2626;
+  }
+}
+
+.no-family-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 12px 0;
+  line-height: 1.3;
+}
+
+.no-family-subtitle {
+  font-size: 16px;
+  color: #a1a1aa;
+  margin: 0 0 32px 0;
+  line-height: 1.5;
+}
+
+.no-family-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.create-family-button {
+  --background: linear-gradient(135deg, #dc2626, #b91c1c);
+  --color: white;
+  --border-radius: 12px;
+  height: 48px;
+  font-weight: 600;
+}
+
+.join-family-button {
+  --border-color: rgba(255, 255, 255, 0.3);
+  --color: white;
+  --border-radius: 12px;
+  height: 48px;
+  font-weight: 500;
+}
+
+// Segment Styles - Mobile Optimized
+.family-segment {
+  --background: rgba(55, 55, 55, 0.8);
+  border-radius: 12px;
+  margin: 16px 0;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+
+  ion-segment-button {
+    --background: transparent;
+    --background-checked: #dc2626;
+    --color: #a1a1aa;
+    --color-checked: white;
+    --indicator-color: transparent;
+    border-radius: 8px;
+    margin: 3px;
+    min-height: 44px;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+
+    ion-icon {
+      font-size: 18px;
+      margin-bottom: 1px;
+    }
+
+    ion-label {
+      font-size: 11px;
+      font-weight: 500;
+      margin: 0;
+    }
+
+    &:active {
+      transform: scale(0.96);
+    }
+  }
+}
+
+// Tab Content
+.tab-content {
+  animation: fadeIn 0.3s ease-in-out;
+  min-height: 400px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// Shared card styles
+%card-base {
+  --background: rgba(55, 55, 55, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  margin: 0 0 20px 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+// Family Overview Card
+.family-overview-card {
+  @extend %card-base;
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(185, 28, 28, 0.1));
+  border-color: rgba(220, 38, 38, 0.3);
+}
+
+.overview-content {
+  padding: 20px;
+}
+
+.family-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.family-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 3px solid #dc2626;
+  overflow: hidden;
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.family-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.family-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.family-description {
+  font-size: 14px;
+  color: #e5e5e5;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.family-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.member-count-chip,
+.online-chip {
+  --background: rgba(59, 130, 246, 0.2);
+  --color: #60a5fa;
+  font-size: 12px;
+  height: 24px;
+
+  ion-icon {
+    font-size: 14px;
+    margin-right: 4px;
+  }
+}
+
+.online-chip {
+  --background: rgba(34, 197, 94, 0.2);
+  --color: #4ade80;
+}
+
+// Quick Actions Card
+.quick-actions-card {
+  @extend %card-base;
+}
+
+ion-card-header {
+  padding: 16px 16px 8px 16px;
+}
+
+ion-card-content {
+  padding: 8px 16px 16px 16px;
+}
+
+.section-title {
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.quick-actions-content {
+  padding: 8px 16px 16px 16px !important;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.action-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  padding: 12px 8px;
+  border-radius: 12px;
+
+  &:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.action-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  ion-icon {
+    font-size: 24px;
+  }
+}
+
+.action-title {
+  font-size: 12px;
+  color: #e5e5e5;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.2;
+}
+
+// Stats Card
+.stats-card {
+  @extend %card-base;
+}
+
+.stats-content {
+  padding: 8px 16px 16px 16px !important;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 12px 8px;
+  background: rgba(75, 75, 75, 0.5);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+
+  ion-icon {
+    font-size: 20px;
+  }
+
+  &.photos {
+    background: rgba(245, 158, 11, 0.2);
+    ion-icon { color: #f59e0b; }
+  }
+
+  &.events {
+    background: rgba(139, 92, 246, 0.2);
+    ion-icon { color: #8b5cf6; }
+  }
+
+  &.messages {
+    background: rgba(34, 197, 94, 0.2);
+    ion-icon { color: #22c55e; }
+  }
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-number {
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 2px;
+  line-height: 1.1;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: #a1a1aa;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+// Connection Strength
+.connection-strength {
+  margin-top: 16px;
+  padding: 16px;
+  background: rgba(75, 75, 75, 0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.connection-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.connection-title {
+  font-size: 14px;
+  color: white;
+  font-weight: 600;
+}
+
+.connection-percentage {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.connection-bar {
+  height: 6px;
+  border-radius: 3px;
+  margin-bottom: 8px;
+}
+
+.connection-label {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+// Card Header with Action
+.card-header-with-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 16px 8px 16px !important;
+}
+
+.view-all-button,
+.invite-button {
+  --color: #dc2626;
+  --padding-start: 8px;
+  --padding-end: 8px;
+  height: 32px;
+}
+
+.title-icon {
+  font-size: 18px;
+  color: #dc2626;
+  margin-right: 8px;
+}
+
+// Members Preview
+.members-preview-card,
+.members-card {
+  @extend %card-base;
+}
+
+.members-content,
+.members-list-content {
+  padding: 8px 0 16px 0 !important;
+}
+
+.members-preview {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.member-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(75, 75, 75, 0.5);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:active {
+    background: rgba(85, 85, 85, 0.7);
+    transform: scale(0.98);
+  }
+}
+
+.member-avatar {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+.status-indicator {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid #373737;
+}
+
+.member-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.member-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 2px;
+  line-height: 1.2;
+}
+
+.member-role {
+  font-size: 12px;
+  color: #a1a1aa;
+  line-height: 1.2;
+}
+
+// Members List
+.members-list {
+  margin: 0;
+  padding: 0;
+}
+
+.member-list-item {
+  --background: transparent;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --color: white;
+  --min-height: 72px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  transition: --background 0.3s ease;
+
+  &:active {
+    --background: rgba(75, 75, 75, 0.5);
+  }
+
+  .member-avatar {
+    width: 48px;
+    height: 48px;
+    margin-right: 12px;
+  }
+}
+
+.member-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.member-status {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 2px 0 0 0;
+  line-height: 1.2;
+
+  &.online {
+    color: #22c55e;
+  }
+}
+
+.member-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.action-btn {
+  --color: #a1a1aa;
+  width: 36px;
+  height: 36px;
+
+  &.chat-btn:hover {
+    --color: #22c55e;
+  }
+
+  &.call-btn:hover {
+    --color: #3b82f6;
+  }
+}
+
+// Activity Preview and Timeline
+.activity-preview-card,
+.activity-card {
+  @extend %card-base;
+}
+
+.activity-content,
+.activity-list-content {
+  padding: 8px 16px 16px 16px !important;
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(75, 75, 75, 0.5);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:active {
+    background: rgba(85, 85, 85, 0.7);
+    transform: scale(0.98);
+  }
+}
+
+.activity-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  ion-icon {
+    font-size: 20px;
+  }
+}
+
+.activity-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.activity-title {
+  font-size: 14px;
+  color: white;
+  font-weight: 500;
+  margin-bottom: 2px;
+  line-height: 1.3;
+}
+
+.activity-time {
+  font-size: 12px;
+  color: #a1a1aa;
+  line-height: 1.2;
+}
+
+// Activity Timeline
+.activity-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.timeline-item {
+  display: flex;
+  gap: 12px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  padding: 8px;
+  border-radius: 12px;
+
+  &:active {
+    transform: translateX(4px);
+    background: rgba(255, 255, 255, 0.02);
+  }
+}
+
+.timeline-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.timeline-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid #262626;
+  flex-shrink: 0;
+}
+
+.timeline-line {
+  width: 2px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  margin-top: 4px;
+}
+
+.timeline-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.activity-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.activity-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.activity-description {
+  font-size: 13px;
+  color: #e5e5e5;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.load-more-button {
+  --border-color: rgba(255, 255, 255, 0.3);
+  --color: white;
+  --border-radius: 12px;
+  height: 44px;
+  margin-top: 16px;
+}
+
+// Invitations Card
+.invitations-card {
+  @extend %card-base;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.invitations-content {
+  padding: 8px 16px 16px 16px !important;
+}
+
+.invitations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.invitation-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(245, 158, 11, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:active {
+    background: rgba(245, 158, 11, 0.15);
+    transform: scale(0.98);
+  }
+}
+
+.invitation-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  ion-icon {
+    font-size: 20px;
+    color: #f59e0b;
+  }
+}
+
+.invitation-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.invitation-email {
+  font-size: 14px;
+  color: white;
+  font-weight: 500;
+  margin-bottom: 2px;
+  line-height: 1.3;
+}
+
+.invitation-role {
+  font-size: 12px;
+  color: #a1a1aa;
+  line-height: 1.2;
+}
+
+.invitation-status {
+  flex-shrink: 0;
+}
+
+.status-chip {
+  font-size: 11px;
+  height: 24px;
+  text-transform: capitalize;
+}
+
+// FAB - Mobile Optimized
+.fab-button {
+  --background: linear-gradient(135deg, #dc2626, #b91c1c);
+  --color: white;
+  box-shadow: 0 8px 32px rgba(220, 38, 38, 0.4);
+  transition: all 0.3s ease;
+  width: 56px;
+  height: 56px;
+
+  &:active {
+    transform: scale(0.9);
+    box-shadow: 0 4px 20px rgba(220, 38, 38, 0.6);
+  }
+
+  ion-icon {
+    font-size: 24px;
+  }
+}
+
+// Responsive Design - Mobile First
+@media (max-width: 430px) {
+  .family-container {
+    padding: 12px;
+    padding-top: 0;
+  }
+
+  .overview-content {
+    padding: 16px;
+  }
+
+  .family-info {
+    gap: 12px;
+  }
+
+  .family-avatar {
+    width: 56px;
+    height: 56px;
+  }
+
+  .family-title {
+    font-size: 18px;
+  }
+
+  .actions-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .members-preview {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .action-icon {
+    width: 44px;
+    height: 44px;
+
+    ion-icon {
+      font-size: 22px;
+    }
+  }
+
+  .action-title {
+    font-size: 11px;
+  }
+
+  .page-title {
+    font-size: 11px;
+  }
+
+  .family-name {
+    font-size: 15px;
+  }
+
+  .notification-button,
+  .settings-button,
+  .menu-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  ion-card-header {
+    padding: 12px 12px 6px 12px;
+  }
+
+  ion-card-content {
+    padding: 6px 12px 12px 12px;
+  }
+
+  .quick-actions-content,
+  .stats-content,
+  .activity-content,
+  .activity-list-content,
+  .invitations-content {
+    padding: 6px 12px 12px 12px !important;
+  }
+
+  .members-content,
+  .members-list-content {
+    padding: 6px 0 12px 0 !important;
+  }
+
+  .section-title {
+    font-size: 15px;
+  }
+
+  .family-segment {
+    margin: 12px 0;
+
+    ion-segment-button {
+      min-height: 40px;
+
+      ion-icon {
+        font-size: 16px;
+      }
+
+      ion-label {
+        font-size: 10px;
+      }
+    }
+  }
+}
+
+@media (max-width: 375px) {
+  .family-container {
+    padding: 10px;
+    padding-top: 0;
+  }
+
+  .no-family-container {
+    padding: 24px;
+  }
+
+  .no-family-icon {
+    width: 70px;
+    height: 70px;
+
+    ion-icon {
+      font-size: 35px;
+    }
+  }
+
+  .no-family-title {
+    font-size: 22px;
+  }
+
+  .no-family-subtitle {
+    font-size: 15px;
+  }
+
+  .actions-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .action-item {
+    flex-direction: row;
+    justify-content: flex-start;
+    text-align: left;
+    padding: 12px;
+  }
+
+  .action-icon {
+    margin-right: 12px;
+  }
+
+  .action-title {
+    text-align: left;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .fab-button {
+    width: 52px;
+    height: 52px;
+
+    ion-icon {
+      font-size: 22px;
+    }
+  }
+}
+
+// iPhone specific optimizations
+@media screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) {
+  .header-toolbar {
+    --padding-top: max(env(safe-area-inset-top, 0px), 8px);
+  }
+
+  .family-container {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 100px);
+  }
+}
+
+// iPad and larger screens
+@media (min-width: 768px) {
+  .family-container {
+    padding: 24px;
+    padding-top: 0;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .actions-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 20px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+
+  .members-preview {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .overview-content {
+    padding: 28px;
+  }
+
+  .family-info {
+    gap: 20px;
+  }
+
+  .family-avatar {
+    width: 80px;
+    height: 80px;
+  }
+
+  .family-title {
+    font-size: 28px;
+  }
+
+  .family-description {
+    font-size: 16px;
+  }
+}
+
+// Dark mode enhancements
+@media (prefers-color-scheme: dark) {
+  .family-content {
+    --background: linear-gradient(135deg, #0a0a0a 0%, #1a0f0f 50%, #0a0a0a 100%);
+  }
+}
+
+// Reduce motion for accessibility
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .action-item:active,
+  .member-item:active,
+  .activity-item:active,
+  .invitation-item:active,
+  .fab-button:active {
+    transform: none !important;
+  }
+}
+
+// High contrast mode
+@media (prefers-contrast: high) {
+  .family-overview-card,
+  .quick-actions-card,
+  .stats-card,
+  .members-preview-card,
+  .members-card,
+  .activity-preview-card,
+  .activity-card,
+  .invitations-card {
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .action-icon,
+  .stat-icon,
+  .activity-icon,
+  .invitation-icon {
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+}

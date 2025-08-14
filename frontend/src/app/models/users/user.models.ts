@@ -1,8 +1,6 @@
 export enum RoleEnum {
   ADMIN = 'admin',
   MODERATOR = 'moderator',
-  FAMILY_OWNER = 'family_owner',
-  FAMILY_MEMBER = 'family_member',
   CLIENT = 'client'
 }
 

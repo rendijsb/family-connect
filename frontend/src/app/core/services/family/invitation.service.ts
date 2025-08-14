@@ -263,7 +263,7 @@ export class InvitationService {
     this.isLoadingSignal.set(true);
 
     return this.http.post<InvitationResponse>(
-      this.apiUrlService.getUrl('families/join'),
+      this.apiUrlService.getUrl('family/join'),
       joinData
     ).pipe(
       map(response => response.data),

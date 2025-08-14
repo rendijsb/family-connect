@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { TabsPage } from './tabs.page';
+import { familyMemberGuard } from '../core/guards/family-member.guard';
 
 export const routes: Routes = [
   {
@@ -10,16 +11,19 @@ export const routes: Routes = [
         path: 'home',
         loadComponent: () => import('./home/home.page').then(m => m.HomePage)
       },
-      // {
-      //   path: 'family',
-      //   loadComponent: () => import('./family/family.page').then(m => m.FamilyPage)
-      // },
+      {
+        path: 'family',
+        canActivate: [familyMemberGuard],
+        loadComponent: () => import('./family/family.page').then(m => m.FamilyPage)
+      },
       // {
       //   path: 'chat',
+      //   canActivate: [familyMemberGuard],
       //   loadComponent: () => import('./chat/chat.page').then(m => m.ChatPage)
       // },
       // {
       //   path: 'photos',
+      //   canActivate: [familyMemberGuard],
       //   loadComponent: () => import('./photos/photos.page').then(m => m.PhotosPage)
       // },
       // {
