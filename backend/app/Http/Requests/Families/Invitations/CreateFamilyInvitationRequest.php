@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Requests\Families;
+namespace App\Http\Requests\Families\Invitations;
 
-use App\DataTransferObjects\Families\CreateFamilyInvitationRequestData;
+use App\DataTransferObjects\Families\Invitations\CreateFamilyInvitationRequestData;
 use App\Enums\Families\FamilyRoleEnum;
-use App\Http\Resources\Families\FamilyInvitationResource;
-use App\Models\Families\FamilyInvitation;
+use App\Http\Resources\Families\Invitations\FamilyInvitationResource;
+use App\Models\Families\Invitations\FamilyInvitation;
 use App\Services\Validation\ValidationRuleHelper;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;

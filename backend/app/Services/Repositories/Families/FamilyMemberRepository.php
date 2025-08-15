@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Repositories\Families;
 
-use App\DataTransferObjects\Families\UpdateFamilyMemberRequestData;
+use App\DataTransferObjects\Families\Members\UpdateFamilyMemberRequestData;
 use App\Enums\Families\FamilyRoleEnum;
 use App\Models\Families\Family;
-use App\Models\Families\FamilyMember;
+use App\Models\Families\Members\FamilyMember;
 use App\Models\Users\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Requests\Families;
+namespace App\Http\Requests\Families\Invitations;
 
-use App\Http\Resources\Families\FamilyInvitationResourceCollection;
+use App\Http\Resources\Families\Invitations\FamilyInvitationResourceCollection;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Collection;
 

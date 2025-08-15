@@ -7,7 +7,7 @@ namespace App\Services\Repositories\Families;
 use App\DataTransferObjects\Families\CreateFamilyRequestData;
 use App\DataTransferObjects\Families\UpdateFamilyRequestData;
 use App\Models\Families\Family;
-use App\Models\Families\FamilyMember;
+use App\Models\Families\Members\FamilyMember;
 use App\Models\Users\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;

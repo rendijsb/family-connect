@@ -6,8 +6,8 @@ namespace App\Http\Routes\Api\Families;
 
 use App\Contracts\Http\Routes\RouteContract;
 use App\Http\Controllers\Families\FamilyController;
-use App\Http\Controllers\Families\FamilyInvitationController;
-use App\Http\Controllers\Families\FamilyMemberController;
+use App\Http\Controllers\Families\Invitations\FamilyInvitationController;
+use App\Http\Controllers\Families\Members\FamilyMemberController;
 use Illuminate\Support\Facades\Route;
 
 class FamiliesRoutes implements RouteContract
@@ -26,7 +26,7 @@ class FamiliesRoutes implements RouteContract
                 Route::middleware('family-member')->group(function () {
                     Route::get('/{family_id}', [FamilyController::class, 'getFamily']);
 //                    Route::get('/{family_id}/stats', [FamilyController::class, 'getFamilyStats']);
-//                    Route::get('/{family_id}/activities', [FamilyController::class, 'getFamilyActivities']);
+                    Route::get('/{family_id}/activities', [FamilyController::class, 'getFamilyActivities']);
                     Route::delete('/{family_id}/leave', [FamilyController::class, 'leaveFamily']);
 
                     // Member routes

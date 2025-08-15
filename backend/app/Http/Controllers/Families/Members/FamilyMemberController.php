@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers\Families;
+namespace App\Http\Controllers\Families\Members;
 
-use App\Http\Requests\Families\DeleteFamilyMemberRequest;
-use App\Http\Requests\Families\GetFamilyMembersRequest;
-use App\Http\Requests\Families\GetUserFamilyMemberRequest;
-use App\Http\Requests\Families\UpdateFamilyMemberRequest;
-use App\Http\Resources\Families\FamilyMemberResource;
-use App\Http\Resources\Families\FamilyMemberResourceCollection;
+use App\Http\Requests\Families\Members\DeleteFamilyMemberRequest;
+use App\Http\Requests\Families\Members\GetFamilyMembersRequest;
+use App\Http\Requests\Families\Members\GetUserFamilyMemberRequest;
+use App\Http\Requests\Families\Members\UpdateFamilyMemberRequest;
+use App\Http\Resources\Families\Members\FamilyMemberResource;
+use App\Http\Resources\Families\Members\FamilyMemberResourceCollection;
 use App\Services\Repositories\Families\FamilyMemberRepository;
 use Illuminate\Http\JsonResponse;
 

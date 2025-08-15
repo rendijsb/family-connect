@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Requests\Families;
+namespace App\Http\Requests\Families\Invitations;
 
-use App\Models\Families\FamilyInvitation;
+use App\Models\Families\Invitations\FamilyInvitation;
 use App\Services\Validation\ValidationRuleHelper;
 use Illuminate\Foundation\Http\FormRequest;
 

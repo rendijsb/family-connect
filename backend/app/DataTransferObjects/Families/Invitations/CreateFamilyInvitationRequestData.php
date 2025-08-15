@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\DataTransferObjects\Families;
+namespace App\DataTransferObjects\Families\Invitations;
 
 use App\Enums\Families\FamilyRoleEnum;
 use Spatie\LaravelData\Data;

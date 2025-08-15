@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Resources\Families;
+namespace App\Http\Resources\Families\Invitations;
 
-use App\Models\Families\FamilyInvitation;
+use App\Http\Resources\Families\FamilyResource;
+use App\Http\Resources\Families\Members\FamilyMemberResource;
+use App\Models\Families\Invitations\FamilyInvitation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 

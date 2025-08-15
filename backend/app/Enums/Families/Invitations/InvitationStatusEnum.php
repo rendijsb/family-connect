@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Enums\Families;
+namespace App\Enums\Families\Invitations;
 
 enum InvitationStatusEnum: string
 {

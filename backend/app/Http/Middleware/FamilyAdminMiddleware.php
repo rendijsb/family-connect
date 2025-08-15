@@ -6,7 +6,7 @@ namespace App\Http\Middleware;
 
 use App\Enums\Families\FamilyRoleEnum;
 use App\Models\Families\Family;
-use App\Models\Families\FamilyMember;
+use App\Models\Families\Members\FamilyMember;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;

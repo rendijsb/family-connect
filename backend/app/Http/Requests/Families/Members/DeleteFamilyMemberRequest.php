@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Requests\Families;
+namespace App\Http\Requests\Families\Members;
 
 use App\Models\Families\Family;
-use App\Models\Families\FamilyMember;
+use App\Models\Families\Members\FamilyMember;
 use App\Services\Validation\ValidationRuleHelper;
 use Illuminate\Foundation\Http\FormRequest;
 

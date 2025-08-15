@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers\Families;
+namespace App\Http\Controllers\Families\Invitations;
 
-use App\Http\Requests\Families\CreateFamilyInvitationRequest;
-use App\Http\Requests\Families\DeleteInvitationRequest;
-use App\Http\Requests\Families\GetAllFamilyInvitationsRequest;
-use App\Http\Requests\Families\GetUserInvitationsRequest;
-use App\Http\Resources\Families\FamilyInvitationResource;
-use App\Http\Resources\Families\FamilyInvitationResourceCollection;
+use App\Http\Requests\Families\Invitations\CreateFamilyInvitationRequest;
+use App\Http\Requests\Families\Invitations\DeleteInvitationRequest;
+use App\Http\Requests\Families\Invitations\GetAllFamilyInvitationsRequest;
+use App\Http\Requests\Families\Invitations\GetUserInvitationsRequest;
+use App\Http\Resources\Families\Invitations\FamilyInvitationResource;
+use App\Http\Resources\Families\Invitations\FamilyInvitationResourceCollection;
 use App\Services\Repositories\Families\FamilyInvitationRepository;
 use Illuminate\Http\JsonResponse;
 

@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Models\Families;
+namespace App\Models\Families\Invitations;
 
 use App\Enums\Families\FamilyRoleEnum;
-use App\Enums\Families\InvitationStatusEnum;
+use App\Enums\Families\Invitations\InvitationStatusEnum;
+use App\Models\Families\Family;
 use App\Models\Users\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;

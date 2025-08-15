@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Requests\Families;
+namespace App\Http\Requests\Families\Members;
 
-use App\Http\Resources\Families\FamilyMemberResourceCollection;
+use App\Http\Resources\Families\Members\FamilyMemberResourceCollection;
 use App\Models\Families\Family;
 use App\Services\Validation\ValidationRuleHelper;
 use Illuminate\Foundation\Http\FormRequest;

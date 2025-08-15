@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Resources\Families;
+namespace App\Http\Resources\Families\Invitations;
 
 use Illuminate\Http\Resources\Json\ResourceCollection;
 

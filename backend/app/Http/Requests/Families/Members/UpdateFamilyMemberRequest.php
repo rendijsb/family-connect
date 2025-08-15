@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Requests\Families;
+namespace App\Http\Requests\Families\Members;
 
-use App\DataTransferObjects\Families\UpdateFamilyMemberRequestData;
+use App\DataTransferObjects\Families\Members\UpdateFamilyMemberRequestData;
 use App\Enums\Families\FamilyRoleEnum;
-use App\Http\Resources\Families\FamilyMemberResource;
+use App\Http\Resources\Families\Members\FamilyMemberResource;
 use App\Models\Families\Family;
-use App\Models\Families\FamilyMember;
+use App\Models\Families\Members\FamilyMember;
 use App\Services\Validation\ValidationRuleHelper;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;

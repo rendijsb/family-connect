@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Resources\Families;
 
 use App\Enums\Families\FamilyRoleEnum;
+use App\Http\Resources\Families\Invitations\FamilyInvitationResourceCollection;
+use App\Http\Resources\Families\Members\FamilyMemberResource;
+use App\Http\Resources\Families\Members\FamilyMemberResourceCollection;
 use App\Models\Families\Family;
-use App\Models\Families\FamilyMember;
+use App\Models\Families\Members\FamilyMember;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 

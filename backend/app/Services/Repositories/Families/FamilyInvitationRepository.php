@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Repositories\Families;
 
-use App\DataTransferObjects\Families\CreateFamilyInvitationRequestData;
+use App\DataTransferObjects\Families\Invitations\CreateFamilyInvitationRequestData;
 use App\Models\Families\Family;
-use App\Models\Families\FamilyInvitation;
+use App\Models\Families\Invitations\FamilyInvitation;
 use App\Models\Users\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;

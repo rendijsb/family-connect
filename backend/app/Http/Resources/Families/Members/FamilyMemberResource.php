@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Resources\Families;
+namespace App\Http\Resources\Families\Members;
 
+use App\Http\Resources\Families\FamilyResource;
 use App\Http\Resources\Users\UserResource;
-use App\Models\Families\FamilyMember;
+use App\Models\Families\Members\FamilyMember;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 

@@ -2,25 +2,25 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Requests\Families;
+namespace App\Http\Requests\Families\Invitations;
 
-use App\Http\Resources\Families\FamilyMemberResource;
+use App\Http\Resources\Families\Invitations\FamilyInvitationResourceCollection;
 use App\Models\Families\Family;
-use App\Models\Families\FamilyMember;
 use App\Services\Validation\ValidationRuleHelper;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Collection;
 
-class GetUserFamilyMemberRequest extends FormRequest
+class GetAllFamilyInvitationsRequest extends FormRequest
 {
     private const FAMILY_ID_ROUTE_KEY = 'family_id';
-
 
     public function rules(): array
     {
         return [
             self::FAMILY_ID_ROUTE_KEY => [
                 ValidationRuleHelper::existsOnDatabase(Family::class, Family::ID),
-                ValidationRuleHelper::REQUIRED
+                ValidationRuleHelper::REQUIRED,
+                ValidationRuleHelper::INTEGER
             ],
         ];
     }
@@ -32,13 +32,13 @@ class GetUserFamilyMemberRequest extends FormRequest
         ]);
     }
 
-    public function responseResource(FamilyMember $familyMember): FamilyMemberResource
+    public function responseResource(Collection $familyInvitations): FamilyInvitationResourceCollection
     {
-        return new FamilyMemberResource($familyMember);
+        return new FamilyInvitationResourceCollection($familyInvitations);
     }
 
     public function getFamilyId(): int
     {
-        return (int) $this->route(self::FAMILY_ID_ROUTE_KEY);
+        return (int)$this->route(self::FAMILY_ID_ROUTE_KEY);
     }
 }
