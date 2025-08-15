@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Repositories\Families;
 
 use App\DataTransferObjects\Families\CreateFamilyInvitationRequestData;
+use App\Models\Families\Family;
 use App\Models\Families\FamilyInvitation;
 use App\Models\Users\User;
 use Illuminate\Http\JsonResponse;
@@ -15,15 +16,15 @@ readonly class FamilyInvitationRepository
 {
     public function __construct(
         private FamilyInvitation $familyInvitation,
-        private FamilyRepository $familyRepository,
-        private Auth $auth
+        private Family $family,
     )
     {
     }
 
     public function getAllFamilyInvitations(int $familyId): Collection
     {
-        $family = $this->familyRepository->findOrFail($familyId);
+        /** @var Family $family */
+        $family = $this->family->findOrFail($familyId);
 
         return $family->relatedInvitations();
     }
@@ -31,7 +32,7 @@ readonly class FamilyInvitationRepository
     public function createInvitation(CreateFamilyInvitationRequestData $data): FamilyInvitation
     {
         /** @var User $user */
-        $user = $this->auth->user();
+        $user = Auth::user();
 
         $payload = [
             FamilyInvitation::FAMILY_ID => $data->familyId,
@@ -63,7 +64,7 @@ readonly class FamilyInvitationRepository
     public function getUserInvitations(): Collection
     {
         /** @var User $user */
-        $user = $this->auth->user();
+        $user = Auth::user();
 
         return $this->familyInvitation
             ->where(FamilyInvitation::EMAIL, $user->getEmail())

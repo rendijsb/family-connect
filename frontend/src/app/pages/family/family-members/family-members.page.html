@@ -7,9 +7,11 @@
     <ion-title class="header-title">
       <div class="title-content">
         <span class="page-title">Family Members</span>
-        <span class="member-count" *ngIf="currentFamily()">
+        @if (currentFamily()) {
+          <span class="member-count">
           {{ totalMembers }} members • {{ onlineMembers }} online
         </span>
+        }
       </div>
     </ion-title>
 
@@ -20,15 +22,16 @@
     </ion-buttons>
   </ion-toolbar>
 
-  <!-- Search Bar -->
-  <ion-toolbar class="search-toolbar" *ngIf="showSearch">
-    <ion-searchbar
-      placeholder="Search members..."
-      [debounce]="300"
-      (ionInput)="onSearchChange($event)"
-      class="custom-searchbar">
-    </ion-searchbar>
-  </ion-toolbar>
+  @if (showSearch) {
+    <ion-toolbar class="search-toolbar">
+      <ion-searchbar
+        placeholder="Search members..."
+        [debounce]="300"
+        (ionInput)="onSearchChange($event)"
+        class="custom-searchbar">
+      </ion-searchbar>
+    </ion-toolbar>
+  }
 </ion-header>
 
 <ion-content [fullscreen]="true" class="members-content">
@@ -83,74 +86,82 @@
       (ionChange)="onFilterChange($event)"
       class="filter-segment"
       scrollable="true">
-      <ion-segment-button
-        *ngFor="let filter of filterOptions"
-        [value]="filter.value"
-        class="filter-button">
-        <ion-icon [name]="filter.icon"></ion-icon>
-        <ion-label>{{ filter.label }}</ion-label>
-      </ion-segment-button>
+      @for (filter of filterOptions; track filter.value) {
+        <ion-segment-button
+          [value]="filter.value"
+          class="filter-button">
+          <ion-icon [name]="filter.icon"></ion-icon>
+          <ion-label>{{ filter.label }}</ion-label>
+        </ion-segment-button>
+      }
     </ion-segment>
 
     <!-- Members List -->
     <div class="members-list">
-      <div class="list-header" *ngIf="filteredMembers().length > 0">
-        <h3 class="list-title">
-          {{ filteredMembers().length }}
-          {{ filteredMembers().length === 1 ? 'Member' : 'Members' }}
-        </h3>
-      </div>
-
-      <!-- Loading State -->
-      <div class="loading-state" *ngIf="isLoading()">
-        <ion-card class="loading-card" *ngFor="let item of [1,2,3]">
-          <ion-card-content class="loading-content">
-            <div class="loading-avatar"></div>
-            <div class="loading-info">
-              <div class="loading-line long"></div>
-              <div class="loading-line short"></div>
-            </div>
-          </ion-card-content>
-        </ion-card>
-      </div>
-
-      <!-- Member Cards -->
-      <app-member-card
-        *ngFor="let member of filteredMembers();"
-        [member]="member"
-        [canManage]="canUserManageMember(currentUserMember(), member)"
-        (memberClicked)="onMemberClick($event)"
-        (chatClicked)="onChatClick($event)"
-        (callClicked)="onCallClick($event)"
-        (videoCallClicked)="onVideoCallClick($event)"
-        (manageClicked)="onManageClick($event)">
-      </app-member-card>
-
-      <!-- Empty State -->
-      <div class="empty-state" *ngIf="!isLoading() && filteredMembers().length === 0">
-        <div class="empty-icon">
-          <ion-icon name="people-outline"></ion-icon>
+      @if (filteredMembers().length > 0) {
+        <div class="list-header">
+          <h3 class="list-title">
+            {{ filteredMembers().length }}
+            {{ filteredMembers().length === 1 ? 'Member' : 'Members' }}
+          </h3>
         </div>
-        <h3 class="empty-title">No Members Found</h3>
-        <p class="empty-description">
-          {{ searchTerm() ? 'No members match your search criteria' : 'No members in this category' }}
-        </p>
-        <ion-button fill="clear" (click)="searchTerm.set(''); selectedFilter.set('all'); applyFilters()">
-          Clear Filters
-        </ion-button>
-      </div>
+      }
+
+      @if (isLoading()) {
+        <div class="loading-state">
+          @for (item of [1, 2, 3]; track item) {
+            <ion-card class="loading-card">
+              <ion-card-content class="loading-content">
+                <div class="loading-avatar"></div>
+                <div class="loading-info">
+                  <div class="loading-line long"></div>
+                  <div class="loading-line short"></div>
+                </div>
+              </ion-card-content>
+            </ion-card>
+          }
+        </div>
+      }
+
+      @for (member of filteredMembers(); track member.id) {
+        <app-member-card
+          [member]="member"
+          [canManage]="canUserManageMember(currentUserMember(), member)"
+          (memberClicked)="onMemberClick($event)"
+          (chatClicked)="onChatClick($event)"
+          (callClicked)="onCallClick($event)"
+          (videoCallClicked)="onVideoCallClick($event)"
+          (manageClicked)="onManageClick($event)">
+        </app-member-card>
+      }
+
+      @if (!isLoading() && filteredMembers().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon">
+            <ion-icon name="people-outline"></ion-icon>
+          </div>
+          <h3 class="empty-title">No Members Found</h3>
+          <p class="empty-description">
+            {{ searchTerm() ? 'No members match your search criteria' : 'No members in this category' }}
+          </p>
+          <ion-button fill="clear" (click)="searchTerm.set(''); selectedFilter.set('all'); applyFilters()">
+            Clear Filters
+          </ion-button>
+        </div>
+      }
     </div>
 
   </div>
 
   <!-- Floating Action Button -->
   <ion-fab slot="fixed" vertical="bottom" horizontal="end" class="invite-fab">
-    <ion-fab-button
-      class="invite-button"
-      (click)="onInviteMembers()"
-      *ngIf="canUserInviteMembers()">
-      <ion-icon name="person-add-outline"></ion-icon>
-    </ion-fab-button>
+    @if (canUserInviteMembers()) {
+      <ion-fab-button
+        class="invite-button"
+        (click)="onInviteMembers()">
+        <ion-icon name="person-add-outline"></ion-icon>
+      </ion-fab-button>
+    }
   </ion-fab>
 
 </ion-content>

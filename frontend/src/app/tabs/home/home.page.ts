@@ -23,16 +23,25 @@ import {Router} from '@angular/router';
   imports: [
     CommonModule,
     IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardContent,
-    IonCardHeader, IonCardTitle, IonButton, IonIcon, IonText, IonAvatar,
+    IonCardHeader, IonCardTitle, IonButton, IonIcon, IonAvatar,
     IonRefresher, IonRefresherContent, IonFab, IonFabButton, IonButtons,
-    IonMenuButton
   ]
 })
 export class HomePage {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
-  user = this.authService.user();
+  get user() {
+    return this.authService.user();
+  }
+
+  get authenticatedUser() {
+    return this.authService.currentUser();
+  }
+
+  get isAuthenticated() {
+    return this.authService.isAuthenticated();
+  }
 
   constructor() {
     addIcons({
@@ -43,9 +52,14 @@ export class HomePage {
   }
 
   doRefresh(event: any) {
-    setTimeout(() => {
-      event.target.complete();
-    }, 2000);
+    this.authService.refreshUser().subscribe({
+      next: () => {
+        event.target.complete();
+      },
+      error: () => {
+        event.target.complete();
+      }
+    });
   }
 
   onLogout() {

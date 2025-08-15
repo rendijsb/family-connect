@@ -41,8 +41,13 @@
         <ion-card-content class="current-content">
           <div class="current-header">
             <ion-avatar class="family-avatar">
-              <img [src]="currentFamily()?.avatar || '/assets/icons/icon.svg'"
+              @if (!currentFamily()?.avatar === null) {
+              <img [src]="currentFamily()?.avatar"
                    [alt]="currentFamily()?.name" />
+              } @else {
+                <img src="/assets/icons/icon.svg"
+                     [alt]="currentFamily()?.name" />
+              }
             </ion-avatar>
             <div class="family-info">
               <h3 class="family-name">{{ currentFamily()?.name }}</h3>

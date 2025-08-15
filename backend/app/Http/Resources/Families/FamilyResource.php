@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Families;
 
+use App\Enums\Families\FamilyRoleEnum;
 use App\Models\Families\Family;
+use App\Models\Families\FamilyMember;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -27,9 +29,27 @@ class FamilyResource extends JsonResource
             'createdAt' => $this->resource->getCreatedAt(),
             'updateAt' => $this->resource->getUpdatedAt(),
 
-            'owner' => FamilyMemberResource::make($this->resource->relatedOwner()),
-            'members' => FamilyMemberResourceCollection::make($this->resource->relatedMembers()),
-            'invitations' => FamilyInvitationResourceCollection::make($this->resource->relatedInvitations()),
+            'owner' => $this->when(
+                $this->includeRelations && $this->resource->relationLoaded('membersRelation'),
+                function () {
+                    $owner = $this->resource->relatedMembers()->where(FamilyMember::ROLE, '=', FamilyRoleEnum::OWNER)->first();
+                    return $owner ? FamilyMemberResource::makeWithoutFamily($owner) : null;
+                }
+            ),
+
+            'members' => $this->when(
+                $this->includeRelations && $this->resource->relationLoaded('membersRelation'),
+                function () {
+                    return FamilyMemberResourceCollection::makeWithoutFamily($this->resource->relatedMembers());
+                }
+            ),
+
+            'invitations' => $this->when(
+                $this->includeRelations && $this->resource->relationLoaded('invitationsRelation'),
+                function () {
+                    return FamilyInvitationResourceCollection::makeWithoutFamily($this->resource->relatedInvitations());
+                }
+            ),
         ];
     }
 }

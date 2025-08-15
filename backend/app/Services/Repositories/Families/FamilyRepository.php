@@ -13,7 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
-class FamilyRepository
+readonly class FamilyRepository
 {
     public function __construct(
         private Family $family,

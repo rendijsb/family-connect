@@ -1,5 +1,3 @@
-// frontend/src/app/core/guards/family-permission.guard.ts
-
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { FamilyService } from '../services/family/family.service';

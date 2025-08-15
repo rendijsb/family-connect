@@ -15,7 +15,7 @@ class FamiliesRoutes implements RouteContract
     public static function api(): void
     {
 
-//        Route::middleware('auth:sanctum')->group(function () {
+        Route::middleware('auth:sanctum')->group(function () {
 
             Route::prefix('families')->group(function () {
                 Route::get('/', [FamilyController::class, 'getAllFamilies']);
@@ -68,6 +68,6 @@ class FamiliesRoutes implements RouteContract
 //                Route::put('/{invitation_id}/accept', [FamilyInvitationController::class, 'acceptInvite']);
 //                Route::put('/{invitation_id}/decline', [FamilyInvitationController::class, 'declineInvite']);
             });
-//        });
+        });
     }
 }

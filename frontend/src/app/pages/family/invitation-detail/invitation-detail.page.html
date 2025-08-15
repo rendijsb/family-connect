@@ -43,7 +43,8 @@
     <div class="invitation-details" *ngIf="invitation() && !isLoading()">
 
       <!-- Status Card -->
-      <ion-card class="status-card" [style.background]="'linear-gradient(135deg, ' + getStatusColor() + '20, ' + getStatusColor() + '10)'">
+      <ion-card class="status-card"
+                [style.background]="'linear-gradient(135deg, ' + getStatusColor() + '20, ' + getStatusColor() + '10)'">
         <ion-card-content class="status-content">
 
           <div class="status-header">
@@ -85,8 +86,13 @@
 
           <div class="family-header">
             <ion-avatar class="family-avatar">
-              <img [src]="invitation()?.family?.avatar || '/assets/icons/icon.svg'"
-                   [alt]="invitation()?.family?.name" />
+              @if (!invitation()?.family?.avatar === null) {
+                <img [src]="invitation()?.family?.avatar"
+                     [alt]="invitation()?.family?.name"/>
+              } @else {
+                <img src="/assets/icons/icon.svg"
+                     [alt]="invitation()?.family?.name"/>
+              }
             </ion-avatar>
 
             <div class="family-info">
@@ -301,7 +307,8 @@
 
           <div class="modal-header">
             <h2>Welcome to {{ invitation()?.family?.name }}!</h2>
-            <p>You're about to join this family. You can optionally set a nickname for how family members will know you.</p>
+            <p>You're about to join this family. You can optionally set a nickname for how family members will know
+              you.</p>
           </div>
 
           <form [formGroup]="acceptForm">

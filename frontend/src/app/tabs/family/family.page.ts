@@ -68,7 +68,6 @@ export class FamilyPage implements OnInit, OnDestroy {
   private readonly actionSheetController = inject(ActionSheetController);
   private readonly destroy$ = new Subject<void>();
 
-  // Signals for reactive state
   selectedSegment = signal<string>('overview');
   isLoading = signal<boolean>(false);
   currentFamily = signal<Family | null>(null);
@@ -76,7 +75,14 @@ export class FamilyPage implements OnInit, OnDestroy {
   familyMembers = signal<FamilyMember[]>([]);
   recentActivities = signal<FamilyActivity[]>([]);
   pendingInvitations = signal<FamilyInvitation[]>([]);
-  currentUser = this.authService.user();
+
+  get authenticatedUser() {
+    return this.authService.user();
+  }
+
+  get user() {
+    return this.authService.user();
+  }
 
   quickActions: QuickAction[] = [
     {
@@ -258,7 +264,6 @@ export class FamilyPage implements OnInit, OnDestroy {
   }
 
   onViewActivity(activity: FamilyActivity) {
-    // Navigate to activity details or expand inline
     console.log('View activity:', activity);
   }
 
@@ -416,7 +421,6 @@ export class FamilyPage implements OnInit, OnDestroy {
     return 'Needs Improvement';
   }
 
-  // Template getters for computed values
   get hasFamily(): boolean {
     return !!this.currentFamily();
   }

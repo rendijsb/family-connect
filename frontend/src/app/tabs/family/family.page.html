@@ -1,5 +1,3 @@
-<!-- frontend/src/app/tabs/family/family.page.html -->
-
 <ion-header [translucent]="true" class="family-header">
   <ion-toolbar class="header-toolbar">
     <ion-title class="header-title">
@@ -93,7 +91,11 @@
         <ion-card-content class="overview-content">
           <div class="family-info">
             <div class="family-avatar">
-              <img [src]="currentFamily()?.avatar || '/assets/icons/icon.svg'" [alt]="currentFamily()?.name" />
+              @if (!currentFamily()?.avatar === null) {
+                <img [src]="currentFamily()?.avatar" [alt]="currentFamily()?.name"/>
+              } @else {
+                <img [src]="'/assets/icons/icon.svg'" [alt]="currentFamily()?.name"/>
+              }
             </div>
             <div class="family-details">
               <h2 class="family-title">{{ currentFamily()?.name }}</h2>
@@ -177,7 +179,8 @@
           <div class="connection-strength" *ngIf="familyStats()?.connectionStrength">
             <div class="connection-header">
               <span class="connection-title">Connection Strength</span>
-              <span class="connection-percentage" [style.color]="getConnectionStrengthColor(familyStats()!.connectionStrength)">
+              <span class="connection-percentage"
+                    [style.color]="getConnectionStrengthColor(familyStats()!.connectionStrength)">
                 {{ familyStats()?.connectionStrength }}%
               </span>
             </div>
@@ -186,7 +189,8 @@
               [color]="getConnectionStrengthColor(familyStats()!.connectionStrength)"
               class="connection-bar">
             </ion-progress-bar>
-            <span class="connection-label" [style.color]="getConnectionStrengthColor(familyStats()!.connectionStrength)">
+            <span class="connection-label"
+                  [style.color]="getConnectionStrengthColor(familyStats()!.connectionStrength)">
               {{ getConnectionStrengthText(familyStats()!.connectionStrength) }}
             </span>
           </div>
@@ -208,7 +212,8 @@
               class="member-item"
               (click)="onViewMember(member)">
               <ion-avatar class="member-avatar">
-                <img [src]="member.user.avatar || '/assets/avatars/default-avatar.jpg'" [alt]="member.displayName" />
+                <img [src]="member.user.avatar || '/assets/avatars/family-avatars/family-1.svg'"
+                     [alt]="member.displayName"/>
                 <div class="status-indicator" [style.background-color]="getMemberStatusColor(member)"></div>
               </ion-avatar>
               <div class="member-info">
@@ -300,7 +305,8 @@
               (click)="onViewMember(member)">
 
               <ion-avatar slot="start" class="member-avatar">
-                <img [src]="member.user.avatar || '/assets/avatars/default-avatar.jpg'" [alt]="member.displayName" />
+                <img [src]="member.user.avatar || '/assets/avatars/family-avatars/family-1.svg'"
+                     [alt]="member.displayName"/>
                 <div class="status-indicator" [style.background-color]="getMemberStatusColor(member)"></div>
               </ion-avatar>
 

@@ -18,8 +18,7 @@ readonly class FamilyMemberRepository
 {
     public function __construct(
         private FamilyMember $familyMember,
-        private FamilyRepository $familyRepository,
-        private Auth $auth
+        private Family $family,
     )
     {
     }
@@ -86,7 +85,8 @@ readonly class FamilyMemberRepository
 
     public function getFamilyMembers(int $familyId): Collection
     {
-        $family = $this->familyRepository->findOrFail($familyId);
+        /** @var Family $family */
+        $family = $this->family->findOrFail($familyId);
 
         return $family->relatedMembers();
     }
@@ -94,7 +94,7 @@ readonly class FamilyMemberRepository
     public function getUserFamilyMember(int $familyId): FamilyMember
     {
         /** @var User $user */
-        $user = $this->auth->user();
+        $user = Auth::user();
         $userId = $user->getId();
 
         return $this->familyMember
@@ -111,7 +111,8 @@ readonly class FamilyMemberRepository
             ->where(FamilyMember::ID, $memberId)
             ->first();
 
-        $family = $this->familyRepository->findOrFail($familyId);
+        /** @var Family $family */
+        $family = $this->family->findOrFail($familyId);
 
         return $this->checkIfDeletingOwner($familyMember, $family);
     }

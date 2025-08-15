@@ -1,5 +1,3 @@
-// frontend/src/app/core/services/family/family.service.ts
-
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import {Observable, BehaviorSubject, throwError, tap, catchError, map, from, switchMap, EMPTY} from 'rxjs';

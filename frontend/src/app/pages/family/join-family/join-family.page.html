@@ -77,8 +77,13 @@
           <div class="invitation-preview" *ngIf="invitation() && !invitation()?.isExpired">
             <div class="preview-header">
               <ion-avatar class="family-avatar">
-                <img [src]="invitation()?.family?.avatar || '/assets/icons/icon.svg'"
+                @if (invitation()?.family?.avatar) {
+                <img [src]="!invitation()?.family?.avatar === null"
                      [alt]="invitation()?.family?.name" />
+                } @else {
+                  <img src="/assets/icons/icon.svg"
+                       [alt]="invitation()?.family?.name" />
+                }
               </ion-avatar>
               <div class="family-info">
                 <h3 class="family-name">{{ invitation()?.family?.name }}</h3>

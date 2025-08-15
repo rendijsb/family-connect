@@ -51,8 +51,13 @@
           <div class="profile-header">
             <div class="avatar-container">
               <ion-avatar class="member-avatar">
-                <img [src]="member()?.user?.avatar || '/assets/avatars/default-avatar.jpg'"
+                @if (!member()?.user?.avatar) {
+                <img src="/assets/avatars/family-avatars/family-1.svg"
                      [alt]="member()?.displayName" />
+                } @else {
+                  <img [src]="member()?.user?.avatar"
+                       [alt]="member()?.displayName" />
+                }
               </ion-avatar>
               <div class="status-indicator" [style.background-color]="getStatusColor()"></div>
               <div class="role-badge" [style.background-color]="getRoleColor()">

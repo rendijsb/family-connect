@@ -9,7 +9,11 @@
     <!-- Family Header -->
     <div class="family-header">
       <ion-avatar class="family-avatar">
-        <img [src]="family.avatar || '/assets/icons/icon.svg'" [alt]="family.name" />
+        @if (!family.avatar === null) {
+          <img [src]="family.avatar" [alt]="family.name"/>
+        } @else {
+          <img src="assets/icons/icon.svg" [alt]="family.name"/>
+        }
       </ion-avatar>
 
       <div class="family-info">

@@ -7,7 +7,7 @@
     <ion-title class="header-title">
       <div class="title-content">
         <span class="greeting">Good evening,</span>
-        <span class="username">{{currentUser.name}}</span>
+        <span class="username">{{ currentUser.name }}</span>
       </div>
     </ion-title>
 
@@ -18,7 +18,12 @@
       </ion-button>
 
       <ion-avatar class="header-avatar">
-        <img [src]="currentUser.avatar" [alt]="currentUser.name" />
+        @if (!currentUser.avatar) {
+          <img
+            src="https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg"/>
+        } @else {
+          <img [src]="currentUser.avatar"/>
+        }
       </ion-avatar>
     </ion-buttons>
   </ion-toolbar>
@@ -63,7 +68,7 @@
               <ion-icon name="people-outline"></ion-icon>
             </div>
             <div class="stat-info">
-              <h3 class="stat-number">{{familyStats.totalMembers}}</h3>
+              <h3 class="stat-number">{{ familyStats.totalMembers }}</h3>
               <p class="stat-label">Family Members</p>
             </div>
           </ion-card-content>
@@ -75,7 +80,7 @@
               <ion-icon name="checkmark-circle-outline"></ion-icon>
             </div>
             <div class="stat-info">
-              <h3 class="stat-number">{{familyStats.activeToday}}</h3>
+              <h3 class="stat-number">{{ familyStats.activeToday }}</h3>
               <p class="stat-label">Active Today</p>
             </div>
           </ion-card-content>
@@ -87,7 +92,7 @@
               <ion-icon name="photos-outline"></ion-icon>
             </div>
             <div class="stat-info">
-              <h3 class="stat-number">{{familyStats.photosShared}}</h3>
+              <h3 class="stat-number">{{ familyStats.photosShared }}</h3>
               <p class="stat-label">Photos Shared</p>
             </div>
           </ion-card-content>
@@ -99,7 +104,7 @@
               <ion-icon name="calendar-outline"></ion-icon>
             </div>
             <div class="stat-info">
-              <h3 class="stat-number">{{familyStats.eventsPlanned}}</h3>
+              <h3 class="stat-number">{{ familyStats.eventsPlanned }}</h3>
               <p class="stat-label">Events Planned</p>
             </div>
           </ion-card-content>
@@ -116,7 +121,7 @@
         </ion-card-header>
         <ion-card-content class="connection-content">
           <div class="connection-score">
-            <span class="score-number">{{familyStats.connectionStrength}}%</span>
+            <span class="score-number">{{ familyStats.connectionStrength }}%</span>
             <span class="score-label">Excellent!</span>
           </div>
           <ion-progress-bar
@@ -143,7 +148,7 @@
               <div class="action-icon" [style.background-color]="action.color + '20'">
                 <ion-icon [name]="action.icon" [style.color]="action.color"></ion-icon>
               </div>
-              <span class="action-title">{{action.title}}</span>
+              <span class="action-title">{{ action.title }}</span>
             </div>
           </div>
         </ion-card-content>
@@ -165,20 +170,20 @@
               (click)="onViewEvent(event)">
               <div class="event-indicator" [style.background-color]="event.color"></div>
               <div class="event-details">
-                <h4 class="event-title">{{event.title}}</h4>
+                <h4 class="event-title">{{ event.title }}</h4>
                 <p class="event-time">
                   <ion-icon name="time-outline"></ion-icon>
-                  {{event.date}}
+                  {{ event.date }}
                 </p>
                 <p class="event-location">
                   <ion-icon name="location-outline"></ion-icon>
-                  {{event.location}}
+                  {{ event.location }}
                 </p>
               </div>
               <div class="event-attendees">
                 <ion-chip class="attendees-chip">
                   <ion-icon name="people-outline"></ion-icon>
-                  <ion-label>{{event.attendees}}</ion-label>
+                  <ion-label>{{ event.attendees }}</ion-label>
                 </ion-chip>
               </div>
             </div>
@@ -204,15 +209,21 @@
               (click)="onViewProfile(member)">
 
               <ion-avatar slot="start" class="member-avatar">
-                <img [src]="member.avatar" [alt]="member.name" />
+                @if (member.avatar) {
+                  <img [src]="member.avatar" [alt]="member.name"/>
+                } @else {
+                  <img
+                    src="https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg"
+                    alt="">
+                }
                 <div class="status-indicator" [style.background-color]="getStatusColor(member.status)"></div>
               </ion-avatar>
 
               <ion-label class="member-info">
-                <h3 class="member-name">{{member.name}}</h3>
-                <p class="member-role">{{member.role}}</p>
+                <h3 class="member-name">{{ member.name }}</h3>
+                <p class="member-role">{{ member.role }}</p>
                 <p class="member-status" *ngIf="member.status === 'offline' && member.lastSeen">
-                  Last seen: {{member.lastSeen}}
+                  Last seen: {{ member.lastSeen }}
                 </p>
               </ion-label>
 
@@ -254,17 +265,21 @@
               <div class="activity-content">
                 <div class="activity-header">
                   <ion-avatar class="activity-avatar">
-                    <img [src]="activity.userAvatar" [alt]="activity.user" />
+                    @if (activity.userAvatar) {
+                      <img [src]="activity.userAvatar" [alt]="activity.user"/>
+                    } @else {
+                      <img src="https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg" alt="">
+                    }
                   </ion-avatar>
                   <div class="activity-meta">
-                    <h4 class="activity-title">{{activity.title}}</h4>
-                    <p class="activity-timestamp">{{activity.timestamp}}</p>
+                    <h4 class="activity-title">{{ activity.title }}</h4>
+                    <p class="activity-timestamp">{{ activity.timestamp }}</p>
                   </div>
                   <div class="activity-icon" [style.background-color]="activity.color + '20'">
                     <ion-icon [name]="activity.icon" [style.color]="activity.color"></ion-icon>
                   </div>
                 </div>
-                <p class="activity-description">{{activity.description}}</p>
+                <p class="activity-description">{{ activity.description }}</p>
               </div>
 
             </div>

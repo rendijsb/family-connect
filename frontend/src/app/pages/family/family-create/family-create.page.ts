@@ -77,7 +77,6 @@ export class FamilyCreatePage implements OnInit {
     }
   ];
 
-  // Avatar options
   avatarOptions = [
     '/assets/family-avatars/family-1.svg',
     '/assets/family-avatars/family-2.svg',

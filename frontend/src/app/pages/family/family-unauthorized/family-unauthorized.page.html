@@ -38,8 +38,13 @@
           </div>
           <div class="family-info">
             <ion-avatar class="family-avatar">
-              <img [src]="currentFamily()?.avatar || '/assets/icons/icon.svg'"
+              @if (!currentFamily()?.avatar === null) {
+              <img [src]="currentFamily()?.avatar"
                    [alt]="currentFamily()?.name" />
+              } @else {
+                <img src="/assets/icons/icon.svg"
+                     [alt]="currentFamily()?.name" />
+              }
             </ion-avatar>
             <div class="family-details">
               <h4 class="family-name">{{ currentFamily()?.name }}</h4>
