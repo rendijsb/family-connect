@@ -1,0 +1,895 @@
+.profile-content {
+  --background: linear-gradient(135deg, #1a1a1a 0%, #2d1b1b 50%, #1a1a1a 100%);
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+.profile-container {
+  padding: 16px;
+  padding-top: 0;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 40px);
+  min-height: calc(100vh - 60px);
+}
+
+// Header Styles
+.profile-header {
+  --background: rgba(38, 38, 38, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-toolbar {
+  --background: transparent;
+  --color: white;
+  --padding-top: max(env(safe-area-inset-top, 0px), 8px);
+  --padding-bottom: 8px;
+  --min-height: 56px;
+}
+
+.title-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+
+.page-title {
+  font-size: 12px;
+  color: #a1a1aa;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.member-name {
+  font-size: 16px;
+  color: white;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: -1px;
+}
+
+.back-button,
+.manage-button {
+  --color: white;
+  width: 40px;
+  height: 40px;
+}
+
+// Shared card styles
+%card-base {
+  --background: rgba(55, 55, 55, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  margin: 0 0 20px 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+// Loading State
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.loading-card {
+  @extend %card-base;
+}
+
+.loading-content {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.loading-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(90deg,
+    rgba(75, 75, 75, 0.5) 0%,
+    rgba(85, 85, 85, 0.7) 50%,
+    rgba(75, 75, 75, 0.5) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  flex-shrink: 0;
+}
+
+.loading-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.loading-line {
+  height: 14px;
+  border-radius: 7px;
+  background: linear-gradient(90deg,
+    rgba(75, 75, 75, 0.5) 0%,
+    rgba(85, 85, 85, 0.7) 50%,
+    rgba(75, 75, 75, 0.5) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+
+  &.long {
+    width: 100%;
+  }
+
+  &.medium {
+    width: 75%;
+  }
+
+  &.short {
+    width: 50%;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+// Header Card
+.header-card {
+  @extend %card-base;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(29, 78, 216, 0.1));
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.header-content {
+  padding: 24px;
+}
+
+.profile-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.avatar-container {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.member-avatar {
+  width: 80px;
+  height: 80px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+}
+
+.status-indicator {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 3px solid #373737;
+}
+
+.role-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #373737;
+
+  ion-icon {
+    font-size: 16px;
+    color: white;
+  }
+}
+
+.profile-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.member-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.member-email {
+  font-size: 14px;
+  color: #a1a1aa;
+  margin: 0 0 12px 0;
+  line-height: 1.3;
+}
+
+.member-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.role-chip,
+.status-chip {
+  font-size: 11px;
+  height: 20px;
+  --background: rgba(75, 75, 75, 0.6);
+
+  ion-icon {
+    font-size: 12px;
+    margin-right: 3px;
+  }
+}
+
+.role-description {
+  font-size: 13px;
+  color: #e5e5e5;
+  margin: 0;
+  line-height: 1.4;
+  font-style: italic;
+}
+
+// Quick Actions Card
+.actions-card {
+  @extend %card-base;
+}
+
+.card-title {
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  ion-icon {
+    font-size: 18px;
+    color: #3b82f6;
+  }
+}
+
+ion-card-header {
+  padding: 16px 16px 8px 16px;
+}
+
+ion-card-content {
+  padding: 8px 16px 16px 16px;
+}
+
+.actions-content {
+  padding: 8px 16px 16px 16px !important;
+}
+
+.actions-grid {
+  padding: 0;
+  margin: 0;
+}
+
+.action-button {
+  --color: #a1a1aa;
+  --border-radius: 12px;
+  width: 100%;
+  height: 56px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.3s ease;
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &:hover {
+    --color: white;
+  }
+
+  &.chat-button:hover {
+    --color: #22c55e;
+    --background: rgba(34, 197, 94, 0.1);
+  }
+
+  &.call-button:hover {
+    --color: #3b82f6;
+    --background: rgba(59, 130, 246, 0.1);
+  }
+
+  &.video-button:hover {
+    --color: #8b5cf6;
+    --background: rgba(139, 92, 246, 0.1);
+  }
+
+  &.email-button:hover {
+    --color: #f59e0b;
+    --background: rgba(245, 158, 11, 0.1);
+  }
+
+  ion-icon {
+    font-size: 24px;
+  }
+}
+
+.action-label {
+  font-size: 11px;
+  color: #a1a1aa;
+  font-weight: 500;
+  text-align: center;
+  margin-top: 4px;
+}
+
+// Details Card
+.details-card {
+  @extend %card-base;
+}
+
+.details-content {
+  padding: 8px 0 16px 0 !important;
+}
+
+.details-list {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.detail-item {
+  --background: transparent;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --color: white;
+  --min-height: 60px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  transition: --background 0.3s ease;
+
+  &.clickable {
+    cursor: pointer;
+
+    &:active {
+      --background: rgba(75, 75, 75, 0.5);
+    }
+  }
+}
+
+.detail-icon {
+  color: #3b82f6;
+  font-size: 20px;
+  margin-right: 12px;
+}
+
+.detail-label {
+  margin: 0;
+
+  h3 {
+    font-size: 14px;
+    font-weight: 500;
+    color: white;
+    margin: 0 0 2px 0;
+    line-height: 1.2;
+  }
+
+  p {
+    font-size: 13px;
+    color: #a1a1aa;
+    margin: 0;
+    line-height: 1.3;
+  }
+}
+
+.chevron-icon {
+  color: #6b7280;
+  font-size: 16px;
+}
+
+// Permissions Card
+.permissions-card {
+  @extend %card-base;
+}
+
+.permissions-content {
+  padding: 8px 0 16px 0 !important;
+}
+
+.permissions-list {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.permission-item {
+  --background: transparent;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --color: white;
+  --min-height: 64px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+}
+
+.permission-icon {
+  color: #3b82f6;
+  font-size: 18px;
+  margin-right: 12px;
+}
+
+.permission-label {
+  flex: 1;
+  margin: 0;
+
+  h4 {
+    font-size: 14px;
+    font-weight: 500;
+    color: white;
+    margin: 0 0 2px 0;
+    line-height: 1.2;
+  }
+
+  p {
+    font-size: 12px;
+    color: #a1a1aa;
+    margin: 0;
+    line-height: 1.3;
+  }
+}
+
+.permission-toggle {
+  --handle-background: white;
+  --track-background: rgba(107, 114, 128, 0.5);
+  --track-background-checked: #22c55e;
+  transform: scale(0.8);
+}
+
+// Responsive Design
+@media (max-width: 430px) {
+  .profile-container {
+    padding: 12px;
+    padding-top: 0;
+  }
+
+  .header-content {
+    padding: 20px;
+  }
+
+  .profile-header {
+    gap: 12px;
+  }
+
+  .member-avatar {
+    width: 70px;
+    height: 70px;
+  }
+
+  .status-indicator {
+    width: 14px;
+    height: 14px;
+    bottom: 2px;
+    right: 2px;
+  }
+
+  .role-badge {
+    width: 24px;
+    height: 24px;
+    top: -4px;
+    right: -4px;
+
+    ion-icon {
+      font-size: 14px;
+    }
+  }
+
+  .member-name {
+    font-size: 20px;
+  }
+
+  .member-email {
+    font-size: 13px;
+  }
+
+  .role-description {
+    font-size: 12px;
+  }
+
+  .action-button {
+    height: 52px;
+
+    ion-icon {
+      font-size: 22px;
+    }
+  }
+
+  .action-label {
+    font-size: 10px;
+  }
+
+  .detail-item {
+    --min-height: 56px;
+    --padding-start: 12px;
+    --padding-end: 12px;
+  }
+
+  .detail-icon {
+    font-size: 18px;
+    margin-right: 10px;
+  }
+
+  .detail-label h3 {
+    font-size: 13px;
+  }
+
+  .detail-label p {
+    font-size: 12px;
+  }
+
+  .permission-item {
+    --min-height: 60px;
+    --padding-start: 12px;
+    --padding-end: 12px;
+  }
+
+  .permission-icon {
+    font-size: 16px;
+    margin-right: 10px;
+  }
+
+  .permission-label h4 {
+    font-size: 13px;
+  }
+
+  .permission-label p {
+    font-size: 11px;
+  }
+
+  .card-title {
+    font-size: 15px;
+
+    ion-icon {
+      font-size: 16px;
+    }
+  }
+
+  .page-title {
+    font-size: 11px;
+  }
+
+  .member-name {
+    font-size: 15px;
+  }
+
+  .back-button,
+  .manage-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  ion-card-header {
+    padding: 12px 12px 6px 12px;
+  }
+
+  ion-card-content {
+    padding: 6px 12px 12px 12px;
+  }
+
+  .actions-content {
+    padding: 6px 12px 12px 12px !important;
+  }
+
+  .details-content,
+  .permissions-content {
+    padding: 6px 0 12px 0 !important;
+  }
+}
+
+@media (max-width: 375px) {
+  .profile-container {
+    padding: 10px;
+    padding-top: 0;
+  }
+
+  .header-content {
+    padding: 16px;
+  }
+
+  .profile-header {
+    gap: 10px;
+  }
+
+  .member-avatar {
+    width: 64px;
+    height: 64px;
+  }
+
+  .status-indicator {
+    width: 12px;
+    height: 12px;
+  }
+
+  .role-badge {
+    width: 20px;
+    height: 20px;
+
+    ion-icon {
+      font-size: 12px;
+    }
+  }
+
+  .member-name {
+    font-size: 18px;
+  }
+
+  .member-email {
+    font-size: 12px;
+  }
+
+  .action-button {
+    height: 48px;
+
+    ion-icon {
+      font-size: 20px;
+    }
+  }
+
+  .detail-item {
+    --min-height: 52px;
+  }
+
+  .permission-item {
+    --min-height: 56px;
+  }
+}
+
+// iPad and larger screens
+@media (min-width: 768px) {
+  .profile-container {
+    padding: 24px;
+    padding-top: 0;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .header-content {
+    padding: 32px;
+  }
+
+  .profile-header {
+    gap: 24px;
+  }
+
+  .member-avatar {
+    width: 100px;
+    height: 100px;
+  }
+
+  .status-indicator {
+    width: 20px;
+    height: 20px;
+    bottom: 6px;
+    right: 6px;
+  }
+
+  .role-badge {
+    width: 32px;
+    height: 32px;
+    top: -8px;
+    right: -8px;
+
+    ion-icon {
+      font-size: 18px;
+    }
+  }
+
+  .member-name {
+    font-size: 28px;
+  }
+
+  .member-email {
+    font-size: 16px;
+  }
+
+  .role-description {
+    font-size: 14px;
+  }
+
+  .actions-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .action-button {
+    height: 64px;
+
+    ion-icon {
+      font-size: 28px;
+    }
+  }
+
+  .action-label {
+    font-size: 12px;
+  }
+
+  .detail-item {
+    --min-height: 68px;
+    --padding-start: 20px;
+    --padding-end: 20px;
+  }
+
+  .detail-icon {
+    font-size: 22px;
+    margin-right: 16px;
+  }
+
+  .detail-label h3 {
+    font-size: 16px;
+  }
+
+  .detail-label p {
+    font-size: 14px;
+  }
+
+  .permission-item {
+    --min-height: 72px;
+    --padding-start: 20px;
+    --padding-end: 20px;
+  }
+
+  .permission-icon {
+    font-size: 20px;
+    margin-right: 16px;
+  }
+
+  .permission-label h4 {
+    font-size: 15px;
+  }
+
+  .permission-label p {
+    font-size: 13px;
+  }
+
+  .card-title {
+    font-size: 18px;
+
+    ion-icon {
+      font-size: 20px;
+    }
+  }
+
+  ion-card-header {
+    padding: 20px 20px 10px 20px;
+  }
+
+  ion-card-content {
+    padding: 10px 20px 20px 20px;
+  }
+
+  .actions-content {
+    padding: 10px 20px 20px 20px !important;
+  }
+
+  .details-content,
+  .permissions-content {
+    padding: 10px 0 20px 0 !important;
+  }
+}
+
+// Landscape mode
+@media (orientation: landscape) and (max-height: 500px) {
+  .profile-container {
+    padding: 8px 16px;
+    padding-top: 0;
+  }
+
+  .header-content {
+    padding: 16px;
+  }
+
+  .profile-header {
+    gap: 12px;
+  }
+
+  .member-avatar {
+    width: 60px;
+    height: 60px;
+  }
+
+  .member-name {
+    font-size: 18px;
+  }
+
+  .action-button {
+    height: 44px;
+
+    ion-icon {
+      font-size: 18px;
+    }
+  }
+
+  .detail-item {
+    --min-height: 48px;
+  }
+
+  .permission-item {
+    --min-height: 52px;
+  }
+
+  ion-card-header {
+    padding: 10px 12px 5px 12px;
+  }
+
+  ion-card-content {
+    padding: 5px 12px 10px 12px;
+  }
+
+  .actions-content {
+    padding: 5px 12px 10px 12px !important;
+  }
+
+  .details-content,
+  .permissions-content {
+    padding: 5px 0 10px 0 !important;
+  }
+}
+
+// Dark mode enhancements
+@media (prefers-color-scheme: dark) {
+  .profile-content {
+    --background: linear-gradient(135deg, #0a0a0a 0%, #1a0f0f 50%, #0a0a0a 100%);
+  }
+}
+
+// Reduce motion
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .action-button:active {
+    transform: none !important;
+  }
+}
+
+// High contrast mode
+@media (prefers-contrast: high) {
+  .header-card,
+  .actions-card,
+  .details-card,
+  .permissions-card {
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .detail-item,
+  .permission-item {
+    --border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .member-avatar {
+    border-width: 4px;
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .status-indicator {
+    border-width: 4px;
+  }
+
+  .role-badge {
+    border-width: 4px;
+  }
+}
