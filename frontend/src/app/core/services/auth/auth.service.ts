@@ -56,16 +56,23 @@ export class AuthService {
   private readonly loadingController = inject(LoadingController);
   private readonly alertController = inject(AlertController);
 
-  private currentUser = signal<User | null>(null);
-  private token = signal<string | null>(null);
-  private isInitialized = signal<boolean>(false);
+  // ✅ FIXED: Ensure proper signal initialization
+  private readonly _currentUser = signal<User | null>(null);
+  private readonly _token = signal<string | null>(null);
+  private readonly _isInitialized = signal<boolean>(false);
 
-  readonly isAdmin = computed(() => this.currentUser()?.role?.id === 1); // RoleEnum.ADMIN
-  readonly isModerator = computed(() => this.currentUser()?.role?.id === 2); // RoleEnum.MODERATOR
-  readonly isFamilyOwner = computed(() => this.currentUser()?.role?.id === 3); // RoleEnum.FAMILY_OWNER
-  readonly isFamilyMember = computed(() => this.currentUser()?.role?.id === 4); // RoleEnum.FAMILY_MEMBER
-  readonly isClient = computed(() => this.currentUser()?.role?.id === 5); // RoleEnum.CLIENT
-  readonly isAuthenticated = computed(() => !!this.token() && !!this.currentUser());
+  // ✅ FIXED: Public readonly access to signals
+  readonly currentUser = this._currentUser.asReadonly();
+  readonly authToken = this._token.asReadonly();
+  readonly isInitialized = this._isInitialized.asReadonly();
+
+  // ✅ FIXED: Computed properties
+  readonly isAdmin = computed(() => this._currentUser()?.role?.id === 1);
+  readonly isModerator = computed(() => this._currentUser()?.role?.id === 2);
+  readonly isFamilyOwner = computed(() => this._currentUser()?.role?.id === 3);
+  readonly isFamilyMember = computed(() => this._currentUser()?.role?.id === 4);
+  readonly isClient = computed(() => this._currentUser()?.role?.id === 5);
+  readonly isAuthenticated = computed(() => !!this._token() && !!this._currentUser());
 
   constructor() {
     this.initializeAuth();
@@ -78,8 +85,8 @@ export class AuthService {
 
       if (token && userDataString) {
         const userData = JSON.parse(userDataString);
-        this.currentUser.set(userData);
-        this.token.set(token);
+        this._currentUser.set(userData);
+        this._token.set(token);
 
         this.verifyTokenValidity().subscribe({
           error: () => {
@@ -91,7 +98,7 @@ export class AuthService {
       console.error('Error initializing auth:', error);
       await this.clearAuthData();
     } finally {
-      this.isInitialized.set(true);
+      this._isInitialized.set(true);
     }
   }
 
@@ -100,8 +107,8 @@ export class AuthService {
       this.apiUrlService.getUrl('auth/me')
     ).pipe(
       tap(response => {
-          this.currentUser.set(response.data);
-          this.saveUserToStorage(response.data);
+        this._currentUser.set(response.data);
+        this.saveUserToStorage(response.data);
       }),
       switchMap(response => [response.data]),
       catchError((error) => {
@@ -112,11 +119,48 @@ export class AuthService {
   }
 
   user(): User | null {
-    return this.currentUser();
+    try {
+      if (typeof this._currentUser === 'function') {
+        return this._currentUser();
+      } else {
+        console.error('_currentUser is not a signal function:', typeof this._currentUser);
+        return null;
+      }
+    } catch (error) {
+      console.error('Error accessing current user:', error);
+      return null;
+    }
+  }
+
+  getCurrentUser(): User | null {
+    try {
+      return this._currentUser();
+    } catch (error) {
+      console.error('Error getting current user:', error);
+      return null;
+    }
   }
 
   getToken(): string | null {
-    return this.token();
+    try {
+      return this._token();
+    } catch (error) {
+      console.error('Error getting token:', error);
+      return null;
+    }
+  }
+
+  isAuthInitialized(): boolean {
+    try {
+      return this._isInitialized();
+    } catch (error) {
+      console.error('Error checking initialization:', error);
+      return false;
+    }
+  }
+
+  get currentUserValue(): User | null {
+    return this.user();
   }
 
   register(userData: RegisterPayload): Observable<AuthResponse> {
@@ -135,8 +179,8 @@ export class AuthService {
       }
     ).pipe(
       tap(async (response) => {
-          await this.handleAuthSuccess(response.data.user, response.data.token);
-          await this.showToast(response.message || 'Registration successful!', 'success');
+        await this.handleAuthSuccess(response.data.user, response.data.token);
+        await this.showToast(response.message || 'Registration successful!', 'success');
       }),
       catchError(error => this.handleAuthError(error))
     );
@@ -152,8 +196,8 @@ export class AuthService {
       }
     ).pipe(
       tap(async (response) => {
-          await this.handleAuthSuccess(response.data.user, response.data.token);
-          await this.showToast(response.message || 'Login successful!', 'success');
+        await this.handleAuthSuccess(response.data.user, response.data.token);
+        await this.showToast(response.message || 'Login successful!', 'success');
       }),
       catchError(error => this.handleAuthError(error))
     );
@@ -163,15 +207,15 @@ export class AuthService {
     return this.http.post(this.apiUrlService.getUrl('auth/logout'), {}).pipe(
       tap(async () => {
         await this.clearAuthData();
-        this.currentUser.set(null);
-        this.token.set(null);
+        this._currentUser.set(null);
+        this._token.set(null);
         await this.router.navigate(['/login']);
         await this.showToast('Logged out successfully', 'success');
       }),
       catchError(async (error) => {
         await this.clearAuthData();
-        this.currentUser.set(null);
-        this.token.set(null);
+        this._currentUser.set(null);
+        this._token.set(null);
         await this.router.navigate(['/login']);
         return throwError(() => error);
       })
@@ -184,7 +228,7 @@ export class AuthService {
       { email }
     ).pipe(
       tap(response => {
-          this.showToast(response.message, 'success');
+        this.showToast(response.message, 'success');
       }),
       catchError(error => this.handleAuthError(error))
     );
@@ -201,7 +245,7 @@ export class AuthService {
       resetData
     ).pipe(
       tap(response => {
-          this.showToast(response.message, 'success');
+        this.showToast(response.message, 'success');
       }),
       catchError(error => this.handleAuthError(error))
     );
@@ -212,22 +256,18 @@ export class AuthService {
       this.apiUrlService.getUrl('user')
     ).pipe(
       tap(response => {
-          this.currentUser.set(response.data);
-          this.saveUserToStorage(response.data);
+        this._currentUser.set(response.data);
+        this.saveUserToStorage(response.data);
       }),
       switchMap(response => [response.data]),
       catchError(error => this.handleAuthError(error))
     );
   }
 
-  isAuthInitialized(): boolean {
-    return this.isInitialized();
-  }
-
   waitForInitialization(): Observable<boolean> {
     return new Observable(subscriber => {
       const checkInitialization = () => {
-        if (this.isInitialized()) {
+        if (this.isAuthInitialized()) {
           subscriber.next(true);
           subscriber.complete();
         } else {
@@ -239,24 +279,24 @@ export class AuthService {
   }
 
   canManageFamily(): boolean {
-    const user = this.currentUser();
+    const user = this.user();
     return user ? <boolean>user.canManageFamily : false;
   }
 
   hasRole(role: RoleEnum): boolean {
-    const user = this.currentUser();
+    const user = this.user();
     return user?.role?.name === role;
   }
 
   hasAnyRole(roles: RoleEnum[]): boolean {
-    const user = this.currentUser();
+    const user = this.user();
     return user ? roles.includes(user.role?.name as RoleEnum) : false;
   }
 
   private async handleAuthSuccess(user: User, token: string): Promise<void> {
     await this.setUserData(user, token);
-    this.currentUser.set(user);
-    this.token.set(token);
+    this._currentUser.set(user);
+    this._token.set(token);
     this.redirectBasedOnRole(user.role?.name);
   }
 

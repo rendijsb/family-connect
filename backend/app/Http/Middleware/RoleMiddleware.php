@@ -58,8 +58,6 @@ class RoleMiddleware
         return match(strtolower($role)) {
             'admin' => RoleEnum::ADMIN,
             'moderator' => RoleEnum::MODERATOR,
-            'family_owner' => RoleEnum::FAMILY_OWNER,
-            'family_member' => RoleEnum::FAMILY_MEMBER,
             'client' => RoleEnum::CLIENT,
             default => null,
         };

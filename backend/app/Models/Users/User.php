@@ -89,7 +89,6 @@ class User extends Authenticatable
         return in_array($this->getRoleId(), [
             RoleEnum::ADMIN->value,
             RoleEnum::MODERATOR->value,
-            RoleEnum::FAMILY_OWNER->value
         ]);
     }
 
