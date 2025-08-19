@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Families;
 
-use App\Http\Requests\Families\GetAllFamilyRequest;
+use App\Http\Requests\Families\GetAllFamiliesRequest;
+use App\Http\Resources\Families\FamilyResource;
+use App\Http\Resources\Families\FamilyResourceCollection;
 use App\Services\Repositories\Families\FamilyRepository;
 
 class FamilyController
@@ -15,16 +17,18 @@ class FamilyController
     {
     }
 
-    public function getAllFamilies(GetAllFamilyRequest $request): FamilyResourceCollection
+    public function getAllFamilies(GetAllFamiliesRequest $request): FamilyResourceCollection
     {
         return $request->responseResource(
             $this->familyRepository->getAllFamilies()
         );
     }
 
-    public function createFamily()
+    public function createFamily(CreateFamilyRequest $request): FamilyResource
     {
-
+        return $request->responseResource(
+            $this->familyRepository->createFamily()
+        );
     }
 
     public function getMyFamilies()

@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Models\Families;
 
 use App\Enums\Families\FamilyRoleEnum;
+use App\Models\Users\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class FamilyMember extends Model
 {
@@ -49,4 +52,95 @@ class FamilyMember extends Model
         self::CREATED_AT => 'datetime',
         self::UPDATED_AT => 'datetime',
     ];
+
+    /** Relations */
+    /** @see FamilyMember::userRelation() */
+    const USER_RELATION = 'userRelation';
+    /** @see FamilyMember::familyRelation() */
+    const FAMILY_RELATION = 'familyRelation';
+
+    public function userRelation(): HasOne
+    {
+        return $this->hasOne(User::class, self::USER_ID, User::ID);
+    }
+
+    public function familyRelation(): BelongsTo
+    {
+        return $this->belongsTo(Family::class, self::FAMILY_ID, Family::ID);
+    }
+
+    public function relatedUser(): User
+    {
+        return $this->{self::USER_RELATION};
+    }
+
+    public function relatedFamily(): Family
+    {
+        return $this->{self::FAMILY_RELATION};
+    }
+
+    public function getId(): int
+    {
+        return $this->getAttribute(self::ID);
+    }
+
+    public function getFamilyId(): int
+    {
+        return $this->getAttribute(self::FAMILY_ID);
+    }
+
+    public function getUserId(): int
+    {
+        return $this->getAttribute(self::USER_ID);
+    }
+
+    public function getRole(): FamilyRoleEnum
+    {
+        return $this->getAttribute(self::ROLE);
+    }
+
+    public function getNickname(): ?string
+    {
+        return $this->getAttribute(self::NICKNAME);
+    }
+
+    public function getRelationship(): ?string
+    {
+        return $this->getAttribute(self::RELATIONSHIP);
+    }
+
+    public function getPermissions(): array
+    {
+        return $this->getAttribute(self::PERMISSIONS);
+    }
+
+    public function getNotificationsEnabled(): bool
+    {
+        return $this->getAttribute(self::NOTIFICATIONS_ENABLED);
+    }
+
+    public function getIsActive(): bool
+    {
+        return $this->getAttribute(self::IS_ACTIVE);
+    }
+
+    public function getJoinedAt(): ?\DateTime
+    {
+        return $this->getAttribute(self::JOINED_AT);
+    }
+
+    public function getLastSeenAt(): ?\DateTime
+    {
+        return $this->getAttribute(self::LAST_SEEN_AT);
+    }
+
+    public function getCreatedAt(): \DateTime
+    {
+        return $this->getAttribute(self::CREATED_AT);
+    }
+
+    public function getUpdatedAt(): \DateTime
+    {
+        return $this->getAttribute(self::UPDATED_AT);
+    }
 }

@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace App\Models\Families;
 
 use App\Enums\Families\FamilyPrivacyEnum;
+use App\Models\Users\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 /**
  * @mixin Builder
@@ -54,4 +58,106 @@ class Family extends Model
         self::CREATED_AT => 'datetime',
         self::UPDATED_AT => 'datetime',
     ];
+
+    /** Relations */
+    /** @see Family::ownerRelation() */
+    const OWNER_RELATION = 'ownerRelation';
+    /** @see Family::membersRelation() */
+    const MEMBERS_RELATION = 'membersRelation';
+
+    public function ownerRelation(): BelongsTo
+    {
+        return $this->belongsTo(Family::class, self::OWNER_ID, User::ID);
+    }
+
+    public function membersRelation(): HasMany
+    {
+        return $this->hasMany(Family::class, FamilyMember::FAMILY_ID, self::ID);
+    }
+
+    public function relatedOwner(): User
+    {
+        return $this->{self::OWNER_RELATION};
+    }
+
+    /** @return Collection<FamilyMember> */
+    public function relatedMembers(): Collection
+    {
+        return $this->{self::MEMBERS_RELATION};
+    }
+
+    public function getId(): int
+    {
+        return $this->getAttribute(self::ID);
+    }
+
+    public function getName(): string
+    {
+        return $this->getAttribute(self::NAME);
+    }
+
+    public function getSlug(): string
+    {
+        return $this->getAttribute(self::SLUG);
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->getAttribute(self::DESCRIPTION);
+    }
+
+    public function getOwnerId(): int
+    {
+        return $this->getAttribute(self::OWNER_ID);
+    }
+
+    public function getPrivacy(): FamilyPrivacyEnum
+    {
+        return $this->getAttribute(self::PRIVACY);
+    }
+
+    public function getJoinCode(): ?string
+    {
+        return $this->getAttribute(self::JOIN_CODE);
+    }
+
+    public function getSettings(): array
+    {
+        return $this->getAttribute(self::SETTINGS) ?? [];
+    }
+
+    public function getTimezone(): ?string
+    {
+        return $this->getAttribute(self::TIMEZONE);
+    }
+
+    public function getLanguage(): ?string
+    {
+        return $this->getAttribute(self::LANGUAGE);
+    }
+
+    public function getMaxMembers(): ?int
+    {
+        return $this->getAttribute(self::MAX_MEMBERS);
+    }
+
+    public function getIsActive(): bool
+    {
+        return $this->getAttribute(self::IS_ACTIVE);
+    }
+
+    public function getLastActivityAt(): ?\DateTime
+    {
+        return $this->getAttribute(self::LAST_ACTIVITY_AT);
+    }
+
+    public function getCreatedAt(): \DateTime
+    {
+        return $this->getAttribute(self::CREATED_AT);
+    }
+
+    public function getUpdatedAt(): \DateTime
+    {
+        return $this->getAttribute(self::UPDATED_AT);
+    }
 }
