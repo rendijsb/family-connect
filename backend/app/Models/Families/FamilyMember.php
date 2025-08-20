@@ -6,10 +6,14 @@ namespace App\Models\Families;
 
 use App\Enums\Families\FamilyRoleEnum;
 use App\Models\Users\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+/**
+ * @mixin Builder
+ */
 class FamilyMember extends Model
 {
     public const TABLE = 'family_members';

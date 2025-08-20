@@ -67,12 +67,12 @@ class Family extends Model
 
     public function ownerRelation(): BelongsTo
     {
-        return $this->belongsTo(Family::class, self::OWNER_ID, User::ID);
+        return $this->belongsTo(User::class, self::OWNER_ID, User::ID);
     }
 
     public function membersRelation(): HasMany
     {
-        return $this->hasMany(Family::class, FamilyMember::FAMILY_ID, self::ID);
+        return $this->hasMany(FamilyMember::class, FamilyMember::FAMILY_ID, self::ID);
     }
 
     public function relatedOwner(): User
@@ -141,7 +141,7 @@ class Family extends Model
         return $this->getAttribute(self::MAX_MEMBERS);
     }
 
-    public function getIsActive(): bool
+    public function getIsActive(): ?bool
     {
         return $this->getAttribute(self::IS_ACTIVE);
     }

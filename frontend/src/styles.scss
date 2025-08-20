@@ -453,3 +453,39 @@ ion-tab-bar {
     display: none !important;
   }
 }
+
+// frontend/src/styles.scss
+
+/* Header offset utilities */
+:root {
+  --header-height: 56px;
+  --header-height-mobile: 52px;
+}
+
+.content-with-header {
+  padding-top: calc(var(--header-height) + env(safe-area-inset-top, 0px)) !important;
+}
+
+@media (max-width: 430px) {
+  .content-with-header {
+    padding-top: calc(var(--header-height-mobile) + env(safe-area-inset-top, 0px)) !important;
+  }
+}
+
+/* iPhone specific */
+@media screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) {
+  .content-with-header {
+    padding-top: calc(var(--header-height) + max(env(safe-area-inset-top, 0px), 47px)) !important;
+  }
+}
+
+.custom-alert {
+  --background: rgba(38, 38, 38, 0.95);
+  --color: white;
+
+  .alert-input {
+    background: rgba(55, 55, 55, 0.8);
+    color: white;
+    text-transform: uppercase;
+  }
+}

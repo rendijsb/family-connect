@@ -120,6 +120,7 @@ export class FamilyPage implements OnInit, OnDestroy {
     const alert = await this.alertController.create({
       header: 'Join Family',
       message: 'Enter the family join code to join an existing family.',
+      cssClass: 'custom-alert',
       inputs: [
         {
           name: 'joinCode',
@@ -127,7 +128,6 @@ export class FamilyPage implements OnInit, OnDestroy {
           placeholder: 'Enter join code',
           attributes: {
             maxlength: 8,
-            style: 'text-transform: uppercase;'
           }
         }
       ],

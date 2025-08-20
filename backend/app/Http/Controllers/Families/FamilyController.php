@@ -5,17 +5,21 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Families;
 
 use App\Http\Requests\Families\CreateFamilyRequest;
+use App\Http\Requests\Families\DeleteFamilyRequest;
 use App\Http\Requests\Families\GetAllFamiliesRequest;
 use App\Http\Requests\Families\GetFamilyBySlugRequest;
 use App\Http\Requests\Families\GetMyFamiliesRequest;
+use App\Http\Requests\Families\JoinFamilyByCodeRequest;
+use App\Http\Requests\Families\UpdateFamilyRequest;
 use App\Http\Resources\Families\FamilyResource;
 use App\Http\Resources\Families\FamilyResourceCollection;
 use App\Services\Repositories\Families\FamilyRepository;
+use Illuminate\Http\JsonResponse;
 
 class FamilyController
 {
     public function __construct(
-        private FamilyRepository $familyRepository,
+        private readonly FamilyRepository $familyRepository,
     )
     {
     }
@@ -48,14 +52,20 @@ class FamilyController
         );
     }
 
-    public function updateFamily()
+    public function updateFamily(UpdateFamilyRequest $request): FamilyResource
     {
-
+        return $request->responseResource(
+            $this->familyRepository->updateFamily($request->dto())
+        );
     }
 
-    public function deleteFamily()
+    public function deleteFamily(DeleteFamilyRequest $request): JsonResponse
     {
+        $this->familyRepository->deleteFamily($request->getFamilySlug());
 
+        return JsonResponse::create([
+            'message' => 'Family deleted successfully.',
+        ], 204);
     }
 
     public function leaveFamily()
@@ -63,8 +73,10 @@ class FamilyController
 
     }
 
-    public function joinFamilyByCode()
+    public function joinFamilyByCode(JoinFamilyByCodeRequest $request): FamilyResource
     {
-
+        return $request->responseResource(
+            $this->familyRepository->joinFamilyByCode($request->dto())
+        );
     }
 }

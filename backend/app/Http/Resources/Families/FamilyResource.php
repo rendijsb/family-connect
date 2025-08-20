@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Families;
 
-use App\Http\Resources\Families\Members\FamilyMemberResource;
 use App\Http\Resources\Families\Members\FamilyMemberResourceCollection;
 use App\Http\Resources\Users\UserResource;
 use App\Models\Families\Family;

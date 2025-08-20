@@ -108,7 +108,6 @@ export class FamilyService {
     );
   }
 
-  // Update family
   updateFamily(slug: string, familyData: UpdateFamilyRequest): Observable<ApiResponse<Family>> {
     this._isLoading.set(true);
 

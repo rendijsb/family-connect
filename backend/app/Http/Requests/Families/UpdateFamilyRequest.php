@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Families;
 
-use App\DataTransferObjects\Families\CreateFamilyRequestData;
+use App\DataTransferObjects\Families\UpdateFamilyRequestData;
 use App\Enums\Families\FamilyPrivacyEnum;
 use App\Http\Resources\Families\FamilyResource;
 use App\Models\Families\Family;
 use App\Services\Validation\ValidationRuleHelper;
 use Illuminate\Foundation\Http\FormRequest;
 
-class CreateFamilyRequest extends FormRequest
+class UpdateFamilyRequest extends FormRequest
 {
     private const NAME = 'name';
     private const DESCRIPTION = 'description';
@@ -19,6 +19,7 @@ class CreateFamilyRequest extends FormRequest
     private const TIMEZONE = 'timezone';
     private const LANGUAGE = 'language';
     private const MAX_MEMBERS = 'maxMembers';
+    private const FAMILY_SLUG_ROUTE_KEY = 'family_slug';
 
     public function authorize(): bool
     {
@@ -29,50 +30,60 @@ class CreateFamilyRequest extends FormRequest
     {
         return [
             self::NAME => [
-                ValidationRuleHelper::REQUIRED,
+                ValidationRuleHelper::SOMETIMES,
                 ValidationRuleHelper::STRING,
-                ValidationRuleHelper::max(100),
+                ValidationRuleHelper::min(2),
+                ValidationRuleHelper::max(50)
             ],
             self::DESCRIPTION => [
+                ValidationRuleHelper::NULLABLE,
                 ValidationRuleHelper::STRING,
-                ValidationRuleHelper::max(255),
+                ValidationRuleHelper::max(500)
             ],
             self::PRIVACY => [
-                ValidationRuleHelper::REQUIRED,
-                ValidationRuleHelper::enum(FamilyPrivacyEnum::class)
+                ValidationRuleHelper::SOMETIMES,
+                ValidationRuleHelper::STRING,
+                ValidationRuleHelper::enum(FamilyPrivacyEnum::class),
             ],
             self::TIMEZONE => [
+                ValidationRuleHelper::NULLABLE,
                 ValidationRuleHelper::STRING,
-                ValidationRuleHelper::NULLABLE
+                ValidationRuleHelper::max(50)
             ],
             self::LANGUAGE => [
-                ValidationRuleHelper::STRING,
-                ValidationRuleHelper::max(40),
                 ValidationRuleHelper::NULLABLE,
+                ValidationRuleHelper::STRING,
+                ValidationRuleHelper::max(10)
             ],
             self::MAX_MEMBERS => [
+                ValidationRuleHelper::NULLABLE,
                 ValidationRuleHelper::INTEGER,
-                ValidationRuleHelper::min(1),
-                ValidationRuleHelper::max(100),
-                ValidationRuleHelper::NULLABLE
+                ValidationRuleHelper::min(2),
+                ValidationRuleHelper::max(100)
             ]
         ];
     }
 
-    public function dto(): CreateFamilyRequestData
+    public function dto(): UpdateFamilyRequestData
     {
-        return new CreateFamilyRequestData(
+        return new UpdateFamilyRequestData(
             name: $this->input(self::NAME),
             description: $this->input(self::DESCRIPTION),
-            privacy: FamilyPrivacyEnum::tryFrom((string)$this->input(self::PRIVACY)),
+            privacy: $this->input(self::PRIVACY),
             timezone: $this->input(self::TIMEZONE),
             language: $this->input(self::LANGUAGE),
-            maxMembers: $this->integer(self::MAX_MEMBERS, 10)
+            maxMembers: $this->input(self::MAX_MEMBERS),
+            familySlug: $this->getFamilySlug()
         );
+    }
+
+    private function getFamilySlug(): string
+    {
+        return (string)$this->route(self::FAMILY_SLUG_ROUTE_KEY);
     }
 
     public function responseResource(Family $family): FamilyResource
     {
-        return FamilyResource::make($family);
+        return new FamilyResource($family);
     }
 }

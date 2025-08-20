@@ -32,8 +32,8 @@ class FamilyMemberResource extends JsonResource
             'createdAt' => $this->resource->getCreatedAt(),
             'updatedAt' => $this->resource->getUpdatedAt(),
 
-            'user' => UserResource::make($this->resource->relatedUser()),
-            'family' => FamilyResource::make($this->resource->relatedFamily()),
+//            'user' => UserResource::make($this->resource->relatedUser()),
+//            'family' => FamilyResource::make($this->resource->relatedFamily()),
         ];
     }
 }
