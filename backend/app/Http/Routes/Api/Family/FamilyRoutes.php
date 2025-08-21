@@ -16,11 +16,14 @@ class FamilyRoutes implements RouteContract
             Route::get('/', [FamilyController::class, 'getAllFamilies']);
             Route::post('/', [FamilyController::class, 'createFamily']);
             Route::get('/my-families', [FamilyController::class, 'getMyFamilies']);
-            Route::get('/{family_slug}', [FamilyController::class, 'getFamilyBySlug']);
-            Route::put('/{family_slug}', [FamilyController::class, 'updateFamily']);
-            Route::delete('/{family_slug}', [FamilyController::class, 'deleteFamily']);
-            Route::post('/{family_slug}/leave', [FamilyController::class, 'leaveFamily']);
             Route::post('/join', [FamilyController::class, 'joinFamilyByCode']);
+
+            Route::middleware('family.access')->group(function () {
+                Route::get('/{family_slug}', [FamilyController::class, 'getFamilyBySlug']);
+                Route::put('/{family_slug}', [FamilyController::class, 'updateFamily']);
+                Route::delete('/{family_slug}', [FamilyController::class, 'deleteFamily']);
+                Route::post('/{family_slug}/leave', [FamilyController::class, 'leaveFamily']);
+            });
         });
     }
 }

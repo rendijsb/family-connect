@@ -34,6 +34,9 @@ class FamilyResource extends JsonResource
             'createdAt' => $this->resource->getCreatedAt(),
             'updatedAt' => $this->resource->getUpdatedAt(),
 
+            'memberCount' => $this->resource->getAttribute('memberCount') ?? 0,
+            'currentUserRole' => $this->resource->getAttribute('currentUserRole')?->value,
+
             'members' => FamilyMemberResourceCollection::make($this->resource->relatedMembers()),
             'owner' => UserResource::make($this->resource->relatedOwner()),
         ];

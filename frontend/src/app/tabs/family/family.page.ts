@@ -167,7 +167,22 @@ export class FamilyPage implements OnInit, OnDestroy {
     if (event) {
       event.stopPropagation();
     }
-    await this.router.navigate(['/family', family.slug]);
+
+      if (!family.slug) {
+        await this.showErrorToast('Invalid family data');
+        return;
+      }
+
+      if (!family.currentUserRole) {
+        await this.showErrorToast('You do not have access to this family');
+        return;
+      }
+
+      const navigationSuccess = await this.router.navigate(['/family', family.slug]);
+
+      if (!navigationSuccess) {
+        await this.showErrorToast('Failed to open family page');
+      }
   }
 
   async openFamilyChat(family: Family, event: Event) {
@@ -180,7 +195,6 @@ export class FamilyPage implements OnInit, OnDestroy {
     await this.router.navigate(['/family', family.slug, 'settings']);
   }
 
-  // Action Sheets
   async presentFamilyOptions() {
     const actionSheet = await this.actionSheetController.create({
       header: 'Family Options',
@@ -227,7 +241,6 @@ export class FamilyPage implements OnInit, OnDestroy {
       }
     ];
 
-    // Add management options if user can manage
     if (this.canManageFamily(family)) {
       buttons.push(
         {
@@ -251,7 +264,6 @@ export class FamilyPage implements OnInit, OnDestroy {
       }
     }
 
-    // Add leave/delete option
     if (family.currentUserRole === FamilyRoleEnum.OWNER) {
       buttons.push({
         text: 'Delete Family',

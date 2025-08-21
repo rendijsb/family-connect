@@ -27,7 +27,12 @@ class FamilyRepository
 
     public function getAllFamilies(): Collection
     {
-        return $this->family->get();
+        return $this->family->with([
+            Family::OWNER_RELATION,
+            Family::MEMBERS_RELATION . '.userRelation'
+        ])->get()->map(function (Family $family) {
+            return $this->enrichFamilyWithUserRole($family);
+        });
     }
 
     public function createFamily(CreateFamilyRequestData $data): Family
@@ -35,8 +40,8 @@ class FamilyRepository
         /** @var User $owner */
         $owner = Auth::user();
 
-        $slug = Str::slug($data->name);
-        $code = Str::random(8);
+        $slug = $this->generateUniqueSlug($data->name);
+        $code = $this->generateUniqueJoinCode();
 
         $payload = [
             Family::NAME => $data->name,
@@ -54,16 +59,16 @@ class FamilyRepository
         /** @var Family $family */
         $family = $this->family->create($payload);
 
-        $payload = [
+        $this->familyMember->create([
             FamilyMember::FAMILY_ID => $family->getId(),
             FamilyMember::USER_ID => $owner->getId(),
             FamilyMember::ROLE => FamilyRoleEnum::OWNER,
             FamilyMember::JOINED_AT => Carbon::now(),
             FamilyMember::LAST_SEEN_AT => Carbon::now(),
-            FamilyMember::IS_ACTIVE => false,
+            FamilyMember::IS_ACTIVE => true,
             FamilyMember::NOTIFICATIONS_ENABLED => true,
             FamilyMember::PERMISSIONS => FamilyRoleEnum::OWNER->getPermissions(),
-        ];
+        ]);
 
         $this->familyMember->create($payload);
 
@@ -83,57 +88,83 @@ class FamilyRepository
         /** @var User $user */
         $user = Auth::user();
 
-        $relatedMembers = $user->relatedFamilyMembers();
+        $familyMembers = $this->familyMember
+            ->where(FamilyMember::USER_ID, $user->getId())
+            ->where(FamilyMember::IS_ACTIVE, true)
+            ->with([
+                FamilyMember::FAMILY_RELATION . '.' . Family::OWNER_RELATION,
+                FamilyMember::FAMILY_RELATION . '.' . Family::MEMBERS_RELATION . FamilyMember::USER_RELATION
+            ])
+            ->get();
 
-        $families = Collection::make();
-
-        foreach ($relatedMembers as $relatedMember) {
-            $families->add($relatedMember->relatedFamily());
-        }
-
-        return $families;
+        return $familyMembers->map(function (FamilyMember $member) {
+            $family = $member->relatedFamily();
+            return $this->enrichFamilyWithUserRole($family, $member->getRole());
+        });
     }
 
     public function getFamilyBySlug(string $slug): Family
     {
-        return $this->family->where(Family::SLUG, $slug)
-            ->first();
+        $family = $this->family
+            ->where(Family::SLUG, $slug)
+            ->with([
+                Family::OWNER_RELATION,
+                Family::MEMBERS_RELATION . '.userRelation'
+            ])
+            ->firstOrFail();
+
+        return $this->enrichFamilyWithUserRole($family);
     }
 
     public function updateFamily(UpdateFamilyRequestData $data): Family
     {
-        $code = Str::random(8);
+        $family = $this->family->where(Family::SLUG, $data->familySlug)->firstOrFail();
 
-        $payload = [
+        $updateData = array_filter([
             Family::NAME => $data->name,
-            Family::JOIN_CODE => $code,
             Family::DESCRIPTION => $data->description,
             Family::PRIVACY => $data->privacy,
             Family::LANGUAGE => $data->language,
             Family::TIMEZONE => $data->timezone,
             Family::MAX_MEMBERS => $data->maxMembers,
-        ];
+        ], fn($value) => $value !== null);
 
-        /** @var Family $family */
-        $family = $this->family->where(Family::SLUG, $data->familySlug)
-            ->first();
+        // Generate new join code if name changed
+        if ($data->name && $data->name !== $family->getName()) {
+            $updateData[Family::JOIN_CODE] = $this->generateUniqueJoinCode();
+        }
 
-        $family->update($payload);
+        $family->update($updateData);
 
-        return $family->refresh();
+        return $this->getFamilyBySlug($family->getSlug());
     }
 
     public function deleteFamily(string $slug): void
     {
-        $family = $this->family->where(Family::SLUG, $slug)
-            ->firstOrFail();
+        $family = $this->family->where(Family::SLUG, $slug)->firstOrFail();
+
+        // Delete all family members first (cascade should handle this, but being explicit)
+        $this->familyMember->where(FamilyMember::FAMILY_ID, $family->getId())->delete();
 
         $family->delete();
     }
 
-    public function leaveFamily()
+    public function leaveFamily(string $slug): void
     {
+        /** @var User $user */
+        $user = Auth::user();
 
+        $family = $this->family->where(Family::SLUG, $slug)->firstOrFail();
+
+        // Owner cannot leave, they must delete the family
+        if ($family->getOwnerId() === $user->getId()) {
+            throw new \InvalidArgumentException('Family owner cannot leave. Delete the family instead.');
+        }
+
+        $this->familyMember
+            ->where(FamilyMember::FAMILY_ID, $family->getId())
+            ->where(FamilyMember::USER_ID, $user->getId())
+            ->delete();
     }
 
     public function joinFamilyByCode(JoinFamilyRequestData $data): Family
@@ -141,21 +172,82 @@ class FamilyRepository
         /** @var User $user */
         $user = Auth::user();
 
-        /** @var Family $family */
-        $family = $this->family->where(Family::JOIN_CODE, '=', $data->joinCode)->firstOrFail();
+        $family = $this->family
+            ->where(Family::JOIN_CODE, $data->joinCode)
+            ->where(Family::IS_ACTIVE, true)
+            ->firstOrFail();
 
-        $payload = [
-            FamilyMember::FAMILY_ID => $family->getId(),
-            FamilyMember::USER_ID => $user->getId(),
-            FamilyMember::ROLE => FamilyRoleEnum::MEMBER,
-            FamilyMember::JOINED_AT => Carbon::now(),
-            FamilyMember::LAST_SEEN_AT => Carbon::now(),
-            FamilyMember::IS_ACTIVE => false,
-            FamilyMember::NOTIFICATIONS_ENABLED => true,
-        ];
+        // Check if user is already a member
+        $existingMember = $this->familyMember
+            ->where(FamilyMember::FAMILY_ID, $family->getId())
+            ->where(FamilyMember::USER_ID, $user->getId())
+            ->first();
 
-        $this->familyMember->create($payload);
+        if ($existingMember) {
+            if ($existingMember->getIsActive()) {
+                throw new \InvalidArgumentException('You are already a member of this family.');
+            }
 
-        return $family->refresh();
+            // Reactivate membership
+            $existingMember->update([
+                FamilyMember::IS_ACTIVE => true,
+                FamilyMember::JOINED_AT => Carbon::now(),
+                FamilyMember::LAST_SEEN_AT => Carbon::now(),
+            ]);
+        } else {
+            // Create new membership
+            $this->familyMember->create([
+                FamilyMember::FAMILY_ID => $family->getId(),
+                FamilyMember::USER_ID => $user->getId(),
+                FamilyMember::ROLE => FamilyRoleEnum::MEMBER,
+                FamilyMember::JOINED_AT => Carbon::now(),
+                FamilyMember::LAST_SEEN_AT => Carbon::now(),
+                FamilyMember::IS_ACTIVE => true,
+                FamilyMember::NOTIFICATIONS_ENABLED => true,
+                FamilyMember::PERMISSIONS => FamilyRoleEnum::MEMBER->getPermissions(),
+            ]);
+        }
+
+        return $this->getFamilyBySlug($family->getSlug());
+    }
+
+    private function enrichFamilyWithUserRole(Family $family, ?FamilyRoleEnum $userRole = null): Family
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        if (!$userRole) {
+            $member = $family->relatedMembers()->firstWhere('user_id', $user->getId());
+            $userRole = $member?->getRole();
+        }
+
+        // Add current user role and member count to family
+        $family->setAttribute('currentUserRole', $userRole);
+        $family->setAttribute('memberCount', $family->relatedMembers()->where('is_active', true)->count());
+
+        return $family;
+    }
+
+    private function generateUniqueSlug(string $name): string
+    {
+        $baseSlug = Str::slug($name);
+        $slug = $baseSlug;
+        $counter = 1;
+
+        while ($this->family->where(Family::SLUG, $slug)->exists()) {
+            $slug = $baseSlug . '-' . $counter;
+            $counter++;
+        }
+
+        return $slug;
+    }
+
+    private function generateUniqueJoinCode(): string
+    {
+        do {
+            $code = strtoupper(Str::random(8));
+        } while ($this->family->where(Family::JOIN_CODE, $code)->exists());
+
+        return $code;
     }
 }

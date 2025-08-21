@@ -28,11 +28,11 @@ export interface Family {
   createdAt: string;
   updatedAt: string;
 
-  // Relations
+  memberCount: number;
+  currentUserRole?: FamilyRoleEnum;
+
   members?: FamilyMember[];
   owner?: any;
-  memberCount?: number;
-  currentUserRole?: FamilyRoleEnum;
 }
 
 export interface FamilyMember {
@@ -105,6 +105,7 @@ export const FAMILY_PERMISSIONS: FamilyPermission[] = [
   { id: 'all', name: 'All Permissions', description: 'Full family management access', requiredRole: FamilyRoleEnum.OWNER }
 ];
 
+// Utility functions
 export function getFamilyRoleName(role: FamilyRoleEnum): string {
   switch (role) {
     case FamilyRoleEnum.OWNER: return 'Family Owner';
@@ -125,14 +126,32 @@ export function getFamilyRolePermissions(role: FamilyRoleEnum): string[] {
   }
 }
 
-export function canUserManageFamily(userRole: FamilyRoleEnum): boolean {
+export function canUserManageFamily(userRole?: FamilyRoleEnum): boolean {
+  if (!userRole) return false;
   return userRole === FamilyRoleEnum.OWNER || userRole === FamilyRoleEnum.MODERATOR;
 }
 
-export function canUserManageMembers(userRole: FamilyRoleEnum): boolean {
+export function canUserManageMembers(userRole?: FamilyRoleEnum): boolean {
+  if (!userRole) return false;
   return userRole === FamilyRoleEnum.OWNER || userRole === FamilyRoleEnum.MODERATOR;
 }
 
-export function canUserInviteMembers(userRole: FamilyRoleEnum): boolean {
+export function canUserInviteMembers(userRole?: FamilyRoleEnum): boolean {
+  if (!userRole) return false;
   return userRole === FamilyRoleEnum.OWNER || userRole === FamilyRoleEnum.MODERATOR;
+}
+
+export function hasPermission(userRole: FamilyRoleEnum | undefined, permission: string): boolean {
+  if (!userRole) return false;
+
+  const permissions = getFamilyRolePermissions(userRole);
+  return permissions.includes('all') || permissions.includes(permission);
+}
+
+export function isFamilyRole(value: any): value is FamilyRoleEnum {
+  return Object.values(FamilyRoleEnum).includes(value);
+}
+
+export function isFamilyPrivacy(value: any): value is FamilyPrivacyEnum {
+  return Object.values(FamilyPrivacyEnum).includes(value);
 }

@@ -10,7 +10,8 @@ import {
   UpdateFamilyRequest,
   JoinFamilyRequest,
   UpdateMemberRequest,
-  FamilyRoleEnum
+  FamilyRoleEnum,
+  getFamilyRolePermissions
 } from '../../../models/families/family.models';
 
 interface ApiResponse<T> {
@@ -48,19 +49,17 @@ export class FamilyService {
       this.apiUrlService.getUrl('families/my-families')
     ).pipe(
       tap(response => {
-        this._families.next(response.data);
+        const families = response.data.map(family => this.normalizeFamilyData(family));
+        this._families.next(families);
         this._isLoading.set(false);
       }),
       catchError(error => {
         this._isLoading.set(false);
         return this.handleError(error);
       })
-    ).pipe(
-      tap(response => response.data)
     );
   }
 
-  // Get family by slug
   getFamilyBySlug(slug: string): Observable<ApiResponse<Family>> {
     this._isLoading.set(true);
 
@@ -68,19 +67,17 @@ export class FamilyService {
       this.apiUrlService.getUrl(`families/${slug}`)
     ).pipe(
       tap(response => {
-        this._currentFamily.next(response.data);
+        const family = this.normalizeFamilyData(response.data);
+        this._currentFamily.next(family);
         this._isLoading.set(false);
       }),
       catchError(error => {
         this._isLoading.set(false);
         return this.handleError(error);
       })
-    ).pipe(
-      tap(response => response.data)
     );
   }
 
-  // Create new family
   createFamily(familyData: CreateFamilyRequest): Observable<ApiResponse<Family>> {
     this._isLoading.set(true);
 
@@ -89,12 +86,12 @@ export class FamilyService {
       familyData
     ).pipe(
       tap(async response => {
-        // Add to families list
-        const currentFamilies = this._families.value;
-        this._families.next([...currentFamilies, response.data]);
+        const family = this.normalizeFamilyData(response.data);
 
-        // Set as current family
-        this._currentFamily.next(response.data);
+        const currentFamilies = this._families.value;
+        this._families.next([...currentFamilies, family]);
+
+        this._currentFamily.next(family);
 
         this._isLoading.set(false);
         await this.showToast('Family created successfully!', 'success');
@@ -103,8 +100,6 @@ export class FamilyService {
         this._isLoading.set(false);
         return this.handleError(error);
       })
-    ).pipe(
-      tap(response => response.data)
     );
   }
 
@@ -116,16 +111,16 @@ export class FamilyService {
       familyData
     ).pipe(
       tap(async response => {
-        // Update in families list
+        const family = this.normalizeFamilyData(response.data);
+
         const currentFamilies = this._families.value;
-        const updatedFamilies = currentFamilies.map(family =>
-          family.slug === slug ? response.data : family
+        const updatedFamilies = currentFamilies.map(f =>
+          f.slug === slug ? family : f
         );
         this._families.next(updatedFamilies);
 
-        // Update current family if it matches
         if (this._currentFamily.value?.slug === slug) {
-          this._currentFamily.next(response.data);
+          this._currentFamily.next(family);
         }
 
         this._isLoading.set(false);
@@ -135,12 +130,9 @@ export class FamilyService {
         this._isLoading.set(false);
         return this.handleError(error);
       })
-    ).pipe(
-      tap(response => response.data)
     );
   }
 
-  // Delete family
   deleteFamily(slug: string): Observable<ApiResponse<void>> {
     this._isLoading.set(true);
 
@@ -148,12 +140,10 @@ export class FamilyService {
       this.apiUrlService.getUrl(`families/${slug}`)
     ).pipe(
       tap(async () => {
-        // Remove from families list
         const currentFamilies = this._families.value;
         const filteredFamilies = currentFamilies.filter(family => family.slug !== slug);
         this._families.next(filteredFamilies);
 
-        // Clear current family if it matches
         if (this._currentFamily.value?.slug === slug) {
           this._currentFamily.next(null);
         }
@@ -168,7 +158,6 @@ export class FamilyService {
     );
   }
 
-  // Join family by code
   joinFamilyByCode(joinData: JoinFamilyRequest): Observable<ApiResponse<Family>> {
     this._isLoading.set(true);
 
@@ -177,9 +166,10 @@ export class FamilyService {
       joinData
     ).pipe(
       tap(async response => {
-        // Add to families list
+        const family = this.normalizeFamilyData(response.data);
+
         const currentFamilies = this._families.value;
-        this._families.next([...currentFamilies, response.data]);
+        this._families.next([...currentFamilies, family]);
 
         this._isLoading.set(false);
         await this.showToast('Successfully joined family!', 'success');
@@ -188,12 +178,9 @@ export class FamilyService {
         this._isLoading.set(false);
         return this.handleError(error);
       })
-    ).pipe(
-      tap(response => response.data)
     );
   }
 
-  // Leave family
   leaveFamily(slug: string): Observable<ApiResponse<void>> {
     this._isLoading.set(true);
 
@@ -202,12 +189,10 @@ export class FamilyService {
       {}
     ).pipe(
       tap(async () => {
-        // Remove from families list
         const currentFamilies = this._families.value;
         const filteredFamilies = currentFamilies.filter(family => family.slug !== slug);
         this._families.next(filteredFamilies);
 
-        // Clear current family if it matches
         if (this._currentFamily.value?.slug === slug) {
           this._currentFamily.next(null);
         }
@@ -222,47 +207,26 @@ export class FamilyService {
     );
   }
 
-  // Get family members
-  getFamilyMembers(slug: string): Observable<ApiResponse<FamilyMember[]>> {
-    return this.http.get<ApiResponse<FamilyMember[]>>(
-      this.apiUrlService.getUrl(`families/${slug}/members`)
-    ).pipe(
-      tap(response => response.data),
-      catchError(error => this.handleError(error))
-    );
-  }
-
-  // Update family member
-  updateFamilyMember(
-    slug: string,
-    memberId: number,
-    memberData: UpdateMemberRequest
-  ): Observable<ApiResponse<FamilyMember>> {
-    return this.http.put<ApiResponse<FamilyMember>>(
-      this.apiUrlService.getUrl(`families/${slug}/members/${memberId}`),
-      memberData
+  generateJoinCode(slug: string): Observable<ApiResponse<{ joinCode: string }>> {
+    return this.http.post<ApiResponse<{ joinCode: string }>>(
+      this.apiUrlService.getUrl(`families/${slug}/generate-code`),
+      {}
     ).pipe(
       tap(async response => {
-        await this.showToast('Member updated successfully!', 'success');
-      }),
-      tap(response => response.data),
-      catchError(error => this.handleError(error))
-    );
-  }
+        const currentFamily = this._currentFamily.value;
+        if (currentFamily?.slug === slug) {
+          this._currentFamily.next({
+            ...currentFamily,
+            joinCode: response.data.joinCode
+          });
+        }
 
-  // Remove family member
-  removeFamilyMember(slug: string, memberId: number): Observable<ApiResponse<void>> {
-    return this.http.delete<ApiResponse<void>>(
-      this.apiUrlService.getUrl(`families/${slug}/members/${memberId}`)
-    ).pipe(
-      tap(async () => {
-        await this.showToast('Member removed successfully!', 'success');
+        await this.showToast('New join code generated!', 'success');
       }),
       catchError(error => this.handleError(error))
     );
   }
 
-  // Invite family member
   inviteFamilyMember(slug: string, email: string, role: FamilyRoleEnum): Observable<ApiResponse<void>> {
     return this.http.post<ApiResponse<void>>(
       this.apiUrlService.getUrl(`families/${slug}/invite`),
@@ -275,30 +239,17 @@ export class FamilyService {
     );
   }
 
-  // Generate new join code
-  generateJoinCode(slug: string): Observable<ApiResponse<{ joinCode: string }>> {
-    return this.http.post<ApiResponse<{ joinCode: string }>>(
-      this.apiUrlService.getUrl(`families/${slug}/generate-code`),
-      {}
+  removeFamilyMember(slug: string, memberId: number): Observable<ApiResponse<void>> {
+    return this.http.delete<ApiResponse<void>>(
+      this.apiUrlService.getUrl(`families/${slug}/members/${memberId}`)
     ).pipe(
-      tap(async response => {
-        // Update current family if it matches
-        const currentFamily = this._currentFamily.value;
-        if (currentFamily?.slug === slug) {
-          this._currentFamily.next({
-            ...currentFamily,
-            joinCode: response.data.joinCode
-          });
-        }
-
-        await this.showToast('New join code generated!', 'success');
-        return response.data.joinCode;
+      tap(async () => {
+        await this.showToast('Member removed successfully!', 'success');
       }),
       catchError(error => this.handleError(error))
     );
   }
 
-  // Utility methods
   getCurrentFamily(): Family | null {
     return this._currentFamily.value;
   }
@@ -310,7 +261,7 @@ export class FamilyService {
   hasPermission(family: Family, permission: string): boolean {
     if (!family.currentUserRole) return false;
 
-    const userPermissions = this.getRolePermissions(family.currentUserRole);
+    const userPermissions = getFamilyRolePermissions(family.currentUserRole);
     return userPermissions.includes('all') || userPermissions.includes(permission);
   }
 
@@ -332,14 +283,16 @@ export class FamilyService {
     return family.currentUserRole === FamilyRoleEnum.OWNER;
   }
 
-  private getRolePermissions(role: FamilyRoleEnum): string[] {
-    switch (role) {
-      case FamilyRoleEnum.OWNER: return ['all'];
-      case FamilyRoleEnum.MODERATOR: return ['manage_members', 'manage_events', 'manage_photos', 'manage_chat'];
-      case FamilyRoleEnum.MEMBER: return ['view_all', 'create_events', 'upload_photos', 'chat'];
-      case FamilyRoleEnum.CHILD: return ['view_limited', 'chat_limited'];
-      default: return [];
-    }
+  getUserRole(family: Family): FamilyRoleEnum | null {
+    return family.currentUserRole || null;
+  }
+
+  private normalizeFamilyData(family: any): Family {
+    return {
+      ...family,
+      currentUserRole: family.currentUserRole ? parseInt(family.currentUserRole) as FamilyRoleEnum : undefined,
+      memberCount: family.memberCount || 0
+    };
   }
 
   // Error handling

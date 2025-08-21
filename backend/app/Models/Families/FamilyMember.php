@@ -9,7 +9,6 @@ use App\Models\Users\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @mixin Builder
@@ -63,11 +62,17 @@ class FamilyMember extends Model
     /** @see FamilyMember::familyRelation() */
     const FAMILY_RELATION = 'familyRelation';
 
-    public function userRelation(): HasOne
+    /**
+     * Get the user that belongs to this family member.
+     */
+    public function userRelation(): BelongsTo
     {
-        return $this->hasOne(User::class, self::USER_ID, User::ID);
+        return $this->belongsTo(User::class, self::USER_ID, User::ID);
     }
 
+    /**
+     * Get the family that this member belongs to.
+     */
     public function familyRelation(): BelongsTo
     {
         return $this->belongsTo(Family::class, self::FAMILY_ID, Family::ID);
@@ -115,7 +120,7 @@ class FamilyMember extends Model
 
     public function getPermissions(): array
     {
-        return $this->getAttribute(self::PERMISSIONS);
+        return $this->getAttribute(self::PERMISSIONS) ?? [];
     }
 
     public function getNotificationsEnabled(): bool

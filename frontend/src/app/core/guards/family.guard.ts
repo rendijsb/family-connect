@@ -22,13 +22,15 @@ export const familyGuard: CanActivateFn = (route, state) => {
   }
 
   return familyService.getFamilyBySlug(familySlug).pipe(
-    map(family => {
+    map(response => {
+      const family = response.data;
+
       if (!family) {
         router.navigate(['/tabs/family']);
         return false;
       }
 
-      if (!family.data.currentUserRole) {
+      if (!family.currentUserRole) {
         router.navigate(['/tabs/family']);
         return false;
       }
@@ -61,13 +63,17 @@ export const familyRoleGuard = (allowedRoles: FamilyRoleEnum[]): CanActivateFn =
     }
 
     return familyService.getFamilyBySlug(familySlug).pipe(
-      map(family => {
-        if (!family || !family.data.currentUserRole) {
+      map(response => {
+        const family = response.data;
+
+        if (!family || !family.currentUserRole) {
           router.navigate(['/tabs/family']);
           return false;
         }
 
-        if (!allowedRoles.includes(family.data.currentUserRole)) {
+        const userRole = family.currentUserRole as FamilyRoleEnum;
+
+        if (!allowedRoles.includes(userRole)) {
           router.navigate([`/family/${familySlug}`]);
           return false;
         }
@@ -121,13 +127,15 @@ export const familyPermissionGuard = (permission: string): CanActivateFn => {
     }
 
     return familyService.getFamilyBySlug(familySlug).pipe(
-      map(family => {
+      map(response => {
+        const family = response.data;
+
         if (!family) {
           router.navigate(['/tabs/family']);
           return false;
         }
 
-        if (!familyService.hasPermission(family.data, permission)) {
+        if (!familyService.hasPermission(family, permission)) {
           router.navigate([`/family/${familySlug}`]);
           return false;
         }
