@@ -32,7 +32,7 @@ interface TimezoneOption {
     CommonModule, ReactiveFormsModule,
     IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonButtons,
     IonIcon, IonItem, IonInput, IonTextarea, IonSelect, IonSelectOption,
-    IonRadio
+    IonRadio, IonRadioGroup
   ]
 })
 export class FamilyCreatePage implements OnInit, OnDestroy {
@@ -152,11 +152,11 @@ export class FamilyCreatePage implements OnInit, OnDestroy {
     this.familyService.createFamily(familyData)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: async (family) => {
+        next: async (response) => {
           await loading.dismiss();
           this.isLoading = false;
           await this.showToast('Family created successfully!', 'success');
-          await this.router.navigate(['/family', family.data.slug]);
+          await this.router.navigate(['/family', response.data.slug]);
         },
         error: async (error) => {
           await loading.dismiss();

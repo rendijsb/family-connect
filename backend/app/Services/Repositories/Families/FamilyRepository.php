@@ -29,7 +29,7 @@ class FamilyRepository
     {
         return $this->family->with([
             Family::OWNER_RELATION,
-            Family::MEMBERS_RELATION . '.userRelation'
+            Family::MEMBERS_RELATION . '.' . FamilyMember::USER_RELATION
         ])->get()->map(function (Family $family) {
             return $this->enrichFamilyWithUserRole($family);
         });
@@ -70,11 +70,9 @@ class FamilyRepository
             FamilyMember::PERMISSIONS => FamilyRoleEnum::OWNER->getPermissions(),
         ]);
 
-        $this->familyMember->create($payload);
-
         $family->load([
             Family::OWNER_RELATION,
-            Family::MEMBERS_RELATION . '.userRelation'
+            Family::MEMBERS_RELATION . '.' . FamilyMember::USER_RELATION
         ]);
 
         return $family->refresh();
@@ -93,7 +91,7 @@ class FamilyRepository
             ->where(FamilyMember::IS_ACTIVE, true)
             ->with([
                 FamilyMember::FAMILY_RELATION . '.' . Family::OWNER_RELATION,
-                FamilyMember::FAMILY_RELATION . '.' . Family::MEMBERS_RELATION . FamilyMember::USER_RELATION
+                FamilyMember::FAMILY_RELATION . '.' . Family::MEMBERS_RELATION . '.' . FamilyMember::USER_RELATION
             ])
             ->get();
 
@@ -109,7 +107,7 @@ class FamilyRepository
             ->where(Family::SLUG, $slug)
             ->with([
                 Family::OWNER_RELATION,
-                Family::MEMBERS_RELATION . '.userRelation'
+                Family::MEMBERS_RELATION . '.' . FamilyMember::USER_RELATION
             ])
             ->firstOrFail();
 

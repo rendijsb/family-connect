@@ -82,7 +82,7 @@
       <div class="form-section">
         <h3 class="form-section-title">Privacy Settings</h3>
 
-        <div class="privacy-options">
+        <ion-radio-group formControlName="privacy" class="privacy-options">
           <div class="privacy-option"
                [class.selected]="createForm.get('privacy')?.value === 'private'"
                (click)="selectPrivacy('private')">
@@ -94,7 +94,6 @@
               </div>
               <ion-radio
                 value="private"
-                formControlName="privacy"
                 class="option-radio">
               </ion-radio>
             </div>
@@ -111,7 +110,6 @@
               </div>
               <ion-radio
                 value="invite_only"
-                formControlName="privacy"
                 class="option-radio">
               </ion-radio>
             </div>
@@ -128,12 +126,11 @@
               </div>
               <ion-radio
                 value="public"
-                formControlName="privacy"
                 class="option-radio">
               </ion-radio>
             </div>
           </div>
-        </div>
+        </ion-radio-group>
       </div>
 
       <!-- Advanced Settings -->

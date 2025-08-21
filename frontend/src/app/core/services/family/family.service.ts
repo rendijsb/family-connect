@@ -288,11 +288,12 @@ export class FamilyService {
   }
 
   private normalizeFamilyData(family: any): Family {
-    return {
+    const normalized = {
       ...family,
       currentUserRole: family.currentUserRole ? parseInt(family.currentUserRole) as FamilyRoleEnum : undefined,
       memberCount: family.memberCount || 0
     };
+    return normalized;
   }
 
   // Error handling
