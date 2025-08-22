@@ -1,15 +1,13 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, BehaviorSubject, tap, catchError, throwError } from 'rxjs';
-import { ToastController, LoadingController } from '@ionic/angular';
+import { HttpClient } from '@angular/common/http';
+import {Observable, BehaviorSubject, tap, finalize} from 'rxjs';
+import { LoadingController } from '@ionic/angular';
 import { ApiUrlService } from '../api.service';
 import {
   Family,
-  FamilyMember,
   CreateFamilyRequest,
   UpdateFamilyRequest,
   JoinFamilyRequest,
-  UpdateMemberRequest,
   FamilyRoleEnum,
   getFamilyRolePermissions
 } from '../../../models/families/family.models';
@@ -27,15 +25,12 @@ interface ApiResponse<T> {
 export class FamilyService {
   private readonly http = inject(HttpClient);
   private readonly apiUrlService = inject(ApiUrlService);
-  private readonly toastController = inject(ToastController);
   private readonly loadingController = inject(LoadingController);
 
-  // State management
   private readonly _families = new BehaviorSubject<Family[]>([]);
   private readonly _currentFamily = new BehaviorSubject<Family | null>(null);
   private readonly _isLoading = signal<boolean>(false);
 
-  // Public observables
   readonly families$ = this._families.asObservable();
   readonly currentFamily$ = this._currentFamily.asObservable();
   readonly isLoading = this._isLoading.asReadonly();
@@ -53,10 +48,7 @@ export class FamilyService {
         this._families.next(families);
         this._isLoading.set(false);
       }),
-      catchError(error => {
-        this._isLoading.set(false);
-        return this.handleError(error);
-      })
+      finalize(() => this._isLoading.set(false)),
     );
   }
 
@@ -71,10 +63,7 @@ export class FamilyService {
         this._currentFamily.next(family);
         this._isLoading.set(false);
       }),
-      catchError(error => {
-        this._isLoading.set(false);
-        return this.handleError(error);
-      })
+      finalize(() => this._isLoading.set(false)),
     );
   }
 
@@ -94,12 +83,8 @@ export class FamilyService {
         this._currentFamily.next(family);
 
         this._isLoading.set(false);
-        await this.showToast('Family created successfully!', 'success');
       }),
-      catchError(error => {
-        this._isLoading.set(false);
-        return this.handleError(error);
-      })
+      finalize(() => this._isLoading.set(false)),
     );
   }
 
@@ -124,12 +109,8 @@ export class FamilyService {
         }
 
         this._isLoading.set(false);
-        await this.showToast('Family updated successfully!', 'success');
       }),
-      catchError(error => {
-        this._isLoading.set(false);
-        return this.handleError(error);
-      })
+      finalize(() => this._isLoading.set(false)),
     );
   }
 
@@ -149,12 +130,8 @@ export class FamilyService {
         }
 
         this._isLoading.set(false);
-        await this.showToast('Family deleted successfully!', 'success');
       }),
-      catchError(error => {
-        this._isLoading.set(false);
-        return this.handleError(error);
-      })
+      finalize(() => this._isLoading.set(false)),
     );
   }
 
@@ -172,12 +149,8 @@ export class FamilyService {
         this._families.next([...currentFamilies, family]);
 
         this._isLoading.set(false);
-        await this.showToast('Successfully joined family!', 'success');
       }),
-      catchError(error => {
-        this._isLoading.set(false);
-        return this.handleError(error);
-      })
+      finalize(() => this._isLoading.set(false)),
     );
   }
 
@@ -198,12 +171,8 @@ export class FamilyService {
         }
 
         this._isLoading.set(false);
-        await this.showToast('Left family successfully!', 'success');
       }),
-      catchError(error => {
-        this._isLoading.set(false);
-        return this.handleError(error);
-      })
+      finalize(() => this._isLoading.set(false)),
     );
   }
 
@@ -220,10 +189,7 @@ export class FamilyService {
             joinCode: response.data.joinCode
           });
         }
-
-        await this.showToast('New join code generated!', 'success');
       }),
-      catchError(error => this.handleError(error))
     );
   }
 
@@ -233,9 +199,7 @@ export class FamilyService {
       { email, role }
     ).pipe(
       tap(async () => {
-        await this.showToast('Invitation sent successfully!', 'success');
       }),
-      catchError(error => this.handleError(error))
     );
   }
 
@@ -244,9 +208,7 @@ export class FamilyService {
       this.apiUrlService.getUrl(`families/${slug}/members/${memberId}`)
     ).pipe(
       tap(async () => {
-        await this.showToast('Member removed successfully!', 'success');
       }),
-      catchError(error => this.handleError(error))
     );
   }
 
@@ -296,46 +258,6 @@ export class FamilyService {
     return normalized;
   }
 
-  // Error handling
-  private handleError(error: HttpErrorResponse): Observable<never> {
-    let errorMessage = 'An error occurred';
-
-    if (error.error?.message) {
-      errorMessage = error.error.message;
-    } else if (error.status === 0) {
-      errorMessage = 'Network error. Please check your connection.';
-    } else if (error.status >= 500) {
-      errorMessage = 'Server error. Please try again later.';
-    } else if (error.status === 404) {
-      errorMessage = 'Family not found.';
-    } else if (error.status === 403) {
-      errorMessage = 'You do not have permission to perform this action.';
-    } else if (error.status === 409) {
-      errorMessage = 'Join code is invalid or expired.';
-    }
-
-    this.showToast(errorMessage, 'danger');
-    return throwError(() => error);
-  }
-
-  // Toast helper
-  private async showToast(message: string, color: 'success' | 'danger' | 'warning' = 'success'): Promise<void> {
-    const toast = await this.toastController.create({
-      message,
-      duration: 3000,
-      color,
-      position: 'top',
-      buttons: [
-        {
-          text: 'Dismiss',
-          role: 'cancel'
-        }
-      ]
-    });
-    await toast.present();
-  }
-
-  // Loading helper
   async showLoading(message: string = 'Please wait...'): Promise<HTMLIonLoadingElement> {
     const loading = await this.loadingController.create({
       message,

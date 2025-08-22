@@ -1,12 +1,13 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+import { catchError, EMPTY, tap, Subject, finalize } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import {
   IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonButtons,
   IonIcon, IonItem, IonInput, IonTextarea, IonSelect, IonSelectOption,
-  IonRadio, IonRadioGroup, ToastController, LoadingController
+  IonRadio, IonRadioGroup
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -17,6 +18,8 @@ import {
 
 import { FamilyService } from '../../../core/services/family/family.service';
 import { FamilyPrivacyEnum, CreateFamilyRequest } from '../../../models/families/family.models';
+import { ValidationErrorDirective } from '../../../shared/directives/validation-error.directive';
+import {ToastService} from '../../../shared/services/toast.service';
 
 interface TimezoneOption {
   value: string;
@@ -32,21 +35,22 @@ interface TimezoneOption {
     CommonModule, ReactiveFormsModule,
     IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonButtons,
     IonIcon, IonItem, IonInput, IonTextarea, IonSelect, IonSelectOption,
-    IonRadio, IonRadioGroup
+    IonRadio, IonRadioGroup, ValidationErrorDirective
   ]
 })
 export class FamilyCreatePage implements OnInit, OnDestroy {
-  private readonly destroy$ = new Subject<void>();
   private readonly formBuilder = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly familyService = inject(FamilyService);
-  private readonly toastController = inject(ToastController);
-  private readonly loadingController = inject(LoadingController);
+  private readonly toastService = inject(ToastService);
+  private readonly destroy$ = new Subject<void>();
 
   createForm!: FormGroup;
-  isLoading = false;
 
-  timezones: TimezoneOption[] = [
+  readonly isLoading = signal<boolean>(false);
+  readonly isSubmitted = signal<boolean>(false);
+
+  readonly timezones: TimezoneOption[] = [
     { value: 'UTC', label: 'UTC - Coordinated Universal Time' },
     { value: 'America/New_York', label: 'Eastern Time (ET)' },
     { value: 'America/Chicago', label: 'Central Time (CT)' },
@@ -100,21 +104,16 @@ export class FamilyCreatePage implements OnInit, OnDestroy {
   }
 
   private detectUserTimezone() {
-    try {
-      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const matchingTimezone = this.timezones.find(tz => tz.value === userTimezone);
+    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const matchingTimezone = this.timezones.find(tz => tz.value === userTimezone);
 
-      if (matchingTimezone) {
-        this.createForm.patchValue({ timezone: userTimezone });
-      }
-    } catch (error) {
-      console.log('Could not detect user timezone:', error);
+    if (matchingTimezone) {
+      this.createForm.patchValue({ timezone: userTimezone });
     }
   }
 
-// Event Handlers
   async goBack() {
-    if (this.createForm.dirty && !this.isLoading) {
+    if (this.createForm.dirty && !this.isLoading()) {
       const shouldLeave = await this.confirmDiscardChanges();
       if (!shouldLeave) return;
     }
@@ -127,47 +126,54 @@ export class FamilyCreatePage implements OnInit, OnDestroy {
   }
 
   async onCreateFamily() {
+    this.isSubmitted.set(true);
+
     if (!this.createForm.valid) {
       this.markFormGroupTouched();
-      await this.showToast('Please fill in all required fields correctly.', 'warning');
+      await this.toastService.showToast('Please fill in all required fields correctly.', 'danger');
       return;
     }
 
-    this.isLoading = true;
-    const loading = await this.loadingController.create({
-      message: 'Creating your family...',
-      spinner: 'crescent'
-    });
-    await loading.present();
+    this.isLoading.set(true);
 
-    const familyData: CreateFamilyRequest = {
-      name: this.createForm.value.name.trim(),
-      description: this.createForm.value.description?.trim() || undefined,
-      privacy: this.createForm.value.privacy,
-      maxMembers: this.createForm.value.maxMembers,
-      timezone: this.createForm.value.timezone,
-      language: this.createForm.value.language
-    };
+    try {
+      const familyData: CreateFamilyRequest = {
+        name: this.createForm.value.name.trim(),
+        description: this.createForm.value.description?.trim() || undefined,
+        privacy: this.createForm.value.privacy,
+        maxMembers: this.createForm.value.maxMembers,
+        timezone: this.createForm.value.timezone,
+        language: this.createForm.value.language
+      };
 
-    this.familyService.createFamily(familyData)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: async (response) => {
-          await loading.dismiss();
-          this.isLoading = false;
-          await this.showToast('Family created successfully!', 'success');
-          await this.router.navigate(['/family', response.data.slug]);
-        },
-        error: async (error) => {
-          await loading.dismiss();
-          this.isLoading = false;
-          console.error('Create family error:', error);
-          await this.showToast('Failed to create family. Please try again.', 'danger');
-        }
-      });
+      this.familyService.createFamily(familyData)
+        .pipe(
+          tap(async (response) => {
+            await this.toastService.showToast('Family created successfully!', 'success');
+            await this.router.navigate(['/family', response.data.slug]);
+          }),
+          catchError(async (error) => {
+            if (error.status === 422 && error.error?.errors) {
+              await this.toastService.showToast('Family name is taken.', 'danger');
+            }  else {
+              await this.toastService.showToast('Failed to create family. Please try again.', 'danger');
+            }
+
+            return EMPTY;
+          }),
+          finalize(() => {
+            this.isLoading.set(false);
+          }),
+          takeUntil(this.destroy$)
+        )
+        .subscribe();
+
+    } catch (error) {
+      this.isLoading.set(false);
+      await this.toastService.showToast('An unexpected error occurred. Please try again.', 'danger');
+    }
   }
 
-// Utility Methods
   private markFormGroupTouched() {
     Object.keys(this.createForm.controls).forEach(key => {
       this.createForm.get(key)?.markAsTouched();
@@ -195,21 +201,5 @@ export class FamilyCreatePage implements OnInit, OnDestroy {
       document.body.appendChild(alert);
       await alert.present();
     });
-  }
-
-  private async showToast(message: string, color: 'success' | 'warning' | 'danger' = 'success') {
-    const toast = await this.toastController.create({
-      message,
-      duration: 3000,
-      color,
-      position: 'top',
-      buttons: [
-        {
-          text: 'Dismiss',
-          role: 'cancel'
-        }
-      ]
-    });
-    await toast.present();
   }
 }

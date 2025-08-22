@@ -11,10 +11,13 @@
     <ion-buttons slot="end">
       <ion-button
         class="save-button"
-        [disabled]="!createForm.valid || isLoading"
+        [disabled]="!createForm.valid || isLoading()"
         (click)="onCreateFamily()">
-        <span *ngIf="!isLoading">Create</span>
-        <ion-icon *ngIf="isLoading" name="reload-outline" class="spinning"></ion-icon>
+        @if (!isLoading()) {
+          <span>Create</span>
+        } @else {
+          <ion-icon name="reload-outline" class="spinning"></ion-icon>
+        }
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -49,14 +52,9 @@
               class="custom-input"
               maxlength="50"
               counter="true"
-              [class.error]="createForm.get('name')?.invalid && createForm.get('name')?.touched">
+              [appValidationError]="isSubmitted()">
             </ion-input>
           </ion-item>
-          <div class="error-text" *ngIf="createForm.get('name')?.invalid && createForm.get('name')?.touched">
-            <span *ngIf="createForm.get('name')?.errors?.['required']">Family name is required</span>
-            <span *ngIf="createForm.get('name')?.errors?.['minlength']">Name must be at least 2 characters</span>
-            <span *ngIf="createForm.get('name')?.errors?.['maxlength']">Name cannot exceed 50 characters</span>
-          </div>
         </div>
 
         <div class="input-group">
@@ -69,12 +67,9 @@
               rows="3"
               maxlength="500"
               counter="true"
-              [class.error]="createForm.get('description')?.invalid && createForm.get('description')?.touched">
+              [appValidationError]="isSubmitted()">
             </ion-textarea>
           </ion-item>
-          <div class="error-text" *ngIf="createForm.get('description')?.invalid && createForm.get('description')?.touched">
-            <span *ngIf="createForm.get('description')?.errors?.['maxlength']">Description cannot exceed 500 characters</span>
-          </div>
         </div>
       </div>
 
@@ -144,7 +139,8 @@
               placeholder="Maximum Members"
               formControlName="maxMembers"
               interface="popover"
-              class="custom-select">
+              class="custom-select"
+              [appValidationError]="isSubmitted()">
               <ion-select-option value="5">5 Members</ion-select-option>
               <ion-select-option value="10">10 Members</ion-select-option>
               <ion-select-option value="15">15 Members</ion-select-option>
@@ -162,12 +158,13 @@
               placeholder="Timezone"
               formControlName="timezone"
               interface="popover"
-              class="custom-select">
-              <ion-select-option
-                *ngFor="let tz of timezones"
-                [value]="tz.value">
-                {{ tz.label }}
-              </ion-select-option>
+              class="custom-select"
+              [appValidationError]="isSubmitted()">
+              @for (tz of timezones; track tz.value) {
+                <ion-select-option [value]="tz.value">
+                  {{ tz.label }}
+                </ion-select-option>
+              }
             </ion-select>
           </ion-item>
         </div>
@@ -179,7 +176,8 @@
               placeholder="Language"
               formControlName="language"
               interface="popover"
-              class="custom-select">
+              class="custom-select"
+              [appValidationError]="isSubmitted()">
               <ion-select-option value="en">English</ion-select-option>
               <ion-select-option value="es">Spanish</ion-select-option>
               <ion-select-option value="fr">French</ion-select-option>
@@ -191,17 +189,19 @@
         </div>
       </div>
 
-      <!-- Create Button -->
       <div class="form-actions">
         <ion-button
           expand="block"
           type="submit"
           class="create-button"
-          [disabled]="!createForm.valid || isLoading">
-          <ion-icon name="home-outline" slot="start" *ngIf="!isLoading"></ion-icon>
-          <ion-icon name="reload-outline" slot="start" class="spinning" *ngIf="isLoading"></ion-icon>
-          <span *ngIf="!isLoading">Create Family</span>
-          <span *ngIf="isLoading">Creating...</span>
+          [disabled]="!createForm.valid || isLoading()">
+          @if (!isLoading()) {
+            <ion-icon name="home-outline" slot="start"></ion-icon>
+            <span>Create Family</span>
+          } @else {
+            <ion-icon name="reload-outline" slot="start" class="spinning"></ion-icon>
+            <span>Creating...</span>
+          }
         </ion-button>
 
         <ion-button
@@ -209,14 +209,13 @@
           fill="clear"
           class="cancel-button"
           (click)="goBack()"
-          [disabled]="isLoading">
+          [disabled]="isLoading()">
           Cancel
         </ion-button>
       </div>
 
     </form>
 
-    <!-- Privacy Info -->
     <div class="privacy-info">
       <div class="info-card">
         <ion-icon name="information-circle-outline" class="info-icon"></ion-icon>

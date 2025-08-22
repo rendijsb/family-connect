@@ -1,12 +1,11 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, finalize } from 'rxjs';
 import {
   IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardContent,
   IonButton, IonIcon, IonButtons, IonRefresher, IonRefresherContent,
-  IonFab, IonFabButton, IonFabList, IonSkeletonText, IonAvatar,
-  ActionSheetController, AlertController, ToastController, ModalController
+  IonFab, IonFabButton, IonFabList, IonSkeletonText, IonAvatar
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -14,7 +13,8 @@ import {
   ellipsisVerticalOutline, ellipsisHorizontalOutline, eyeOutline,
   chatbubbleOutline, settingsOutline, timeOutline, globeOutline,
   lockClosedOutline, keyOutline, copyOutline, shareOutline,
-  trashOutline, createOutline, exitOutline, personAddOutline
+  trashOutline, createOutline, exitOutline, personAddOutline,
+  refreshOutline, closeOutline
 } from 'ionicons/icons';
 
 import { FamilyService } from '../../core/services/family/family.service';
@@ -25,6 +25,7 @@ import {
   FamilyPrivacyEnum,
   getFamilyRoleName
 } from '../../models/families/family.models';
+import {ToastService} from '../../shared/services/toast.service';
 
 @Component({
   selector: 'app-family',
@@ -41,16 +42,13 @@ import {
 export class FamilyPage implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
   private readonly router = inject(Router);
-  private readonly actionSheetController = inject(ActionSheetController);
-  private readonly alertController = inject(AlertController);
-  private readonly toastController = inject(ToastController);
-  private readonly modalController = inject(ModalController);
+  private readonly familyService = inject(FamilyService);
+  private readonly authService = inject(AuthService);
+  private readonly toastService = inject(ToastService);
 
-  readonly familyService = inject(FamilyService);
-  readonly authService = inject(AuthService);
-
-  families: Family[] = [];
-  isLoading = false;
+  // Signals for reactive state management
+  readonly families = signal<Family[]>([]);
+  readonly isLoading = signal<boolean>(false);
 
   constructor() {
     this.addIcons();
@@ -72,7 +70,8 @@ export class FamilyPage implements OnInit, OnDestroy {
       ellipsisVerticalOutline, ellipsisHorizontalOutline, eyeOutline,
       chatbubbleOutline, settingsOutline, timeOutline, globeOutline,
       lockClosedOutline, keyOutline, copyOutline, shareOutline,
-      trashOutline, createOutline, exitOutline, personAddOutline
+      trashOutline, createOutline, exitOutline, personAddOutline,
+      refreshOutline, closeOutline
     });
   }
 
@@ -80,20 +79,20 @@ export class FamilyPage implements OnInit, OnDestroy {
     this.familyService.families$
       .pipe(takeUntil(this.destroy$))
       .subscribe(families => {
-        this.families = families;
+        this.families.set(families);
       });
   }
 
   private loadFamilies() {
-    this.isLoading = true;
+    this.isLoading.set(true);
     this.familyService.getMyFamilies()
-      .pipe(takeUntil(this.destroy$))
+      .pipe(
+        finalize(() => this.isLoading.set(false)),
+        takeUntil(this.destroy$)
+      )
       .subscribe({
-        next: () => {
-          this.isLoading = false;
-        },
-        error: () => {
-          this.isLoading = false;
+        error: (error) => {
+          this.toastService.showToast('Failed to load families. Please try again.', 'danger');
         }
       });
   }
@@ -103,11 +102,10 @@ export class FamilyPage implements OnInit, OnDestroy {
     this.familyService.getMyFamilies()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        complete: () => {
-          event.target.complete();
-        },
+        complete: () => event.target.complete(),
         error: () => {
           event.target.complete();
+          this.toastService.showToast('Failed to refresh families.', 'danger');
         }
       });
   }
@@ -117,48 +115,34 @@ export class FamilyPage implements OnInit, OnDestroy {
   }
 
   async joinFamily() {
-    const alert = await this.alertController.create({
-      header: 'Join Family',
-      message: 'Enter the family join code to join an existing family.',
-      cssClass: 'custom-alert',
-      inputs: [
-        {
-          name: 'joinCode',
-          type: 'text',
-          placeholder: 'Enter join code',
-          attributes: {
-            maxlength: 8,
-          }
-        }
-      ],
-      buttons: [
-        {
-          text: 'Cancel',
-          role: 'cancel'
-        },
-        {
-          text: 'Join',
-          handler: (data) => {
-            if (data.joinCode && data.joinCode.trim()) {
-              this.handleJoinFamily(data.joinCode.trim().toUpperCase());
-            }
-          }
-        }
-      ]
-    });
-
-    await alert.present();
+    const joinCode = await this.toastService.showJoinCodeInput();
+    if (joinCode) {
+      this.handleJoinFamily(joinCode);
+    }
   }
 
-  private handleJoinFamily(joinCode: string) {
+  private async handleJoinFamily(joinCode: string) {
+    const loading = await this.toastService.showLoading('Joining family...');
+
     this.familyService.joinFamilyByCode({ joinCode })
-      .pipe(takeUntil(this.destroy$))
+      .pipe(
+        finalize(() => loading.dismiss()),
+        takeUntil(this.destroy$)
+      )
       .subscribe({
-        next: (family) => {
-          this.router.navigate(['/family', family.data.slug]);
+        next: async (response) => {
+          await this.toastService.showToast('Successfully joined family!', 'success');
+          await this.router.navigate(['/family', response.data.slug]);
         },
-        error: (error) => {
+        error: async (error) => {
           console.error('Join family error:', error);
+          if (error.status === 404) {
+            await this.toastService.showToast('Invalid join code. Please check and try again.', 'danger');
+          } else if (error.status === 409) {
+            await this.toastService.showToast('You are already a member of this family.', 'warning');
+          } else {
+            await this.toastService.showToast('Failed to join family. Please try again.', 'danger');
+          }
         }
       });
   }
@@ -168,21 +152,21 @@ export class FamilyPage implements OnInit, OnDestroy {
       event.stopPropagation();
     }
 
-      if (!family.slug) {
-        await this.showErrorToast('Invalid family data');
-        return;
-      }
+    if (!family.slug) {
+      await this.toastService.showToast('Invalid family data', 'danger');
+      return;
+    }
 
-      if (!family.currentUserRole) {
-        await this.showErrorToast('You do not have access to this family');
-        return;
-      }
+    if (!family.currentUserRole) {
+      await this.toastService.showToast('You do not have access to this family', 'danger');
+      return;
+    }
 
-      const navigationSuccess = await this.router.navigate(['/family', family.slug]);
-
-      if (!navigationSuccess) {
-        await this.showErrorToast('Failed to open family page');
-      }
+    try {
+      await this.router.navigate(['/family', family.slug]);
+    } catch (error) {
+      await this.toastService.showToast('Failed to open family page', 'danger');
+    }
   }
 
   async openFamilyChat(family: Family, event: Event) {
@@ -196,33 +180,23 @@ export class FamilyPage implements OnInit, OnDestroy {
   }
 
   async presentFamilyOptions() {
-    const actionSheet = await this.actionSheetController.create({
-      header: 'Family Options',
-      buttons: [
-        {
-          text: 'Create New Family',
-          icon: 'home-outline',
-          handler: () => this.createFamily()
-        },
-        {
-          text: 'Join Family',
-          icon: 'people-outline',
-          handler: () => this.joinFamily()
-        },
-        {
-          text: 'Refresh',
-          icon: 'refresh-outline',
-          handler: () => this.loadFamilies()
-        },
-        {
-          text: 'Cancel',
-          role: 'cancel',
-          icon: 'close-outline'
-        }
-      ]
-    });
-
-    await actionSheet.present();
+    await this.toastService.showActionSheet('Family Options', [
+      {
+        text: 'Create New Family',
+        icon: 'home-outline',
+        handler: () => this.createFamily()
+      },
+      {
+        text: 'Join Family',
+        icon: 'people-outline',
+        handler: () => this.joinFamily()
+      },
+      {
+        text: 'Refresh',
+        icon: 'refresh-outline',
+        handler: () => this.loadFamilies()
+      }
+    ]);
   }
 
   async presentFamilyActionSheet(family: Family, event: Event) {
@@ -280,165 +254,116 @@ export class FamilyPage implements OnInit, OnDestroy {
       });
     }
 
-    buttons.push({
-      text: 'Cancel',
-      role: 'cancel',
-      icon: 'close-outline'
-    });
-
-    const actionSheet = await this.actionSheetController.create({
-      header: family.name,
-      buttons
-    });
-
-    await actionSheet.present();
-  }
-
-  async presentFabOptions() {
-    // This is handled by the ion-fab-list in the template
+    await this.toastService.showActionSheet(family.name, buttons);
   }
 
   // Family Actions
   async copyJoinCode(joinCode: string, event: Event) {
     event.stopPropagation();
-
-    try {
-      await navigator.clipboard.writeText(joinCode);
-      const toast = await this.toastController.create({
-        message: 'Join code copied to clipboard!',
-        duration: 2000,
-        color: 'success',
-        position: 'bottom'
-      });
-      await toast.present();
-    } catch (error) {
-      console.error('Failed to copy join code:', error);
-    }
+    await this.toastService.copyToClipboard(joinCode, 'Join code copied to clipboard!');
   }
 
   async shareJoinCode(family: Family) {
-    if (navigator.share && family.joinCode) {
-      try {
-        await navigator.share({
+    if (family.joinCode) {
+      await this.toastService.shareWithFallback(
+        {
           title: `Join ${family.name}`,
-          text: `You're invited to join the "${family.name}" family on Family Connect!`,
-          url: `familyconnect://join/${family.joinCode}`
-        });
-      } catch (error) {
-        console.error('Share failed:', error);
-        this.copyJoinCode(family.joinCode, {} as Event);
-      }
-    } else if (family.joinCode) {
-      this.copyJoinCode(family.joinCode, {} as Event);
+          text: `You're invited to join the "${family.name}" family on Family Connect! Use join code: ${family.joinCode}`
+        },
+        family.joinCode,
+        'Join code copied to clipboard!'
+      );
     }
   }
 
   async inviteToFamily(family: Family) {
-    const alert = await this.alertController.create({
-      header: 'Invite Family Member',
-      message: 'Enter the email address of the person you want to invite.',
-      inputs: [
-        {
-          name: 'email',
-          type: 'email',
-          placeholder: 'Email address'
-        },
-        {
-          name: 'role',
-          type: 'radio',
-          label: 'Family Member',
-          value: FamilyRoleEnum.MEMBER,
-          checked: true
-        },
-        {
-          name: 'role',
-          type: 'radio',
-          label: 'Family Moderator',
-          value: FamilyRoleEnum.MODERATOR
-        }
-      ],
-      buttons: [
-        {
-          text: 'Cancel',
-          role: 'cancel'
-        },
-        {
-          text: 'Send Invite',
-          handler: (data) => {
-            if (data.email && data.email.trim()) {
-              this.handleInviteMember(family, data.email.trim(), data.role);
-            }
-          }
-        }
-      ]
-    });
-
-    await alert.present();
+    const inviteData = await this.toastService.showInviteMemberDialog();
+    if (inviteData) {
+      this.handleInviteMember(family, inviteData.email, inviteData.role);
+    }
   }
 
-  private handleInviteMember(family: Family, email: string, role: FamilyRoleEnum) {
+  private async handleInviteMember(family: Family, email: string, role: FamilyRoleEnum) {
+    const loading = await this.toastService.showLoading('Sending invitation...');
+
     this.familyService.inviteFamilyMember(family.slug, email, role)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe();
+      .pipe(
+        finalize(() => loading.dismiss()),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: async () => {
+          await this.toastService.showToast('Invitation sent successfully!', 'success');
+        },
+        error: async (error) => {
+          console.error('Invite member error:', error);
+          if (error.status === 409) {
+            await this.toastService.showToast('This person is already a family member.', 'warning');
+          } else if (error.status === 422) {
+            await this.toastService.showToast('Invalid email address.', 'danger');
+          } else {
+            await this.toastService.showToast('Failed to send invitation. Please try again.', 'danger');
+          }
+        }
+      });
   }
 
   async confirmLeaveFamily(family: Family) {
-    const alert = await this.alertController.create({
-      header: 'Leave Family',
-      message: `Are you sure you want to leave "${family.name}"? You'll need a new invitation to rejoin.`,
-      buttons: [
-        {
-          text: 'Cancel',
-          role: 'cancel'
-        },
-        {
-          text: 'Leave',
-          role: 'destructive',
-          handler: () => {
-            this.familyService.leaveFamily(family.slug)
-              .pipe(takeUntil(this.destroy$))
-              .subscribe();
-          }
-        }
-      ]
-    });
+    const confirmed = await this.toastService.showDestructiveConfirmation(
+      'Leave Family',
+      `Are you sure you want to leave "${family.name}"? You'll need a new invitation to rejoin.`,
+      'Leave',
+      'Cancel'
+    );
 
-    await alert.present();
+    if (confirmed) {
+      this.handleLeaveFamily(family);
+    }
+  }
+
+  private async handleLeaveFamily(family: Family) {
+    const loading = await this.toastService.showLoading('Leaving family...');
+
+    this.familyService.leaveFamily(family.slug)
+      .pipe(
+        finalize(() => loading.dismiss()),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: async () => {
+          await this.toastService.showToast('You have left the family.', 'success');
+        },
+        error: async (error) => {
+          console.error('Leave family error:', error);
+          await this.toastService.showToast('Failed to leave family. Please try again.', 'danger');
+        }
+      });
   }
 
   async confirmDeleteFamily(family: Family) {
-    const alert = await this.alertController.create({
-      header: 'Delete Family',
-      message: `Are you sure you want to permanently delete "${family.name}"? This action cannot be undone and all family data will be lost.`,
-      inputs: [
-        {
-          name: 'confirmation',
-          type: 'text',
-          placeholder: `Type "${family.name}" to confirm`
-        }
-      ],
-      buttons: [
-        {
-          text: 'Cancel',
-          role: 'cancel'
-        },
-        {
-          text: 'Delete',
-          role: 'destructive',
-          handler: (data) => {
-            if (data.confirmation === family.name) {
-              this.familyService.deleteFamily(family.slug)
-                .pipe(takeUntil(this.destroy$))
-                .subscribe();
-            } else {
-              this.showErrorToast('Family name does not match. Please try again.');
-            }
-          }
-        }
-      ]
-    });
+    const confirmed = await this.toastService.showDeleteConfirmation(family.name, 'Family');
+    if (confirmed) {
+      this.handleDeleteFamily(family);
+    }
+  }
 
-    await alert.present();
+  private async handleDeleteFamily(family: Family) {
+    const loading = await this.toastService.showLoading('Deleting family...');
+
+    this.familyService.deleteFamily(family.slug)
+      .pipe(
+        finalize(() => loading.dismiss()),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: async () => {
+          await this.toastService.showToast('Family deleted successfully.', 'success');
+        },
+        error: async (error) => {
+          console.error('Delete family error:', error);
+          await this.toastService.showToast('Failed to delete family. Please try again.', 'danger');
+        }
+      });
   }
 
   // Utility Methods
@@ -479,13 +404,12 @@ export class FamilyPage implements OnInit, OnDestroy {
     return this.familyService.canManageFamily(family);
   }
 
-  private async showErrorToast(message: string) {
-    const toast = await this.toastController.create({
-      message,
-      duration: 3000,
-      color: 'danger',
-      position: 'top'
-    });
-    await toast.present();
+  getPrivacyIcon(privacy: FamilyPrivacyEnum): string {
+    switch (privacy) {
+      case FamilyPrivacyEnum.PUBLIC: return 'globe-outline';
+      case FamilyPrivacyEnum.PRIVATE: return 'lock-closed-outline';
+      case FamilyPrivacyEnum.INVITE_ONLY: return 'key-outline';
+      default: return 'help-outline';
+    }
   }
 }

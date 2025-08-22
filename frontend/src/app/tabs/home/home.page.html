@@ -13,7 +13,7 @@
       </ion-button>
 
       <ion-avatar class="header-avatar">
-        <img src="/assets/avatars/default-avatar.jpg" [alt]="user?.name" />
+        <img src="https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png?20150327203541" [alt]="user?.name" />
       </ion-avatar>
     </ion-buttons>
   </ion-toolbar>
@@ -48,7 +48,7 @@
       </ion-card-header>
       <ion-card-content class="actions-content">
         <div class="actions-grid">
-          <div class="action-item">
+          <div class="action-item" (click)="goToFamily()">
             <div class="action-icon family">
               <ion-icon name="people-outline"></ion-icon>
             </div>
