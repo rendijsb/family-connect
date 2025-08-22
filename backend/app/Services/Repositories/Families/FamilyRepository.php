@@ -103,6 +103,7 @@ class FamilyRepository
 
     public function getFamilyBySlug(string $slug): Family
     {
+        /** @var Family $family */
         $family = $this->family
             ->where(Family::SLUG, $slug)
             ->with([
@@ -116,6 +117,7 @@ class FamilyRepository
 
     public function updateFamily(UpdateFamilyRequestData $data): Family
     {
+        /** @var Family $family */
         $family = $this->family->where(Family::SLUG, $data->familySlug)->firstOrFail();
 
         $updateData = array_filter([
@@ -127,7 +129,6 @@ class FamilyRepository
             Family::MAX_MEMBERS => $data->maxMembers,
         ], fn($value) => $value !== null);
 
-        // Generate new join code if name changed
         if ($data->name && $data->name !== $family->getName()) {
             $updateData[Family::JOIN_CODE] = $this->generateUniqueJoinCode();
         }
@@ -139,9 +140,9 @@ class FamilyRepository
 
     public function deleteFamily(string $slug): void
     {
+        /** @var Family $family */
         $family = $this->family->where(Family::SLUG, $slug)->firstOrFail();
 
-        // Delete all family members first (cascade should handle this, but being explicit)
         $this->familyMember->where(FamilyMember::FAMILY_ID, $family->getId())->delete();
 
         $family->delete();
@@ -152,9 +153,9 @@ class FamilyRepository
         /** @var User $user */
         $user = Auth::user();
 
+        /** @var Family $family */
         $family = $this->family->where(Family::SLUG, $slug)->firstOrFail();
 
-        // Owner cannot leave, they must delete the family
         if ($family->getOwnerId() === $user->getId()) {
             throw new \InvalidArgumentException('Family owner cannot leave. Delete the family instead.');
         }
@@ -170,12 +171,12 @@ class FamilyRepository
         /** @var User $user */
         $user = Auth::user();
 
+        /** @var Family $family */
         $family = $this->family
             ->where(Family::JOIN_CODE, $data->joinCode)
             ->where(Family::IS_ACTIVE, true)
             ->firstOrFail();
 
-        // Check if user is already a member
         $existingMember = $this->familyMember
             ->where(FamilyMember::FAMILY_ID, $family->getId())
             ->where(FamilyMember::USER_ID, $user->getId())
@@ -186,14 +187,12 @@ class FamilyRepository
                 throw new \InvalidArgumentException('You are already a member of this family.');
             }
 
-            // Reactivate membership
             $existingMember->update([
                 FamilyMember::IS_ACTIVE => true,
                 FamilyMember::JOINED_AT => Carbon::now(),
                 FamilyMember::LAST_SEEN_AT => Carbon::now(),
             ]);
         } else {
-            // Create new membership
             $this->familyMember->create([
                 FamilyMember::FAMILY_ID => $family->getId(),
                 FamilyMember::USER_ID => $user->getId(),
@@ -215,13 +214,12 @@ class FamilyRepository
         $user = Auth::user();
 
         if (!$userRole) {
-            $member = $family->relatedMembers()->firstWhere('user_id', $user->getId());
+            $member = $family->relatedMembers()->firstWhere(FamilyMember::USER_ID, $user->getId());
             $userRole = $member?->getRole();
         }
 
-        // Add current user role and member count to family
         $family->setAttribute('currentUserRole', $userRole);
-        $family->setAttribute('memberCount', $family->relatedMembers()->where('is_active', true)->count());
+        $family->setAttribute('memberCount', $family->relatedMembers()->where(Family::IS_ACTIVE, true)->count());
 
         return $family;
     }

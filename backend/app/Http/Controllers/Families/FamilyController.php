@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Families;
 
+use App\Enums\Families\FamilyRoleEnum;
 use App\Http\Requests\Families\CreateFamilyRequest;
 use App\Http\Requests\Families\DeleteFamilyRequest;
 use App\Http\Requests\Families\GetAllFamiliesRequest;
 use App\Http\Requests\Families\GetFamilyBySlugRequest;
 use App\Http\Requests\Families\GetMyFamiliesRequest;
 use App\Http\Requests\Families\JoinFamilyByCodeRequest;
+use App\Http\Requests\Families\LeaveFamilyRequest;
 use App\Http\Requests\Families\UpdateFamilyRequest;
 use App\Http\Resources\Families\FamilyResource;
 use App\Http\Resources\Families\FamilyResourceCollection;
@@ -84,12 +86,14 @@ class FamilyController
         ], 200);
     }
 
-    public function leaveFamily(): JsonResponse
+    public function leaveFamily(LeaveFamilyRequest $request): JsonResponse
     {
+        $this->familyRepository->leaveFamily($request->getFamilySlug());
+
         return response()->json([
-            'success' => false,
-            'message' => 'Not implemented yet.',
-        ], 501);
+            'success' => true,
+            'message' => 'Family left.',
+        ], 200);
     }
 
     public function joinFamilyByCode(JoinFamilyByCodeRequest $request): FamilyResource
@@ -102,14 +106,14 @@ class FamilyController
     private function canManageFamily(FamilyMember $member): bool
     {
         return in_array($member->getRole(), [
-            \App\Enums\Families\FamilyRoleEnum::OWNER,
-            \App\Enums\Families\FamilyRoleEnum::MODERATOR,
+            FamilyRoleEnum::OWNER,
+            FamilyRoleEnum::MODERATOR,
         ]);
     }
 
     private function isOwner(Family $family, FamilyMember $member): bool
     {
         return $family->getOwnerId() === $member->getUserId() &&
-            $member->getRole() === \App\Enums\Families\FamilyRoleEnum::OWNER;
+            $member->getRole() === FamilyRoleEnum::OWNER;
     }
 }
