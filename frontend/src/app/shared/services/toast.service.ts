@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { ToastController, LoadingController, AlertController, ActionSheetController } from '@ionic/angular';
+import { ToastController, LoadingController, AlertController, ActionSheetController, ModalController } from '@ionic/angular';
 import { FamilyRoleEnum } from '../../models/families/family.models';
 import { RelationshipTypeEnum, getRelationshipLabel } from '../../models/families/invitation.models';
 
@@ -51,6 +51,7 @@ export class ToastService {
   private readonly loadingController = inject(LoadingController);
   private readonly alertController = inject(AlertController);
   private readonly actionSheetController = inject(ActionSheetController);
+  private readonly modalController = inject(ModalController);
 
   // Toast Methods
   async showToast(message: string, color: 'success' | 'danger' | 'warning' | 'primary' = 'success'): Promise<void> {
@@ -177,7 +178,38 @@ export class ToastService {
     });
   }
 
-  // Enhanced Family Member Invitation Dialog
+  // Enhanced Family Member Invitation Modal
+  async showInviteMemberModal(
+    familyName: string,
+    canInviteModerators: boolean = false
+  ): Promise<InviteMemberData | null> {
+    const { InviteMemberModal } = await import('../modals/invite-member/invite-member.modal');
+
+    const modal = await this.modalController.create({
+      component: InviteMemberModal,
+      componentProps: {
+        familyName,
+        canInviteModerators
+      },
+      cssClass: 'invite-member-modal'
+    });
+
+    await modal.present();
+
+    const { data, role } = await modal.onWillDismiss();
+
+    if (role === 'confirm' && data) {
+      return {
+        email: data.email,
+        role: data.role,
+        message: data.message
+      };
+    }
+
+    return null;
+  }
+
+  // Legacy alert-based invitation dialog (for backward compatibility)
   async showInviteMemberDialog(): Promise<InviteMemberData | null> {
     return new Promise(async (resolve) => {
       const alert = await this.alertController.create({
@@ -239,7 +271,30 @@ export class ToastService {
     });
   }
 
-  // Relationship Selection Dialog
+  // Relationship Selection Modal
+  async showRelationshipModal(): Promise<RelationshipData | null> {
+    const { RelationshipModal } = await import('../modals/relationship/relationship.modal');
+
+    const modal = await this.modalController.create({
+      component: RelationshipModal,
+      cssClass: 'relationship-modal'
+    });
+
+    await modal.present();
+
+    const { data, role } = await modal.onWillDismiss();
+
+    if (role === 'confirm' && data) {
+      return {
+        relationshipType: data.relationshipType,
+        isGuardian: data.isGuardian
+      };
+    }
+
+    return null;
+  }
+
+  // Legacy relationship dialog (for backward compatibility)
   async showRelationshipDialog(): Promise<RelationshipData | null> {
     return new Promise(async (resolve) => {
       const alert = await this.alertController.create({

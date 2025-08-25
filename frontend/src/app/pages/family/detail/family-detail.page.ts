@@ -30,6 +30,7 @@ import {
   getFamilyRoleName
 } from '../../../models/families/family.models';
 import {ToastService} from '../../../shared/services/toast.service';
+import {ModalController} from '@ionic/angular';
 
 interface FamilyActivity {
   id: number;
@@ -63,6 +64,7 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
   private readonly familyService = inject(FamilyService);
   private readonly authService = inject(AuthService);
   private readonly toastService = inject(ToastService);
+  private readonly modalController = inject(ModalController);
 
   // Signals for reactive state management
   readonly family = signal<Family | null>(null);
@@ -211,11 +213,19 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
     await this.router.navigate(['/family', this.familySlug(), 'memories']);
   }
 
-  // Member Actions
   async inviteMembers() {
-    const inviteData = await this.toastService.showInviteMemberDialog();
-    if (inviteData && this.family()) {
-      this.handleInviteMember(inviteData.email, inviteData.role);
+    const family = this.family();
+    if (!family) return;
+
+    const canInviteModerators = family.currentUserRole === FamilyRoleEnum.OWNER;
+
+    const inviteData = await this.toastService.showInviteMemberModal(
+      family.name,
+      canInviteModerators
+    );
+
+    if (inviteData) {
+      await this.handleInviteMember(inviteData.email, inviteData.role);
     }
   }
 
@@ -245,6 +255,42 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
           }
         }
       });
+  }
+
+  async setMemberRelationship(member: FamilyMember) {
+    const relationshipData = await this.toastService.showRelationshipModal();
+
+    if (relationshipData) {
+      await this.handleSetRelationship(member, relationshipData);
+    }
+  }
+
+  private async handleSetRelationship(member: FamilyMember, relationshipData: any) {
+    const family = this.family();
+    if (!family) return;
+
+    const loading = await this.toastService.showLoading('Updating relationship...');
+
+    // You'll need to implement this in your FamilyMemberService
+    // this.memberService.setMemberRelationship(family.slug, member.id, {
+    //   relatedMemberId: currentUser.id, // You'll need to determine this
+    //   relationshipType: relationshipData.relationshipType,
+    //   isGuardian: relationshipData.isGuardian
+    // }).pipe(
+    //   finalize(() => loading.dismiss()),
+    //   takeUntil(this.destroy$)
+    // ).subscribe({
+    //   next: async () => {
+    //     await this.toastService.showToast('Relationship updated successfully!', 'success');
+    //   },
+    //   error: async (error) => {
+    //     console.error('Set relationship error:', error);
+    //     await this.toastService.showToast('Failed to update relationship.', 'danger');
+    //   }
+    // });
+
+    loading.dismiss();
+    await this.toastService.showToast('Relationship feature will be available soon!', 'warning');
   }
 
   async chatWithMember(member: FamilyMember) {
@@ -358,6 +404,8 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
   }
 
   async presentMemberActions(member: FamilyMember) {
+    if (!this.canManageMember(member)) return;
+
     const buttons: any[] = [
       {
         text: 'Send Message',
@@ -365,29 +413,68 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
         handler: () => this.chatWithMember(member)
       },
       {
-        text: 'View Profile',
-        icon: 'person-outline',
-        handler: () => this.viewMemberProfile(member)
+        text: 'Call Member',
+        icon: 'call-outline',
+        handler: () => this.callMember(member)
+      },
+      {
+        text: 'Set Relationship',
+        icon: 'people-outline',
+        handler: () => this.setMemberRelationship(member)
       }
     ];
 
-    if (this.canManageMember(member)) {
+    if (this.canEditMember(member)) {
       buttons.push(
         {
-          text: 'Edit Member',
+          text: 'Edit Details',
           icon: 'create-outline',
           handler: () => this.editMember(member)
         },
         {
-          text: 'Remove Member',
-          icon: 'person-remove-outline',
-          role: 'destructive',
-          handler: () => this.confirmRemoveMember(member)
+          text: 'Change Role',
+          icon: 'shield-checkmark-outline',
+          handler: () => this.changeMemberRole(member)
         }
       );
     }
 
-    await this.toastService.showActionSheet(member.user?.name || 'Member', buttons);
+    if (this.canRemoveMember(member)) {
+      buttons.push({
+        text: 'Remove Member',
+        icon: 'person-remove-outline',
+        role: 'destructive',
+        handler: () => this.confirmRemoveMember(member)
+      });
+    }
+
+    await this.toastService.showActionSheet(
+      member.user?.name || 'Member',
+      buttons
+    );
+  }
+
+  private canEditMember(member: FamilyMember): boolean {
+    return this.canManageMember(member);
+  }
+
+  private canRemoveMember(member: FamilyMember): boolean {
+    return this.canManageMember(member) && !this.isCurrentUser(member);
+  }
+
+  private async callMember(member: FamilyMember) {
+    if (member.user?.phone) {
+      window.open(`tel:${member.user.phone}`, '_system');
+    } else {
+      await this.toastService.showToast('Phone number not available', 'warning');
+    }
+  }
+
+  private async changeMemberRole(member: FamilyMember) {
+    const newRole = await this.toastService.showRoleSelectionDialog(member.role);
+    if (newRole !== null && newRole !== member.role) {
+      await this.toastService.showToast('Role change feature will be available soon!', 'warning');
+    }
   }
 
   // Family Management

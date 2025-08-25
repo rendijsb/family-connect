@@ -16,11 +16,11 @@ export const familyRoutes: Routes = [
     canActivate: [familyGuard, familyModeratorGuard],
     loadComponent: () => import('./members/family-members.page').then(m => m.FamilyMembersPage)
   },
-  {
-    path: ':slug/settings',
-    canActivate: [familyGuard, familyModeratorGuard],
-    loadComponent: () => import('./settings/family-settings.page').then(m => m.FamilySettingsPage)
-  }
+  // {
+  //   path: ':slug/settings',
+  //   canActivate: [familyGuard, familyModeratorGuard],
+  //   loadComponent: () => import('./settings/family-settings.page').then(m => m.FamilySettingsPage)
+  // }
 ];
 
 export const invitationRoutes: Routes = [

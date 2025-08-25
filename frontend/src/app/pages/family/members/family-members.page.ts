@@ -174,6 +174,11 @@ export class FamilyMembersPage implements OnInit, OnDestroy {
         text: 'Call Member',
         icon: 'call-outline',
         handler: () => this.callMember(member)
+      },
+      {
+        text: 'Set Relationship',
+        icon: 'people-outline',
+        handler: () => this.setMemberRelationship(member)
       }
     ];
 
@@ -207,17 +212,38 @@ export class FamilyMembersPage implements OnInit, OnDestroy {
     );
   }
 
+  async editMemberNickname(member: FamilyMember) {
+    const nickname = await this.toastService.showEditNicknameDialog(member.nickname);
+
+    if (nickname !== null) {
+      // You'll need to implement this in your FamilyMemberService
+      await this.toastService.showToast('Nickname update feature will be available soon!', 'warning');
+    }
+  }
+
   async inviteMember() {
-    const inviteData = await this.toastService.showInviteMemberDialog();
+    const family = this.family();
+    if (!family) return;
+
+    const canInviteModerators = family.currentUserRole === FamilyRoleEnum.OWNER;
+
+    const inviteData = await this.toastService.showInviteMemberModal(
+      family.name,
+      canInviteModerators
+    );
+
     if (inviteData) {
       await this.handleInviteMember(inviteData.email, inviteData.role);
     }
   }
 
-  private async handleInviteMember(email: string, role: number) {
+  private async handleInviteMember(email: string, role: FamilyRoleEnum) {
     const loading = await this.toastService.showLoading('Sending invitation...');
 
-    this.memberService.inviteMember(this.familySlug(), { email, role })
+    this.memberService.inviteMember(this.familySlug(), {
+      email,
+      role: role as number // Cast to number for API compatibility
+    })
       .pipe(
         finalize(() => loading.dismiss()),
         takeUntil(this.destroy$)
@@ -235,6 +261,39 @@ export class FamilyMembersPage implements OnInit, OnDestroy {
       });
   }
 
+  async setMemberRelationship(member: FamilyMember) {
+    const relationshipData = await this.toastService.showRelationshipModal();
+
+    if (relationshipData) {
+      await this.handleSetRelationship(member, relationshipData);
+    }
+  }
+
+  private async handleSetRelationship(member: FamilyMember, relationshipData: any) {
+    const loading = await this.toastService.showLoading('Updating relationship...');
+
+    // You'll need to implement this in your FamilyMemberService
+    // this.memberService.setMemberRelationship(this.familySlug(), member.id, {
+    //   relatedMemberId: currentUser.id, // You'll need to determine this
+    //   relationshipType: relationshipData.relationshipType,
+    //   isGuardian: relationshipData.isGuardian
+    // }).pipe(
+    //   finalize(() => loading.dismiss()),
+    //   takeUntil(this.destroy$)
+    // ).subscribe({
+    //   next: async () => {
+    //     await this.toastService.showToast('Relationship updated successfully!', 'success');
+    //   },
+    //   error: async (error) => {
+    //     console.error('Set relationship error:', error);
+    //     await this.toastService.showToast('Failed to update relationship.', 'danger');
+    //   }
+    // });
+
+    loading.dismiss();
+    await this.toastService.showToast('Relationship feature will be available soon!', 'warning');
+  }
+
   async chatWithMember(member: FamilyMember) {
     await this.router.navigate(['/chat', 'direct', member.userId]);
   }
@@ -248,8 +307,23 @@ export class FamilyMembersPage implements OnInit, OnDestroy {
   }
 
   async editMember(member: FamilyMember) {
-    // TODO: Implement member editing modal
-    await this.toastService.showToast('Member editing will be available soon!', 'warning');
+    const buttons: any[] = [
+      {
+        text: 'Edit Nickname',
+        icon: 'create-outline',
+        handler: () => this.editMemberNickname(member)
+      },
+      {
+        text: 'Set Relationship',
+        icon: 'people-outline',
+        handler: () => this.setMemberRelationship(member)
+      }
+    ];
+
+    await this.toastService.showActionSheet(
+      `Edit ${member.user?.name}`,
+      buttons
+    );
   }
 
   async changeMemberRole(member: FamilyMember) {
