@@ -108,6 +108,7 @@
 
               <!-- Message Bubble -->
               <div class="message-bubble"
+                   [attr.data-message-id]="message.id"
                    [class.own]="isCurrentUserMessage(message)"
                    [class.has-reactions]="message.reactions && message.reactions.length > 0"
                    [class.deleted]="message.isDeleted"
@@ -226,7 +227,7 @@
       <div class="reply-preview">
         <div class="reply-content">
           <div class="reply-header">
-            <ion-icon name="reply-outline"></ion-icon>
+            <ion-icon name="arrow-undo-outline"></ion-icon>
             <span class="replying-to">Replying to {{ replyingTo()!.user?.name }}</span>
             <ion-button fill="clear" size="small" (click)="cancelReply()">
               <ion-icon name="close-outline"></ion-icon>
@@ -252,7 +253,7 @@
           placeholder="Type a message..."
           [(ngModel)]="messageText"
           (ionInput)="onMessageInputChange()"
-          (keydown.enter)="$event.ctrlKey ? sendMessage() : null"
+          (keydown)="onMessageKeyDown($event)"
           class="message-textarea"
           rows="1"
           autoGrow="true"

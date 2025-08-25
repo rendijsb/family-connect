@@ -6,17 +6,17 @@ import {
   signal,
   ViewChild,
   ElementRef,
-  AfterViewInit
+  AfterViewInit,
+  effect
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
-import { Subject, takeUntil, finalize, debounceTime } from 'rxjs';
+import { Subject, takeUntil, debounceTime } from 'rxjs';
 import {
   IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonButtons,
-  IonIcon, IonTextarea, IonItem, IonInfiniteScroll, IonInfiniteScrollContent,
-  IonRefresher, IonRefresherContent, IonAvatar, IonBadge, IonActionSheet,
-  IonFab, IonFabButton, IonList, IonLabel, IonCheckbox, IonInput
+  IonIcon, IonTextarea, IonInfiniteScroll, IonInfiniteScrollContent,
+  IonRefresher, IonRefresherContent, IonAvatar, IonSkeletonText
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -25,7 +25,8 @@ import {
   ellipsisVerticalOutline, heartOutline, happyOutline, sadOutline,
   thumbsUpOutline, thumbsDownOutline, playOutline, copyOutline,
   trashOutline, createOutline, flagOutline, informationCircleOutline,
-  timeOutline, checkmarkDoneOutline, closeOutline
+  timeOutline, checkmarkDoneOutline, closeOutline, arrowUndoOutline,
+  alertCircleOutline, checkmarkOutline, videocamOutline, addOutline
 } from 'ionicons/icons';
 
 import { ChatService } from '../../../core/services/chat/chat.service';
@@ -35,12 +36,14 @@ import {
   ChatRoom,
   ChatMessage,
   MessageTypeEnum,
+  ChatRoomTypeEnum, // Added missing import
   SendMessageRequest,
   isMessageFromCurrentUser,
   shouldShowAvatar,
   shouldShowTimestamp,
   formatMessageTime,
-  formatMessageDate, getChatRoomTypeIcon
+  formatMessageDate,
+  getChatRoomTypeIcon
 } from '../../../models/chat/chat.models';
 
 @Component({
@@ -51,9 +54,8 @@ import {
   imports: [
     CommonModule, FormsModule,
     IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonButtons,
-    IonIcon, IonTextarea, IonItem, IonInfiniteScroll, IonInfiniteScrollContent,
-    IonRefresher, IonRefresherContent, IonAvatar, IonBadge, IonActionSheet,
-    IonFab, IonFabButton, IonList, IonLabel, IonCheckbox, IonInput
+    IonIcon, IonTextarea, IonInfiniteScroll, IonInfiniteScrollContent,
+    IonRefresher, IonRefresherContent, IonAvatar, IonSkeletonText
   ]
 })
 export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
@@ -91,6 +93,7 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
 
   readonly currentUser = this.authService.user;
   readonly MessageTypeEnum = MessageTypeEnum;
+  readonly ChatRoomTypeEnum = ChatRoomTypeEnum; // Added missing enum
 
   constructor() {
     this.addIcons();
@@ -112,14 +115,13 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    // Auto-scroll to bottom on new messages
-    this.messages.asObservable?.()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((messages) => {
-        if (messages.length > 0) {
-          setTimeout(() => this.scrollToBottom(), 100);
-        }
-      });
+    // Auto-scroll to bottom on new messages using effect
+    effect(() => {
+      const messages = this.messages();
+      if (messages.length > 0) {
+        setTimeout(() => this.scrollToBottom(), 100);
+      }
+    });
   }
 
   ngOnDestroy() {
@@ -135,7 +137,10 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
       ellipsisVerticalOutline, heartOutline, happyOutline, sadOutline,
       thumbsUpOutline, thumbsDownOutline, playOutline, copyOutline,
       trashOutline, createOutline, flagOutline, informationCircleOutline,
-      timeOutline, checkmarkDoneOutline, closeOutline
+      timeOutline, checkmarkDoneOutline, closeOutline,
+      'arrow-undo-outline': arrowUndoOutline, // Reply icon
+      alertCircleOutline, checkmarkOutline, videocamOutline,
+      addOutline
     });
   }
 
@@ -224,6 +229,13 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
     this.typingSubject.next();
   }
 
+  onMessageKeyDown(event: KeyboardEvent) {
+    if (event.key === 'Enter' && event.ctrlKey) {
+      event.preventDefault();
+      this.sendMessage();
+    }
+  }
+
   async sendMessage() {
     const text = this.messageText().trim();
     if (!text) return;
@@ -248,6 +260,47 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
           this.toastService.showToast('Failed to send message.', 'danger');
         }
       });
+  }
+
+  // Missing methods that were referenced in template
+  getRoomMemberCount(chatRoom: ChatRoom): number {
+    return chatRoom.members?.length || 0;
+  }
+
+  async openRoomInfo() {
+    // Navigate to room info page or show modal
+    await this.toastService.showToast('Room info coming soon!', 'warning');
+  }
+
+  scrollToMessage(message: ChatMessage) {
+    // Find and scroll to specific message
+    const messageElement = document.querySelector(`[data-message-id="${message.id}"]`);
+    if (messageElement) {
+      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  getMessagePreview(message: ChatMessage): string {
+    if (message.isDeleted) return 'This message was deleted';
+
+    switch (message.type) {
+      case MessageTypeEnum.TEXT:
+        return message.message.length > 50
+          ? message.message.substring(0, 50) + '...'
+          : message.message;
+      case MessageTypeEnum.IMAGE:
+        return '📷 Photo';
+      case MessageTypeEnum.VIDEO:
+        return '🎥 Video';
+      case MessageTypeEnum.AUDIO:
+        return '🎵 Voice message';
+      case MessageTypeEnum.FILE:
+        return '📄 Document';
+      case MessageTypeEnum.LOCATION:
+        return '📍 Location';
+      default:
+        return message.message || 'Message';
+    }
   }
 
   async presentAttachmentOptions() {
@@ -283,7 +336,7 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
     const buttons: any[] = [
       {
         text: 'Reply',
-        icon: 'reply-outline',
+        icon: 'arrow-undo-outline',
         handler: () => this.replyToMessage(message)
       },
       {
@@ -303,7 +356,7 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
         {
           text: 'Delete',
           icon: 'trash-outline',
-          role: 'destructive',
+          cssClass: 'destructive-button', // Use cssClass instead of role
           handler: () => this.confirmDeleteMessage(message)
         }
       );
@@ -319,7 +372,7 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
   }
 
   async presentEmojiPicker(message: ChatMessage) {
-    const alert = await document.createElement('ion-alert');
+    const alert = document.createElement('ion-alert');
     alert.header = 'Add Reaction';
     alert.cssClass = 'emoji-alert';
 
@@ -330,10 +383,11 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
       handler: () => this.addReaction(message, emoji)
     }));
 
+    // Add cancel button
     buttons.push({
       text: 'Cancel',
-      role: 'cancel',
-      cssClass: 'cancel-button'
+      cssClass: 'cancel-button',
+      handler: () => alert.dismiss()
     });
 
     alert.buttons = buttons;
@@ -360,7 +414,7 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
 
   async editMessage(message: ChatMessage) {
     // Simple prompt for editing - in a full app, this would be a proper modal
-    const alert = await document.createElement('ion-alert');
+    const alert = document.createElement('ion-alert');
     alert.header = 'Edit Message';
     alert.inputs = [{
       name: 'message',
@@ -371,12 +425,12 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
     alert.buttons = [
       {
         text: 'Cancel',
-        role: 'cancel'
+        handler: () => alert.dismiss()
       },
       {
         text: 'Update',
-        handler: (data) => {
-          if (data.message.trim()) {
+        handler: (data: any) => {
+          if (data.message && data.message.trim()) {
             this.updateMessage(message, data.message.trim());
           }
         }
