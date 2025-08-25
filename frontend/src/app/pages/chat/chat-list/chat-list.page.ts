@@ -100,7 +100,7 @@ export class ChatListPage implements OnInit, OnDestroy {
       });
   }
 
-  private updateFilteredRooms() {
+  protected updateFilteredRooms() {
     const rooms = this.chatRooms();
     const search = this.searchTerm().toLowerCase();
 

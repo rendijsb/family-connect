@@ -109,10 +109,11 @@ export class FamilySettingsPage implements OnInit, OnDestroy {
   private readonly toastService = inject(ToastService);
 
   // Signals for reactive state management
-  readonly family = signal<Family | null>(null);
+  protected family = signal<Family | null>(null);
   readonly isLoading = signal<boolean>(false);
   readonly isSaving = signal<boolean>(false);
   readonly familySlug = signal<string>('');
+  readonly code = signal<string>('');
 
   // Form groups
   familyForm!: FormGroup;
@@ -229,6 +230,7 @@ export class FamilySettingsPage implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           this.family.set(response.data);
+          this.code.set(response.data.joinCode || '');
           this.populateForms(response.data);
         },
         error: async (error) => {
@@ -425,7 +427,7 @@ export class FamilySettingsPage implements OnInit, OnDestroy {
         )
         .subscribe({
           next: async (response) => {
-            this.family.set(response.data.family);
+            this.code.set(response.data.joinCode);
             await this.toastService.showToast(
               'New join code generated successfully!',
               'success'

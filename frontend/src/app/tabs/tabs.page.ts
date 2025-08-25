@@ -5,8 +5,7 @@ import { addIcons } from 'ionicons';
 import { homeOutline, peopleOutline, chatbubbleOutline, cameraOutline, personOutline } from 'ionicons/icons';
 import { Subject, takeUntil } from 'rxjs';
 
-// TODO: Import chat service when implemented
-// import { ChatService } from '../core/services/chat/chat.service';
+import { ChatService } from '../core/services/chat/chat.service';
 
 @Component({
   selector: 'app-tabs',
@@ -17,23 +16,16 @@ import { Subject, takeUntil } from 'rxjs';
 })
 export class TabsPage implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
+  private readonly chatService = inject(ChatService);
 
-  // TODO: Inject chat service when implemented
-  // private readonly chatService = inject(ChatService);
-
-  unreadMessages = 0;
+  readonly unreadMessages = this.chatService.totalUnreadCount;
 
   constructor() {
     addIcons({ homeOutline, peopleOutline, chatbubbleOutline, cameraOutline, personOutline });
   }
 
   ngOnInit() {
-    // TODO: Subscribe to unread messages when chat service is implemented
-    // this.chatService.unreadCount$
-    //   .pipe(takeUntil(this.destroy$))
-    //   .subscribe(count => {
-    //     this.unreadMessages = count;
-    //   });
+
   }
 
   ngOnDestroy() {
