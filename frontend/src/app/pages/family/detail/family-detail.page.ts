@@ -21,16 +21,17 @@ import {
 } from 'ionicons/icons';
 
 import { FamilyService } from '../../../core/services/family/family.service';
+import { FamilyMemberService } from '../../../core/services/family-member/family-member.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import {
   Family,
   FamilyMember,
   FamilyRoleEnum,
   FamilyPrivacyEnum,
-  getFamilyRoleName
+  getFamilyRoleName,
 } from '../../../models/families/family.models';
-import {ToastService} from '../../../shared/services/toast.service';
-import {ModalController} from '@ionic/angular';
+import { ToastService } from '../../../shared/services/toast.service';
+import { ModalController } from '@ionic/angular';
 
 interface FamilyActivity {
   id: number;
@@ -62,6 +63,7 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly familyService = inject(FamilyService);
+  private readonly familyMemberService = inject(FamilyMemberService);
   private readonly authService = inject(AuthService);
   private readonly toastService = inject(ToastService);
   private readonly modalController = inject(ModalController);
@@ -83,7 +85,7 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
       user: 'Emma Johnson',
       userAvatar: '/assets/avatars/emma.jpg',
       icon: 'person-add-outline',
-      color: '#22c55e'
+      color: '#22c55e',
     },
     {
       id: 2,
@@ -94,7 +96,7 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
       user: 'Michael Johnson',
       userAvatar: '/assets/avatars/michael.jpg',
       icon: 'camera-outline',
-      color: '#3b82f6'
+      color: '#3b82f6',
     },
     {
       id: 3,
@@ -105,8 +107,8 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
       user: 'John Johnson',
       userAvatar: '/assets/avatars/john.jpg',
       icon: 'calendar-outline',
-      color: '#f59e0b'
-    }
+      color: '#f59e0b',
+    },
   ];
 
   constructor() {
@@ -141,7 +143,8 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
   private async loadFamily() {
     this.isLoading.set(true);
 
-    this.familyService.getFamilyBySlug(this.familySlug())
+    this.familyService
+      .getFamilyBySlug(this.familySlug())
       .pipe(
         finalize(() => this.isLoading.set(false)),
         takeUntil(this.destroy$)
@@ -155,12 +158,18 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
           if (error.status === 404) {
             await this.toastService.showToast('Family not found.', 'danger');
           } else if (error.status === 403) {
-            await this.toastService.showToast('You do not have access to this family.', 'danger');
+            await this.toastService.showToast(
+              'You do not have access to this family.',
+              'danger'
+            );
           } else {
-            await this.toastService.showToast('Failed to load family details.', 'danger');
+            await this.toastService.showToast(
+              'Failed to load family details.',
+              'danger'
+            );
           }
           await this.router.navigate(['/tabs/family']);
-        }
+        },
       });
   }
 
@@ -171,7 +180,8 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
 
   doRefresh(event: any) {
     if (this.familySlug()) {
-      this.familyService.getFamilyBySlug(this.familySlug())
+      this.familyService
+        .getFamilyBySlug(this.familySlug())
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (response) => {
@@ -180,8 +190,11 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
           },
           error: () => {
             event.target.complete();
-            this.toastService.showToast('Failed to refresh family data.', 'danger');
-          }
+            this.toastService.showToast(
+              'Failed to refresh family data.',
+              'danger'
+            );
+          },
         });
     } else {
       event.target.complete();
@@ -233,27 +246,42 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
     const family = this.family();
     if (!family) return;
 
-    const loading = await this.toastService.showLoading('Sending invitation...');
+    const loading = await this.toastService.showLoading(
+      'Sending invitation...'
+    );
 
-    this.familyService.inviteFamilyMember(family.slug, email, role)
+    this.familyService
+      .inviteFamilyMember(family.slug, email, role)
       .pipe(
         finalize(() => loading.dismiss()),
         takeUntil(this.destroy$)
       )
       .subscribe({
         next: async () => {
-          await this.toastService.showToast('Invitation sent successfully!', 'success');
+          await this.toastService.showToast(
+            'Invitation sent successfully!',
+            'success'
+          );
         },
         error: async (error) => {
           console.error('Invite member error:', error);
           if (error.status === 409) {
-            await this.toastService.showToast('This person is already a family member.', 'warning');
+            await this.toastService.showToast(
+              'This person is already a family member.',
+              'warning'
+            );
           } else if (error.status === 422) {
-            await this.toastService.showToast('Invalid email address.', 'danger');
+            await this.toastService.showToast(
+              'Invalid email address.',
+              'danger'
+            );
           } else {
-            await this.toastService.showToast('Failed to send invitation. Please try again.', 'danger');
+            await this.toastService.showToast(
+              'Failed to send invitation. Please try again.',
+              'danger'
+            );
           }
-        }
+        },
       });
   }
 
@@ -265,32 +293,43 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
     }
   }
 
-  private async handleSetRelationship(member: FamilyMember, relationshipData: any) {
+  private async handleSetRelationship(
+    member: FamilyMember,
+    relationshipData: any
+  ) {
     const family = this.family();
-    if (!family) return;
+    const currentUser = this.authService.user();
+    if (!family || !currentUser) return;
 
-    const loading = await this.toastService.showLoading('Updating relationship...');
+    const loading = await this.toastService.showLoading(
+      'Updating relationship...'
+    );
 
-    // You'll need to implement this in your FamilyMemberService
-    // this.memberService.setMemberRelationship(family.slug, member.id, {
-    //   relatedMemberId: currentUser.id, // You'll need to determine this
-    //   relationshipType: relationshipData.relationshipType,
-    //   isGuardian: relationshipData.isGuardian
-    // }).pipe(
-    //   finalize(() => loading.dismiss()),
-    //   takeUntil(this.destroy$)
-    // ).subscribe({
-    //   next: async () => {
-    //     await this.toastService.showToast('Relationship updated successfully!', 'success');
-    //   },
-    //   error: async (error) => {
-    //     console.error('Set relationship error:', error);
-    //     await this.toastService.showToast('Failed to update relationship.', 'danger');
-    //   }
-    // });
-
-    loading.dismiss();
-    await this.toastService.showToast('Relationship feature will be available soon!', 'warning');
+    this.familyMemberService
+      .setMemberRelationship(family.slug, member.id, {
+        relatedMemberId: currentUser.id,
+        relationshipType: relationshipData.relationshipType,
+        isGuardian: relationshipData.isGuardian || false,
+      })
+      .pipe(
+        finalize(() => loading.dismiss()),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: async () => {
+          await this.toastService.showToast(
+            'Relationship updated successfully!',
+            'success'
+          );
+        },
+        error: async (error) => {
+          console.error('Set relationship error:', error);
+          await this.toastService.showToast(
+            'Failed to update relationship.',
+            'danger'
+          );
+        },
+      });
   }
 
   async chatWithMember(member: FamilyMember) {
@@ -302,7 +341,10 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
   async copyJoinCode() {
     const family = this.family();
     if (family?.joinCode) {
-      await this.toastService.copyToClipboard(family.joinCode, 'Join code copied to clipboard!');
+      await this.toastService.copyToClipboard(
+        family.joinCode,
+        'Join code copied to clipboard!'
+      );
     }
   }
 
@@ -312,7 +354,7 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
       await this.toastService.shareWithFallback(
         {
           title: `Join ${family.name}`,
-          text: `You're invited to join the "${family.name}" family on Family Connect! Use join code: ${family.joinCode}`
+          text: `You're invited to join the "${family.name}" family on Family Connect! Use join code: ${family.joinCode}`,
         },
         family.joinCode,
         'Join code copied to clipboard!'
@@ -332,21 +374,30 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
     );
 
     if (confirmed) {
-      const loading = await this.toastService.showLoading('Generating new join code...');
+      const loading = await this.toastService.showLoading(
+        'Generating new join code...'
+      );
 
-      this.familyService.generateJoinCode(family.slug)
+      this.familyService
+        .generateJoinCode(family.slug)
         .pipe(
           finalize(() => loading.dismiss()),
           takeUntil(this.destroy$)
         )
         .subscribe({
           next: async () => {
-            await this.toastService.showToast('New join code generated successfully!', 'success');
+            await this.toastService.showToast(
+              'New join code generated successfully!',
+              'success'
+            );
           },
           error: async (error) => {
             console.error('Generate join code error:', error);
-            await this.toastService.showToast('Failed to generate new join code.', 'danger');
-          }
+            await this.toastService.showToast(
+              'Failed to generate new join code.',
+              'danger'
+            );
+          },
         });
     }
   }
@@ -360,13 +411,13 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
       {
         text: 'Family Chat',
         icon: 'chatbubble-outline',
-        handler: () => this.openFamilyChat()
+        handler: () => this.openFamilyChat(),
       },
       {
         text: 'Share Family',
         icon: 'share-outline',
-        handler: () => this.shareFamily()
-      }
+        handler: () => this.shareFamily(),
+      },
     ];
 
     if (this.canManageFamily()) {
@@ -374,12 +425,12 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
         {
           text: 'Family Settings',
           icon: 'settings-outline',
-          handler: () => this.openFamilySettings()
+          handler: () => this.openFamilySettings(),
         },
         {
           text: 'Invite Members',
           icon: 'person-add-outline',
-          handler: () => this.inviteMembers()
+          handler: () => this.inviteMembers(),
         }
       );
     }
@@ -389,14 +440,14 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
         text: 'Delete Family',
         icon: 'trash-outline',
         role: 'destructive',
-        handler: () => this.confirmDeleteFamily()
+        handler: () => this.confirmDeleteFamily(),
       });
     } else {
       buttons.push({
         text: 'Leave Family',
         icon: 'exit-outline',
         role: 'destructive',
-        handler: () => this.confirmLeaveFamily()
+        handler: () => this.confirmLeaveFamily(),
       });
     }
 
@@ -410,18 +461,18 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
       {
         text: 'Send Message',
         icon: 'chatbubble-outline',
-        handler: () => this.chatWithMember(member)
+        handler: () => this.chatWithMember(member),
       },
       {
         text: 'Call Member',
         icon: 'call-outline',
-        handler: () => this.callMember(member)
+        handler: () => this.callMember(member),
       },
       {
         text: 'Set Relationship',
         icon: 'people-outline',
-        handler: () => this.setMemberRelationship(member)
-      }
+        handler: () => this.setMemberRelationship(member),
+      },
     ];
 
     if (this.canEditMember(member)) {
@@ -429,12 +480,12 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
         {
           text: 'Edit Details',
           icon: 'create-outline',
-          handler: () => this.editMember(member)
+          handler: () => this.editMember(member),
         },
         {
           text: 'Change Role',
           icon: 'shield-checkmark-outline',
-          handler: () => this.changeMemberRole(member)
+          handler: () => this.changeMemberRole(member),
         }
       );
     }
@@ -444,7 +495,7 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
         text: 'Remove Member',
         icon: 'person-remove-outline',
         role: 'destructive',
-        handler: () => this.confirmRemoveMember(member)
+        handler: () => this.confirmRemoveMember(member),
       });
     }
 
@@ -466,14 +517,50 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
     if (member.user?.phone) {
       window.open(`tel:${member.user.phone}`, '_system');
     } else {
-      await this.toastService.showToast('Phone number not available', 'warning');
+      await this.toastService.showToast(
+        'Phone number not available',
+        'warning'
+      );
     }
   }
 
   private async changeMemberRole(member: FamilyMember) {
-    const newRole = await this.toastService.showRoleSelectionDialog(member.role);
+    const newRole = await this.toastService.showRoleSelectionDialog(
+      member.role
+    );
     if (newRole !== null && newRole !== member.role) {
-      await this.toastService.showToast('Role change feature will be available soon!', 'warning');
+      const family = this.family();
+      if (!family) return;
+
+      const loading = await this.toastService.showLoading(
+        'Updating member role...'
+      );
+
+      this.familyMemberService
+        .updateMemberRole(family.slug, member.id, {
+          role: newRole,
+        })
+        .pipe(
+          finalize(() => loading.dismiss()),
+          takeUntil(this.destroy$)
+        )
+        .subscribe({
+          next: async () => {
+            await this.toastService.showToast(
+              'Member role updated successfully!',
+              'success'
+            );
+            // Reload family to reflect changes
+            this.loadFamily();
+          },
+          error: async (error) => {
+            console.error('Update member role error:', error);
+            await this.toastService.showToast(
+              'Failed to update member role.',
+              'danger'
+            );
+          },
+        });
     }
   }
 
@@ -488,7 +575,7 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
       await this.toastService.shareWithFallback(
         {
           title: family.name,
-          text: `Check out the "${family.name}" family on Family Connect!`
+          text: `Check out the "${family.name}" family on Family Connect!`,
         },
         family.slug,
         'Family link copied to clipboard!'
@@ -515,20 +602,27 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
   private async handleLeaveFamily(family: Family) {
     const loading = await this.toastService.showLoading('Leaving family...');
 
-    this.familyService.leaveFamily(family.slug)
+    this.familyService
+      .leaveFamily(family.slug)
       .pipe(
         finalize(() => loading.dismiss()),
         takeUntil(this.destroy$)
       )
       .subscribe({
         next: async () => {
-          await this.toastService.showToast('You have left the family.', 'success');
+          await this.toastService.showToast(
+            'You have left the family.',
+            'success'
+          );
           await this.router.navigate(['/tabs/family']);
         },
         error: async (error) => {
           console.error('Leave family error:', error);
-          await this.toastService.showToast('Failed to leave family. Please try again.', 'danger');
-        }
+          await this.toastService.showToast(
+            'Failed to leave family. Please try again.',
+            'danger'
+          );
+        },
       });
   }
 
@@ -536,7 +630,10 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
     const family = this.family();
     if (!family) return;
 
-    const confirmed = await this.toastService.showDeleteConfirmation(family.name, 'Family');
+    const confirmed = await this.toastService.showDeleteConfirmation(
+      family.name,
+      'Family'
+    );
     if (confirmed) {
       this.handleDeleteFamily(family);
     }
@@ -545,20 +642,27 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
   private async handleDeleteFamily(family: Family) {
     const loading = await this.toastService.showLoading('Deleting family...');
 
-    this.familyService.deleteFamily(family.slug)
+    this.familyService
+      .deleteFamily(family.slug)
       .pipe(
         finalize(() => loading.dismiss()),
         takeUntil(this.destroy$)
       )
       .subscribe({
         next: async () => {
-          await this.toastService.showToast('Family deleted successfully.', 'success');
+          await this.toastService.showToast(
+            'Family deleted successfully.',
+            'success'
+          );
           await this.router.navigate(['/tabs/family']);
         },
         error: async (error) => {
           console.error('Delete family error:', error);
-          await this.toastService.showToast('Failed to delete family. Please try again.', 'danger');
-        }
+          await this.toastService.showToast(
+            'Failed to delete family. Please try again.',
+            'danger'
+          );
+        },
       });
   }
 
@@ -568,9 +672,38 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
   }
 
   async editMember(member: FamilyMember) {
-    // Open member edit modal/page
-    console.log('Edit member:', member);
-    await this.toastService.showToast('Member editing will be available soon!', 'warning');
+    const memberData = await this.toastService.showEditMemberModal(member);
+
+    if (memberData) {
+      const family = this.family();
+      if (!family) return;
+
+      const loading = await this.toastService.showLoading('Updating member...');
+
+      this.familyMemberService
+        .updateMember(family.slug, member.id, memberData)
+        .pipe(
+          finalize(() => loading.dismiss()),
+          takeUntil(this.destroy$)
+        )
+        .subscribe({
+          next: async () => {
+            await this.toastService.showToast(
+              'Member updated successfully!',
+              'success'
+            );
+            // Reload family to reflect changes
+            this.loadFamily();
+          },
+          error: async (error) => {
+            console.error('Update member error:', error);
+            await this.toastService.showToast(
+              'Failed to update member.',
+              'danger'
+            );
+          },
+        });
+    }
   }
 
   async confirmRemoveMember(member: FamilyMember) {
@@ -592,21 +725,28 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
 
     const loading = await this.toastService.showLoading('Removing member...');
 
-    this.familyService.removeFamilyMember(family.slug, member.id)
+    this.familyService
+      .removeFamilyMember(family.slug, member.id)
       .pipe(
         finalize(() => loading.dismiss()),
         takeUntil(this.destroy$)
       )
       .subscribe({
         next: async () => {
-          await this.toastService.showToast('Member removed successfully.', 'success');
+          await this.toastService.showToast(
+            'Member removed successfully.',
+            'success'
+          );
           // Reload family to refresh members list
           this.loadFamily();
         },
         error: async (error) => {
           console.error('Remove member error:', error);
-          await this.toastService.showToast('Failed to remove member. Please try again.', 'danger');
-        }
+          await this.toastService.showToast(
+            'Failed to remove member. Please try again.',
+            'danger'
+          );
+        },
       });
   }
 
@@ -625,39 +765,57 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
 
   getRoleInitial(role: FamilyRoleEnum): string {
     switch (role) {
-      case FamilyRoleEnum.OWNER: return 'O';
-      case FamilyRoleEnum.MODERATOR: return 'M';
-      case FamilyRoleEnum.MEMBER: return 'F';
-      case FamilyRoleEnum.CHILD: return 'C';
-      default: return '?';
+      case FamilyRoleEnum.OWNER:
+        return 'O';
+      case FamilyRoleEnum.MODERATOR:
+        return 'M';
+      case FamilyRoleEnum.MEMBER:
+        return 'F';
+      case FamilyRoleEnum.CHILD:
+        return 'C';
+      default:
+        return '?';
     }
   }
 
   getRoleBadgeClass(role: FamilyRoleEnum): string {
     switch (role) {
-      case FamilyRoleEnum.OWNER: return 'owner';
-      case FamilyRoleEnum.MODERATOR: return 'moderator';
-      case FamilyRoleEnum.MEMBER: return 'member';
-      case FamilyRoleEnum.CHILD: return 'child';
-      default: return 'member';
+      case FamilyRoleEnum.OWNER:
+        return 'owner';
+      case FamilyRoleEnum.MODERATOR:
+        return 'moderator';
+      case FamilyRoleEnum.MEMBER:
+        return 'member';
+      case FamilyRoleEnum.CHILD:
+        return 'child';
+      default:
+        return 'member';
     }
   }
 
   getPrivacyLabel(privacy: FamilyPrivacyEnum): string {
     switch (privacy) {
-      case FamilyPrivacyEnum.PUBLIC: return 'Public';
-      case FamilyPrivacyEnum.PRIVATE: return 'Private';
-      case FamilyPrivacyEnum.INVITE_ONLY: return 'Invite Only';
-      default: return 'Unknown';
+      case FamilyPrivacyEnum.PUBLIC:
+        return 'Public';
+      case FamilyPrivacyEnum.PRIVATE:
+        return 'Private';
+      case FamilyPrivacyEnum.INVITE_ONLY:
+        return 'Invite Only';
+      default:
+        return 'Unknown';
     }
   }
 
   getPrivacyIcon(privacy: FamilyPrivacyEnum): string {
     switch (privacy) {
-      case FamilyPrivacyEnum.PUBLIC: return 'globe-outline';
-      case FamilyPrivacyEnum.PRIVATE: return 'lock-closed-outline';
-      case FamilyPrivacyEnum.INVITE_ONLY: return 'key-outline';
-      default: return 'help-outline';
+      case FamilyPrivacyEnum.PUBLIC:
+        return 'globe-outline';
+      case FamilyPrivacyEnum.PRIVATE:
+        return 'lock-closed-outline';
+      case FamilyPrivacyEnum.INVITE_ONLY:
+        return 'key-outline';
+      default:
+        return 'help-outline';
     }
   }
 
@@ -706,7 +864,10 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
     }
 
     if (currentRole === FamilyRoleEnum.MODERATOR) {
-      return member.role === FamilyRoleEnum.MEMBER || member.role === FamilyRoleEnum.CHILD;
+      return (
+        member.role === FamilyRoleEnum.MEMBER ||
+        member.role === FamilyRoleEnum.CHILD
+      );
     }
 
     return false;
@@ -721,7 +882,8 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
     if (member.lastSeenAt) {
       const lastSeen = new Date(member.lastSeenAt);
       const now = new Date();
-      const diffInHours = (now.getTime() - lastSeen.getTime()) / (1000 * 60 * 60);
+      const diffInHours =
+        (now.getTime() - lastSeen.getTime()) / (1000 * 60 * 60);
 
       if (diffInHours < 1) return 'radio-button-on-outline';
       if (diffInHours < 24) return 'time-outline';
@@ -734,7 +896,8 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
     if (member.lastSeenAt) {
       const lastSeen = new Date(member.lastSeenAt);
       const now = new Date();
-      const diffInHours = (now.getTime() - lastSeen.getTime()) / (1000 * 60 * 60);
+      const diffInHours =
+        (now.getTime() - lastSeen.getTime()) / (1000 * 60 * 60);
 
       if (diffInHours < 1) return '#22c55e';
       if (diffInHours < 24) return '#f59e0b';
@@ -747,7 +910,8 @@ export class FamilyDetailPage implements OnInit, OnDestroy {
     if (member.lastSeenAt) {
       const lastSeen = new Date(member.lastSeenAt);
       const now = new Date();
-      const diffInHours = (now.getTime() - lastSeen.getTime()) / (1000 * 60 * 60);
+      const diffInHours =
+        (now.getTime() - lastSeen.getTime()) / (1000 * 60 * 60);
 
       if (diffInHours < 1) return 'Active now';
       if (diffInHours < 24) return `Active ${Math.floor(diffInHours)}h ago`;

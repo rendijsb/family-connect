@@ -6,13 +6,14 @@ namespace App\Http\Routes\Api\Family;
 
 use App\Contracts\Http\Routes\RouteContract;
 use App\Http\Controllers\Families\FamilyMemberController;
+use App\Http\Controllers\Families\InvitationController;
 use Illuminate\Support\Facades\Route;
 
 class FamilyMemberRoutes implements RouteContract
 {
     public static function api(): void
     {
-        Route::prefix('families/{family_slug}/members')->middleware('auth:sanctum')->group(function () {
+        Route::prefix('families/{family_slug}/members')->middleware(['auth:sanctum', 'family.access'])->group(function () {
             Route::get('/', [FamilyMemberController::class, 'getAllFamilyMembers']);
             Route::post('/invite', [FamilyMemberController::class, 'inviteFamilyMember']);
             Route::put('/{member_id}', [FamilyMemberController::class, 'updateFamilyMember']);

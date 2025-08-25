@@ -31,7 +31,9 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 1px;
+  gap: 2px;
+  width: 100%;
+  padding: 0 8px;
 }
 
 .family-name {
@@ -40,6 +42,14 @@
   font-weight: 600;
   line-height: 1.2;
   margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+
+  @media (max-width: 430px) {
+    font-size: 15px;
+  }
 }
 
 .member-count {
@@ -47,6 +57,10 @@
   color: #a1a1aa;
   font-weight: 400;
   line-height: 1.2;
+
+  @media (max-width: 430px) {
+    font-size: 11px;
+  }
 }
 
 .back-button,
@@ -79,15 +93,29 @@
 
 // Family Header
 .family-header {
-  background: linear-gradient(135deg, rgba(220, 38, 38, 0.15), rgba(185, 28, 28, 0.15));
+  background: linear-gradient(
+    135deg,
+    rgba(220, 38, 38, 0.15),
+    rgba(185, 28, 28, 0.15)
+  );
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .family-banner {
-  padding: 24px 16px;
+  padding: 28px 20px;
   display: flex;
-  gap: 16px;
+  gap: 18px;
   align-items: flex-start;
+
+  @media (max-width: 430px) {
+    padding: 24px 16px;
+    gap: 16px;
+  }
+
+  @media (max-width: 350px) {
+    padding: 20px 14px;
+    gap: 14px;
+  }
 }
 
 .family-avatar {
@@ -110,6 +138,14 @@
 .family-info {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-right: 12px;
+
+  @media (max-width: 430px) {
+    padding-right: 8px;
+  }
 }
 
 .family-name {
@@ -186,12 +222,24 @@
 // Tab Content
 .tab-content {
   padding: 16px;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
   animation: fadeIn 0.3s ease-in-out;
+
+  @media (max-width: 430px) {
+    padding: 12px;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 // Shared Card Styles
@@ -213,23 +261,40 @@
 }
 
 ion-card-header {
-  padding: 16px 16px 8px 16px;
+  padding: 20px 20px 12px 20px;
+
+  @media (max-width: 430px) {
+    padding: 16px 16px 10px 16px;
+  }
 }
 
 ion-card-content {
-  padding: 8px 16px 16px 16px;
+  padding: 8px 20px 20px 20px;
+
+  @media (max-width: 430px) {
+    padding: 8px 16px 16px 16px;
+  }
 }
 
 .section-title {
   color: white;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   margin: 0;
+  line-height: 1.3;
+
+  @media (max-width: 430px) {
+    font-size: 16px;
+  }
 }
 
 // Quick Actions Grid
 .actions-content {
-  padding: 8px 16px 16px 16px !important;
+  padding: 8px 20px 20px 20px !important;
+
+  @media (max-width: 430px) {
+    padding: 8px 16px 16px 16px !important;
+  }
 }
 
 .actions-grid {
@@ -237,6 +302,15 @@ ion-card-content {
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   margin-top: 8px;
+
+  @media (max-width: 430px) {
+    gap: 12px;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (max-width: 350px) {
+    gap: 8px;
+  }
 }
 
 .action-item {
@@ -262,39 +336,71 @@ ion-card-content {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.2s ease;
 
   ion-icon {
     font-size: 24px;
   }
 
+  @media (max-width: 430px) {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+
+    ion-icon {
+      font-size: 22px;
+    }
+  }
+
+  @media (max-width: 350px) {
+    width: 40px;
+    height: 40px;
+
+    ion-icon {
+      font-size: 20px;
+    }
+  }
+
   &.chat {
     background: rgba(34, 197, 94, 0.2);
-    ion-icon { color: #22c55e; }
+    ion-icon {
+      color: #22c55e;
+    }
   }
 
   &.photos {
     background: rgba(59, 130, 246, 0.2);
-    ion-icon { color: #3b82f6; }
+    ion-icon {
+      color: #3b82f6;
+    }
   }
 
   &.events {
     background: rgba(245, 158, 11, 0.2);
-    ion-icon { color: #f59e0b; }
+    ion-icon {
+      color: #f59e0b;
+    }
   }
 
   &.location {
     background: rgba(139, 92, 246, 0.2);
-    ion-icon { color: #8b5cf6; }
+    ion-icon {
+      color: #8b5cf6;
+    }
   }
 
   &.memories {
     background: rgba(239, 68, 68, 0.2);
-    ion-icon { color: #ef4444; }
+    ion-icon {
+      color: #ef4444;
+    }
   }
 
   &.invite {
     background: rgba(236, 72, 153, 0.2);
-    ion-icon { color: #ec4899; }
+    ion-icon {
+      color: #ec4899;
+    }
   }
 }
 
@@ -304,11 +410,25 @@ ion-card-content {
   font-weight: 500;
   text-align: center;
   line-height: 1.2;
+  margin-top: 2px;
+
+  @media (max-width: 430px) {
+    font-size: 11px;
+  }
+
+  @media (max-width: 350px) {
+    font-size: 10px;
+    line-height: 1.1;
+  }
 }
 
 // Join Code Card
 .join-code-content {
-  padding: 8px 16px 16px 16px !important;
+  padding: 8px 20px 20px 20px !important;
+
+  @media (max-width: 430px) {
+    padding: 8px 16px 16px 16px !important;
+  }
 }
 
 .join-code-display {
@@ -326,9 +446,20 @@ ion-card-content {
   font-size: 24px;
   font-weight: 700;
   color: #dc2626;
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   text-align: center;
   letter-spacing: 2px;
+  margin: 0;
+
+  @media (max-width: 430px) {
+    font-size: 20px;
+    letter-spacing: 1.5px;
+  }
+
+  @media (max-width: 350px) {
+    font-size: 18px;
+    letter-spacing: 1px;
+  }
 }
 
 .join-code-actions {
@@ -431,11 +562,19 @@ ion-card-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 16px 8px 16px !important;
+  padding: 20px 20px 12px 20px !important;
+
+  @media (max-width: 430px) {
+    padding: 16px 16px 10px 16px !important;
+  }
 }
 
 .members-content {
-  padding: 8px 0 16px 0 !important;
+  padding: 8px 0 20px 0 !important;
+
+  @media (max-width: 430px) {
+    padding: 8px 0 16px 0 !important;
+  }
 }
 
 .members-list {
@@ -446,10 +585,11 @@ ion-card-content {
 .member-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px;
+  gap: 14px;
+  padding: 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   transition: background-color 0.3s ease;
+  min-height: 80px;
 
   &:last-child {
     border-bottom: none;
@@ -458,14 +598,36 @@ ion-card-content {
   &:active {
     background: rgba(255, 255, 255, 0.05);
   }
+
+  @media (max-width: 430px) {
+    padding: 16px;
+    gap: 12px;
+    min-height: 72px;
+  }
+
+  @media (max-width: 350px) {
+    padding: 14px;
+    gap: 10px;
+    min-height: 68px;
+  }
 }
 
 .member-avatar {
   position: relative;
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   border: 2px solid rgba(255, 255, 255, 0.2);
   flex-shrink: 0;
+
+  @media (max-width: 430px) {
+    width: 48px;
+    height: 48px;
+  }
+
+  @media (max-width: 350px) {
+    width: 44px;
+    height: 44px;
+  }
 }
 
 .role-badge {
@@ -506,6 +668,14 @@ ion-card-content {
 .member-info {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-right: 8px;
+
+  @media (max-width: 430px) {
+    padding-right: 6px;
+  }
 }
 
 .member-name {
@@ -517,6 +687,13 @@ ion-card-content {
   display: flex;
   align-items: center;
   gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  @media (max-width: 430px) {
+    font-size: 14px;
+  }
 }
 
 .you-badge {
@@ -531,20 +708,30 @@ ion-card-content {
 .member-role {
   font-size: 13px;
   color: #a1a1aa;
-  margin: 0 0 2px 0;
+  margin: 2px 0 4px 0;
   line-height: 1.2;
+
+  @media (max-width: 430px) {
+    font-size: 12px;
+    margin: 1px 0 3px 0;
+  }
 }
 
 .member-relationship {
   font-size: 12px;
-  color: #6b7280;
-  margin: 0 0 2px 0;
+  color: #9ca3af;
+  margin: 0 0 4px 0;
   line-height: 1.2;
+
+  @media (max-width: 430px) {
+    font-size: 11px;
+    margin: 0 0 3px 0;
+  }
 }
 
 .member-status {
   font-size: 12px;
-  color: #6b7280;
+  color: #9ca3af;
   margin: 0;
   line-height: 1.2;
   display: flex;
@@ -552,14 +739,29 @@ ion-card-content {
   gap: 4px;
 
   ion-icon {
-    font-size: 10px;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 430px) {
+    font-size: 11px;
+    gap: 3px;
+
+    ion-icon {
+      font-size: 11px;
+    }
   }
 }
 
 .member-actions {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   flex-shrink: 0;
+  align-items: center;
+
+  @media (max-width: 430px) {
+    gap: 4px;
+  }
 }
 
 .chat-btn,
@@ -1060,7 +1262,12 @@ ion-card-content {
 // Dark mode enhancements
 @media (prefers-color-scheme: dark) {
   .detail-content {
-    --background: linear-gradient(135deg, #0a0a0a 0%, #1a0f0f 50%, #0a0a0a 100%);
+    --background: linear-gradient(
+      135deg,
+      #0a0a0a 0%,
+      #1a0f0f 50%,
+      #0a0a0a 100%
+    );
   }
 }
 

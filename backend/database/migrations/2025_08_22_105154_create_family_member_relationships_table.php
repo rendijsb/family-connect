@@ -19,7 +19,7 @@ return new class extends Migration
             $table->boolean('is_guardian')->default(false);
             $table->timestamps();
 
-            $table->unique(['family_id', 'member_id', 'related_member_id']);
+            $table->unique(['family_id', 'member_id', 'related_member_id'], 'fmr_family_member_related_unique');
             $table->index('family_id');
             $table->index('relationship_type');
         });

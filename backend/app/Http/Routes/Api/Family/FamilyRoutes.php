@@ -23,6 +23,8 @@ class FamilyRoutes implements RouteContract
                 Route::put('/{family_slug}', [FamilyController::class, 'updateFamily']);
                 Route::delete('/{family_slug}', [FamilyController::class, 'deleteFamily']);
                 Route::post('/{family_slug}/leave', [FamilyController::class, 'leaveFamily']);
+                Route::post('/{family_slug}/generate-code', [FamilyController::class, 'generateJoinCode']);
+                Route::post('/{family_slug}/invite', [FamilyController::class, 'inviteMember']);
             });
         });
     }

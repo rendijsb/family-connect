@@ -91,6 +91,30 @@ export class FamilyMemberService {
       );
   }
 
+  updateMember(
+    familySlug: string,
+    memberId: number,
+    request: any
+  ): Observable<ApiResponse<FamilyMember>> {
+    this._isLoading.set(true);
+
+    return this.http
+      .put<ApiResponse<FamilyMember>>(
+        this.apiUrlService.getUrl(`families/${familySlug}/members/${memberId}`),
+        request
+      )
+      .pipe(
+        tap((response) => {
+          const currentMembers = this._familyMembers.value;
+          const updatedMembers = currentMembers.map((member) =>
+            member.id === memberId ? response.data : member
+          );
+          this._familyMembers.next(updatedMembers);
+        }),
+        finalize(() => this._isLoading.set(false))
+      );
+  }
+
   setMemberRelationship(
     familySlug: string,
     memberId: number,
