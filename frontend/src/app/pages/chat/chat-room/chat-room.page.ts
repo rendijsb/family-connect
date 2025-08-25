@@ -4,29 +4,64 @@ import {
   OnDestroy,
   inject,
   signal,
+  computed,
   ViewChild,
   ElementRef,
   AfterViewInit,
-  effect
+  effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil, debounceTime } from 'rxjs';
 import {
-  IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonButtons,
-  IonIcon, IonTextarea, IonInfiniteScroll, IonInfiniteScrollContent,
-  IonRefresher, IonRefresherContent, IonAvatar, IonSkeletonText
+  IonContent,
+  IonHeader,
+  IonTitle,
+  IonToolbar,
+  IonButton,
+  IonButtons,
+  IonIcon,
+  IonTextarea,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
+  IonRefresher,
+  IonRefresherContent,
+  IonAvatar,
+  IonSkeletonText,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
-  arrowBackOutline, sendOutline, attachOutline, micOutline, cameraOutline,
-  imageOutline, documentOutline, locationOutline, addCircleOutline,
-  ellipsisVerticalOutline, heartOutline, happyOutline, sadOutline,
-  thumbsUpOutline, thumbsDownOutline, playOutline, copyOutline,
-  trashOutline, createOutline, flagOutline, informationCircleOutline,
-  timeOutline, checkmarkDoneOutline, closeOutline, arrowUndoOutline,
-  alertCircleOutline, checkmarkOutline, videocamOutline, addOutline
+  arrowBackOutline,
+  sendOutline,
+  attachOutline,
+  micOutline,
+  cameraOutline,
+  imageOutline,
+  documentOutline,
+  locationOutline,
+  addCircleOutline,
+  ellipsisVerticalOutline,
+  heartOutline,
+  happyOutline,
+  sadOutline,
+  thumbsUpOutline,
+  thumbsDownOutline,
+  playOutline,
+  copyOutline,
+  trashOutline,
+  createOutline,
+  flagOutline,
+  informationCircleOutline,
+  timeOutline,
+  checkmarkDoneOutline,
+  closeOutline,
+  arrowUndoOutline,
+  alertCircleOutline,
+  checkmarkOutline,
+  videocamOutline,
+  addOutline,
+  arrowDownOutline,
 } from 'ionicons/icons';
 
 import { ChatService } from '../../../core/services/chat/chat.service';
@@ -43,7 +78,7 @@ import {
   shouldShowTimestamp,
   formatMessageTime,
   formatMessageDate,
-  getChatRoomTypeIcon
+  getChatRoomTypeIcon,
 } from '../../../models/chat/chat.models';
 
 @Component({
@@ -52,11 +87,23 @@ import {
   styleUrls: ['./chat-room.page.scss'],
   standalone: true,
   imports: [
-    CommonModule, FormsModule,
-    IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonButtons,
-    IonIcon, IonTextarea, IonInfiniteScroll, IonInfiniteScrollContent,
-    IonRefresher, IonRefresherContent, IonAvatar, IonSkeletonText
-  ]
+    CommonModule,
+    FormsModule,
+    IonContent,
+    IonHeader,
+    IonTitle,
+    IonToolbar,
+    IonButton,
+    IonButtons,
+    IonIcon,
+    IonTextarea,
+    IonInfiniteScroll,
+    IonInfiniteScrollContent,
+    IonRefresher,
+    IonRefresherContent,
+    IonAvatar,
+    IonSkeletonText,
+  ],
 })
 export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild(IonContent) content!: IonContent;
@@ -91,13 +138,14 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
   // Common emoji reactions
   readonly commonEmojis = ['👍', '❤️', '😂', '😮', '😢', '😡', '🎉', '🔥'];
 
-  readonly currentUser = this.authService.user;
+  readonly currentUser = computed(() => this.authService.user());
   readonly MessageTypeEnum = MessageTypeEnum;
   readonly ChatRoomTypeEnum = ChatRoomTypeEnum; // Added missing enum
 
   constructor() {
     this.addIcons();
     this.setupTypingIndicator();
+    this.setupAutoScroll();
   }
 
   ngOnInit() {
@@ -109,13 +157,19 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
     this.roomId.set(roomId);
 
     if (familySlug && roomId) {
+      // Initialize WebSocket connection and setup real-time features
+      this.initializeRealtimeFeatures(roomId);
+
       this.loadChatRoom();
       this.loadMessages();
     }
   }
 
   ngAfterViewInit() {
-    // Auto-scroll to bottom on new messages using effect
+    // View is ready
+  }
+
+  private setupAutoScroll() {
     effect(() => {
       const messages = this.messages();
       if (messages.length > 0) {
@@ -124,7 +178,69 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
+  private async initializeRealtimeFeatures(roomId: number): Promise<void> {
+    try {
+      // Initialize WebSocket connection
+      await this.chatService.initializeWebSocket();
+
+      // Join the chat room for real-time updates
+      this.chatService.joinChatRoom(roomId);
+
+      // Subscribe to real-time message events
+      this.subscribeToRealTimeEvents();
+    } catch (error) {
+      console.error('Failed to initialize real-time features:', error);
+    }
+  }
+
+  private subscribeToRealTimeEvents() {
+    // Subscribe to new messages
+    this.chatService
+      .getMessageReceivedStream()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (message) => {
+          console.log('Real-time message received:', message);
+          // The message is already added to the messages signal in ChatService
+          // Just scroll to bottom for new messages
+          setTimeout(() => this.scrollToBottom(), 100);
+        },
+        error: (error) => {
+          console.error('Error receiving real-time message:', error);
+        },
+      });
+
+    // Subscribe to message updates
+    this.chatService
+      .getMessageUpdatedStream()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (message) => {
+          console.log('Real-time message updated:', message);
+        },
+        error: (error) => {
+          console.error('Error receiving message update:', error);
+        },
+      });
+
+    // Subscribe to message deletions
+    this.chatService
+      .getMessageDeletedStream()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (messageId) => {
+          console.log('Real-time message deleted:', messageId);
+        },
+        error: (error) => {
+          console.error('Error receiving message deletion:', error);
+        },
+      });
+  }
+
   ngOnDestroy() {
+    // Clean up WebSocket connections
+    this.chatService.leaveChatRoom();
+
     this.destroy$.next();
     this.destroy$.complete();
     this.chatService.clearCurrentRoom();
@@ -132,29 +248,50 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
 
   private addIcons() {
     addIcons({
-      arrowBackOutline, sendOutline, attachOutline, micOutline, cameraOutline,
-      imageOutline, documentOutline, locationOutline, addCircleOutline,
-      ellipsisVerticalOutline, heartOutline, happyOutline, sadOutline,
-      thumbsUpOutline, thumbsDownOutline, playOutline, copyOutline,
-      trashOutline, createOutline, flagOutline, informationCircleOutline,
-      timeOutline, checkmarkDoneOutline, closeOutline,
+      arrowBackOutline,
+      sendOutline,
+      attachOutline,
+      micOutline,
+      cameraOutline,
+      imageOutline,
+      documentOutline,
+      locationOutline,
+      addCircleOutline,
+      ellipsisVerticalOutline,
+      heartOutline,
+      happyOutline,
+      sadOutline,
+      thumbsUpOutline,
+      thumbsDownOutline,
+      playOutline,
+      copyOutline,
+      trashOutline,
+      createOutline,
+      flagOutline,
+      informationCircleOutline,
+      timeOutline,
+      checkmarkDoneOutline,
+      closeOutline,
       'arrow-undo-outline': arrowUndoOutline, // Reply icon
-      alertCircleOutline, checkmarkOutline, videocamOutline,
-      addOutline
+      alertCircleOutline,
+      checkmarkOutline,
+      videocamOutline,
+      addOutline,
+      arrowDownOutline,
     });
   }
 
   private setupTypingIndicator() {
-    this.typingSubject.pipe(
-      debounceTime(500),
-      takeUntil(this.destroy$)
-    ).subscribe(() => {
-      this.sendTypingIndicator();
-    });
+    this.typingSubject
+      .pipe(debounceTime(500), takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.sendTypingIndicator();
+      });
   }
 
   private loadChatRoom() {
-    this.chatService.getChatRoom(this.familySlug(), this.roomId())
+    this.chatService
+      .getChatRoom(this.familySlug(), this.roomId())
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
@@ -165,12 +302,13 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
           console.error('Load chat room error:', error);
           this.toastService.showToast('Failed to load chat room.', 'danger');
           this.goBack();
-        }
+        },
       });
   }
 
   private loadMessages(page: number = 1) {
-    this.chatService.getMessages(this.familySlug(), this.roomId(), page)
+    this.chatService
+      .getMessages(this.familySlug(), this.roomId(), page)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
@@ -184,18 +322,20 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
         error: (error) => {
           console.error('Load messages error:', error);
           this.toastService.showToast('Failed to load messages.', 'danger');
-        }
+        },
       });
   }
 
   private markAsRead() {
-    this.chatService.markAsRead(this.familySlug(), this.roomId())
+    this.chatService
+      .markAsRead(this.familySlug(), this.roomId())
       .pipe(takeUntil(this.destroy$))
       .subscribe();
   }
 
   private sendTypingIndicator() {
-    this.chatService.sendTypingIndicator(this.familySlug(), this.roomId())
+    this.chatService
+      .sendTypingIndicator(this.familySlug(), this.roomId())
       .pipe(takeUntil(this.destroy$))
       .subscribe();
   }
@@ -243,13 +383,14 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
     const request: SendMessageRequest = {
       message: text,
       type: MessageTypeEnum.TEXT,
-      replyToId: this.replyingTo()?.id
+      replyToId: this.replyingTo()?.id,
     };
 
     this.messageText.set('');
     this.replyingTo.set(null);
 
-    this.chatService.sendMessage(this.familySlug(), this.roomId(), request)
+    this.chatService
+      .sendMessage(this.familySlug(), this.roomId(), request)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
@@ -258,13 +399,13 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
         error: (error) => {
           console.error('Send message error:', error);
           this.toastService.showToast('Failed to send message.', 'danger');
-        }
+        },
       });
   }
 
   // Missing methods that were referenced in template
-  getRoomMemberCount(chatRoom: ChatRoom): number {
-    return chatRoom.members?.length || 0;
+  getRoomMemberCount(chatRoom: ChatRoom): string {
+    return `${chatRoom.members?.length || 0}`;
   }
 
   async openRoomInfo() {
@@ -274,7 +415,9 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
 
   scrollToMessage(message: ChatMessage) {
     // Find and scroll to specific message
-    const messageElement = document.querySelector(`[data-message-id="${message.id}"]`);
+    const messageElement = document.querySelector(
+      `[data-message-id="${message.id}"]`
+    );
     if (messageElement) {
       messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -308,23 +451,23 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
       {
         text: 'Camera',
         icon: 'camera-outline',
-        handler: () => this.openCamera()
+        handler: () => this.openCamera(),
       },
       {
         text: 'Photo & Video Library',
         icon: 'image-outline',
-        handler: () => this.openGallery()
+        handler: () => this.openGallery(),
       },
       {
         text: 'Document',
         icon: 'document-outline',
-        handler: () => this.openDocuments()
+        handler: () => this.openDocuments(),
       },
       {
         text: 'Location',
         icon: 'location-outline',
-        handler: () => this.shareLocation()
-      }
+        handler: () => this.shareLocation(),
+      },
     ];
 
     await this.toastService.showActionSheet('Add Attachment', buttons);
@@ -337,13 +480,13 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
       {
         text: 'Reply',
         icon: 'arrow-undo-outline',
-        handler: () => this.replyToMessage(message)
+        handler: () => this.replyToMessage(message),
       },
       {
         text: 'Copy Text',
         icon: 'copy-outline',
-        handler: () => this.copyMessageText(message)
-      }
+        handler: () => this.copyMessageText(message),
+      },
     ];
 
     if (this.isCurrentUserMessage(message)) {
@@ -351,20 +494,20 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
         {
           text: 'Edit',
           icon: 'create-outline',
-          handler: () => this.editMessage(message)
+          handler: () => this.editMessage(message),
         },
         {
           text: 'Delete',
           icon: 'trash-outline',
           cssClass: 'destructive-button', // Use cssClass instead of role
-          handler: () => this.confirmDeleteMessage(message)
+          handler: () => this.confirmDeleteMessage(message),
         }
       );
     } else {
       buttons.push({
         text: 'Report',
         icon: 'flag-outline',
-        handler: () => this.reportMessage(message)
+        handler: () => this.reportMessage(message),
       });
     }
 
@@ -377,17 +520,17 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
     alert.cssClass = 'emoji-alert';
 
     // Create emoji buttons
-    const buttons = this.commonEmojis.map(emoji => ({
+    const buttons = this.commonEmojis.map((emoji) => ({
       text: emoji,
       cssClass: 'emoji-button',
-      handler: () => this.addReaction(message, emoji)
+      handler: () => this.addReaction(message, emoji),
     }));
 
     // Add cancel button
     buttons.push({
       text: 'Cancel',
       cssClass: 'cancel-button',
-      handler: () => alert.dismiss()
+      handler: () => alert.dismiss(),
     });
 
     alert.buttons = buttons;
@@ -416,16 +559,18 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
     // Simple prompt for editing - in a full app, this would be a proper modal
     const alert = document.createElement('ion-alert');
     alert.header = 'Edit Message';
-    alert.inputs = [{
-      name: 'message',
-      type: 'textarea',
-      value: message.message,
-      placeholder: 'Edit your message...'
-    }];
+    alert.inputs = [
+      {
+        name: 'message',
+        type: 'textarea',
+        value: message.message,
+        placeholder: 'Edit your message...',
+      },
+    ];
     alert.buttons = [
       {
         text: 'Cancel',
-        handler: () => alert.dismiss()
+        handler: () => alert.dismiss(),
       },
       {
         text: 'Update',
@@ -433,8 +578,8 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
           if (data.message && data.message.trim()) {
             this.updateMessage(message, data.message.trim());
           }
-        }
-      }
+        },
+      },
     ];
 
     document.body.appendChild(alert);
@@ -442,7 +587,8 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private updateMessage(message: ChatMessage, newText: string) {
-    this.chatService.updateMessage(this.familySlug(), message.id, newText)
+    this.chatService
+      .updateMessage(this.familySlug(), message.id, newText)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
@@ -450,7 +596,7 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
         },
         error: () => {
           this.toastService.showToast('Failed to update message', 'danger');
-        }
+        },
       });
   }
 
@@ -468,7 +614,8 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private deleteMessage(message: ChatMessage) {
-    this.chatService.deleteMessage(this.familySlug(), message.id)
+    this.chatService
+      .deleteMessage(this.familySlug(), message.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
@@ -476,32 +623,37 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
         },
         error: () => {
           this.toastService.showToast('Failed to delete message', 'danger');
-        }
+        },
       });
   }
 
   async reportMessage(message: ChatMessage) {
-    await this.toastService.showToast('Message reporting coming soon!', 'warning');
+    await this.toastService.showToast(
+      'Message reporting coming soon!',
+      'warning'
+    );
   }
 
   // Reactions
   addReaction(message: ChatMessage, emoji: string) {
-    this.chatService.addReaction(this.familySlug(), message.id, emoji)
+    this.chatService
+      .addReaction(this.familySlug(), message.id, emoji)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         error: () => {
           this.toastService.showToast('Failed to add reaction', 'danger');
-        }
+        },
       });
   }
 
   removeReaction(message: ChatMessage, emoji: string) {
-    this.chatService.removeReaction(this.familySlug(), message.id, emoji)
+    this.chatService
+      .removeReaction(this.familySlug(), message.id, emoji)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         error: () => {
           this.toastService.showToast('Failed to remove reaction', 'danger');
-        }
+        },
       });
   }
 
@@ -510,7 +662,7 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
     if (!currentUserId) return;
 
     const existingReaction = message.reactions?.find(
-      r => r.emoji === emoji && r.userId === currentUserId
+      (r) => r.emoji === emoji && r.userId === currentUserId
     );
 
     if (existingReaction) {
@@ -526,15 +678,24 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private async openGallery() {
-    await this.toastService.showToast('Gallery feature coming soon!', 'warning');
+    await this.toastService.showToast(
+      'Gallery feature coming soon!',
+      'warning'
+    );
   }
 
   private async openDocuments() {
-    await this.toastService.showToast('Document attachment coming soon!', 'warning');
+    await this.toastService.showToast(
+      'Document attachment coming soon!',
+      'warning'
+    );
   }
 
   private async shareLocation() {
-    await this.toastService.showToast('Location sharing coming soon!', 'warning');
+    await this.toastService.showToast(
+      'Location sharing coming soon!',
+      'warning'
+    );
   }
 
   // Voice recording (placeholder)
@@ -563,15 +724,43 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
 
   isCurrentUserMessage(message: ChatMessage): boolean {
     const currentUserId = this.currentUser()?.id;
-    return currentUserId ? isMessageFromCurrentUser(message, currentUserId) : false;
+    return currentUserId
+      ? isMessageFromCurrentUser(message, currentUserId)
+      : false;
   }
 
   shouldShowAvatar(index: number): boolean {
-    return shouldShowAvatar(this.messages(), index);
+    const messages = this.messages();
+    const currentMessage = messages[index];
+
+    if (!currentMessage || index === messages.length - 1) return true;
+
+    const nextMessage = messages[index + 1];
+    if (!nextMessage) return true;
+
+    // Show avatar if next message is from different user or there's a significant time gap
+    const isDifferentUser = currentMessage.userId !== nextMessage.userId;
+    const timeDiff =
+      new Date(nextMessage.createdAt).getTime() -
+      new Date(currentMessage.createdAt).getTime();
+    const hasTimeGap = timeDiff > 300000; // 5 minutes
+
+    return isDifferentUser || hasTimeGap;
   }
 
   shouldShowTimestamp(index: number): boolean {
-    return shouldShowTimestamp(this.messages(), index);
+    const messages = this.messages();
+    if (index === 0) return true;
+
+    const currentMessage = messages[index];
+    const previousMessage = messages[index - 1];
+
+    if (!currentMessage || !previousMessage) return true;
+
+    const currentDate = new Date(currentMessage.createdAt).toDateString();
+    const previousDate = new Date(previousMessage.createdAt).toDateString();
+
+    return currentDate !== previousDate;
   }
 
   formatMessageTime(dateString: string): string {
@@ -583,22 +772,24 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
   }
 
   getReactionCount(message: ChatMessage, emoji: string): number {
-    return message.reactions?.filter(r => r.emoji === emoji).length || 0;
+    return message.reactions?.filter((r) => r.emoji === emoji).length || 0;
   }
 
   hasUserReacted(message: ChatMessage, emoji: string): boolean {
     const currentUserId = this.currentUser()?.id;
     if (!currentUserId) return false;
 
-    return message.reactions?.some(
-      r => r.emoji === emoji && r.userId === currentUserId
-    ) || false;
+    return (
+      message.reactions?.some(
+        (r) => r.emoji === emoji && r.userId === currentUserId
+      ) || false
+    );
   }
 
   getUniqueReactions(message: ChatMessage): string[] {
     if (!message.reactions) return [];
 
-    const uniqueEmojis = new Set(message.reactions.map(r => r.emoji));
+    const uniqueEmojis = new Set(message.reactions.map((r) => r.emoji));
     return Array.from(uniqueEmojis);
   }
 
@@ -612,11 +803,16 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
   getMessageStatusIcon(message: ChatMessage): string {
     const status = this.getMessageStatus(message);
     switch (status) {
-      case 'sending': return 'time-outline';
-      case 'failed': return 'alert-circle-outline';
-      case 'sent': return 'checkmark-outline';
-      case 'deleted': return 'trash-outline';
-      default: return 'checkmark-outline';
+      case 'sending':
+        return 'time-outline';
+      case 'failed':
+        return 'alert-circle-outline';
+      case 'sent':
+        return 'checkmark-outline';
+      case 'deleted':
+        return 'trash-outline';
+      default:
+        return 'checkmark-outline';
     }
   }
 

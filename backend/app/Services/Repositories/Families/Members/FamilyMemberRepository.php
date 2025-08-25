@@ -38,7 +38,7 @@ class FamilyMemberRepository
             ->where(Family::IS_ACTIVE, true)
             ->firstOrFail();
 
-        return $family->relatedMembers()
+        return $family->membersRelation()
             ->where(FamilyMember::IS_ACTIVE, true)
             ->with([FamilyMember::USER_RELATION])
             ->orderBy(FamilyMember::ROLE, 'asc')
@@ -52,7 +52,7 @@ class FamilyMemberRepository
         $family = $this->family->where(Family::SLUG, '=', $data->familySlug)->firstOrFail();
 
         /** @var FamilyMember $member */
-        $member = $family->relatedMembers()->where(FamilyMember::ID, '=', $data->memberId)->firstOrFail();
+        $member = $family->membersRelation()->where(FamilyMember::ID, '=', $data->memberId)->firstOrFail();
 
         $member->update([
             FamilyMember::ROLE => $data->role,
@@ -67,7 +67,7 @@ class FamilyMemberRepository
         $family = $this->family->where(Family::SLUG, '=', $familySlug)->firstOrFail();
 
         /** @var FamilyMember $member */
-        $member = $family->relatedMembers()->where(FamilyMember::ID, '=', $memberId)->firstOrFail();
+        $member = $family->membersRelation()->where(FamilyMember::ID, '=', $memberId)->firstOrFail();
 
         $member->delete();
     }
@@ -132,7 +132,7 @@ class FamilyMemberRepository
         $family = $this->family->where(Family::SLUG, $data->familySlug)->firstOrFail();
 
         /** @var FamilyMember $member */
-        $member = $family->relatedMembers()->where(FamilyMember::ID, $data->memberId)->firstOrFail();
+        $member = $family->membersRelation()->where(FamilyMember::ID, $data->memberId)->firstOrFail();
 
         $updateData = array_filter([
             FamilyMember::NICKNAME => $data->nickname,
@@ -153,8 +153,8 @@ class FamilyMemberRepository
         $family = $this->family->where(Family::SLUG, $data->familySlug)->firstOrFail();
 
         // Check if both members exist in the family
-        $member1 = $family->relatedMembers()->where(FamilyMember::ID, $data->memberId)->firstOrFail();
-        $member2 = $family->relatedMembers()->where(FamilyMember::ID, $data->relatedMemberId)->firstOrFail();
+        $member1 = $family->membersRelation()->where(FamilyMember::ID, $data->memberId)->firstOrFail();
+        $member2 = $family->membersRelation()->where(FamilyMember::ID, $data->relatedMemberId)->firstOrFail();
 
         // Remove existing relationship if any
         $this->familyMemberRelationship

@@ -1,21 +1,43 @@
-import {Component, inject, signal, OnInit, OnDestroy} from '@angular/core';
-import {CommonModule} from '@angular/common';
-import {FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators} from '@angular/forms';
+import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import {
-  IonContent, IonButton, IonInput, IonItem, IonLabel, IonCheckbox,
-  IonCard, IonCardContent, IonIcon, IonText
+  FormsModule,
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+} from '@angular/forms';
+import {
+  IonContent,
+  IonButton,
+  IonInput,
+  IonItem,
+  IonLabel,
+  IonCheckbox,
+  IonCard,
+  IonCardContent,
+  IonIcon,
+  IonText,
 } from '@ionic/angular/standalone';
-import {Router, RouterLink} from '@angular/router';
-import {addIcons} from 'ionicons';
+import { Router, RouterLink } from '@angular/router';
+import { addIcons } from 'ionicons';
 import {
-  mailOutline, lockClosedOutline, eyeOutline, eyeOffOutline,
-  logoApple, logoGoogle, logoFacebook, personOutline, reloadOutline
+  mailOutline,
+  lockClosedOutline,
+  eyeOutline,
+  eyeOffOutline,
+  logoApple,
+  logoGoogle,
+  logoFacebook,
+  personOutline,
+  personCircleOutline,
+  reloadOutline,
 } from 'ionicons/icons';
-import {AuthService} from '../../core/services/auth/auth.service';
-import {catchError, EMPTY, finalize, tap, Subject} from 'rxjs';
-import {takeUntil} from 'rxjs/operators';
-import {ValidationErrorDirective} from '../../shared/directives/validation-error.directive';
-import {ToastService} from '../../shared/services/toast.service';
+import { AuthService } from '../../core/services/auth/auth.service';
+import { catchError, EMPTY, finalize, tap, Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { ValidationErrorDirective } from '../../shared/directives/validation-error.directive';
+import { ToastService } from '../../shared/services/toast.service';
 
 @Component({
   selector: 'app-login',
@@ -23,10 +45,22 @@ import {ToastService} from '../../shared/services/toast.service';
   styleUrls: ['./login.page.scss'],
   standalone: true,
   imports: [
-    CommonModule, FormsModule, ReactiveFormsModule, RouterLink,
-    IonContent, IonButton, IonInput, IonItem, IonLabel, IonCheckbox,
-    IonCard, IonCardContent, IonIcon, IonText, ValidationErrorDirective
-  ]
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    RouterLink,
+    IonContent,
+    IonButton,
+    IonInput,
+    IonItem,
+    IonLabel,
+    IonCheckbox,
+    IonCard,
+    IonCardContent,
+    IonIcon,
+    IonText,
+    ValidationErrorDirective,
+  ],
 })
 export class LoginPage implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
@@ -57,8 +91,16 @@ export class LoginPage implements OnInit, OnDestroy {
 
   private addIcons() {
     addIcons({
-      mailOutline, lockClosedOutline, eyeOutline, eyeOffOutline,
-      logoApple, logoGoogle, logoFacebook, personOutline, reloadOutline
+      mailOutline,
+      lockClosedOutline,
+      eyeOutline,
+      eyeOffOutline,
+      logoApple,
+      logoGoogle,
+      logoFacebook,
+      personOutline,
+      personCircleOutline,
+      reloadOutline,
     });
   }
 
@@ -66,7 +108,7 @@ export class LoginPage implements OnInit, OnDestroy {
     this.loginForm = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
-      rememberMe: [false]
+      rememberMe: [false],
     });
   }
 
@@ -84,7 +126,10 @@ export class LoginPage implements OnInit, OnDestroy {
     this.isSubmitted.set(true);
 
     if (!this.loginForm.valid) {
-      await this.toastService.showToast('Please fill in all required fields correctly.', 'danger');
+      await this.toastService.showToast(
+        'Please fill in all required fields correctly.',
+        'danger'
+      );
       return;
     }
 
@@ -93,22 +138,35 @@ export class LoginPage implements OnInit, OnDestroy {
     const payload = {
       email: this.loginForm.value.email,
       password: this.loginForm.value.password,
-      remember: this.loginForm.value.rememberMe
+      remember: this.loginForm.value.rememberMe,
     };
 
-    this.authService.login(payload)
+    this.authService
+      .login(payload)
       .pipe(
         tap(async () => {
-          await this.toastService.showToast('Login successful! Welcome back.', 'success');
+          await this.toastService.showToast(
+            'Login successful! Welcome back.',
+            'success'
+          );
           this.redirectUser();
         }),
         catchError(async (error) => {
           if (error.status === 422 && error.error?.errors) {
-            await this.toastService.showToast('Please check your credentials.', 'danger');
+            await this.toastService.showToast(
+              'Please check your credentials.',
+              'danger'
+            );
           } else if (error.status === 401) {
-            await this.toastService.showToast('Invalid email or password. Please try again.', 'danger');
+            await this.toastService.showToast(
+              'Invalid email or password. Please try again.',
+              'danger'
+            );
           } else {
-            await this.toastService.showToast('An error occurred during login. Please try again.', 'danger');
+            await this.toastService.showToast(
+              'An error occurred during login. Please try again.',
+              'danger'
+            );
           }
 
           return EMPTY;
@@ -123,7 +181,10 @@ export class LoginPage implements OnInit, OnDestroy {
 
   async onSocialLogin(provider: string) {
     // TODO: Implement social login
-    await this.toastService.showToast(`${provider} login will be available soon!`, 'warning');
+    await this.toastService.showToast(
+      `${provider} login will be available soon!`,
+      'warning'
+    );
   }
 
   private redirectUser() {

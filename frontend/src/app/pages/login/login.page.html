@@ -3,7 +3,7 @@
     <!-- Logo Section -->
     <div class="logo-section">
       <div class="logo-circle">
-        <ion-icon name="person-outline" class="logo-icon"></ion-icon>
+        <ion-icon name="person-circle-outline" class="logo-icon"></ion-icon>
       </div>
       <h1 class="app-title">Family Connect</h1>
       <p class="app-subtitle">Welcome back! Sign in to continue</p>
@@ -13,17 +13,21 @@
     <ion-card class="login-card">
       <ion-card-content class="card-content">
         <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
-
           <!-- Email Input -->
           <div class="input-group">
             <ion-item class="custom-item" lines="none">
-              <ion-icon name="mail-outline" slot="start" class="input-icon"></ion-icon>
+              <ion-icon
+                name="mail-outline"
+                slot="start"
+                class="input-icon"
+              ></ion-icon>
               <ion-input
                 type="email"
                 placeholder="Enter your email"
                 formControlName="email"
                 [appValidationError]="isSubmitted()"
-                class="custom-input">
+                class="custom-input"
+              >
               </ion-input>
             </ion-item>
           </div>
@@ -31,19 +35,25 @@
           <!-- Password Input -->
           <div class="input-group">
             <ion-item class="custom-item" lines="none">
-              <ion-icon name="lock-closed-outline" slot="start" class="input-icon"></ion-icon>
+              <ion-icon
+                name="lock-closed-outline"
+                slot="start"
+                class="input-icon"
+              ></ion-icon>
               <ion-input
                 [type]="showPassword() ? 'text' : 'password'"
                 placeholder="Enter your password"
                 formControlName="password"
                 [appValidationError]="isSubmitted()"
-                class="custom-input">
+                class="custom-input"
+              >
               </ion-input>
               <ion-icon
                 [name]="showPassword() ? 'eye-off-outline' : 'eye-outline'"
                 slot="end"
                 class="password-toggle"
-                (click)="togglePasswordVisibility()">
+                (click)="togglePasswordVisibility()"
+              >
               </ion-icon>
             </ion-item>
           </div>
@@ -53,11 +63,14 @@
             <ion-item class="checkbox-item" lines="none">
               <ion-checkbox
                 formControlName="rememberMe"
-                class="custom-checkbox">
+                class="custom-checkbox"
+              >
               </ion-checkbox>
               <ion-label class="checkbox-label">Remember me</ion-label>
             </ion-item>
-            <a routerLink="/forgot-password" class="forgot-link">Forgot Password?</a>
+            <a routerLink="/forgot-password" class="forgot-link"
+              >Forgot Password?</a
+            >
           </div>
 
           <!-- Login Button -->
@@ -65,14 +78,14 @@
             expand="block"
             type="submit"
             class="login-button"
-            [disabled]="!loginForm.valid || isLoading()">
+            [disabled]="!loginForm.valid || isLoading()"
+          >
             @if (!isLoading()) {
-              <span>Sign In</span>
+            <span>Sign In</span>
             } @else {
-              <ion-icon name="reload-outline" class="spinning"></ion-icon>
+            <ion-icon name="reload-outline" class="spinning"></ion-icon>
             }
           </ion-button>
-
         </form>
 
         <!-- Divider -->
@@ -82,17 +95,29 @@
 
         <!-- Social Login Buttons -->
         <div class="social-buttons">
-          <ion-button fill="outline" class="social-button google" (click)="onSocialLogin('google')">
+          <ion-button
+            fill="outline"
+            class="social-button google"
+            (click)="onSocialLogin('google')"
+          >
             <ion-icon name="logo-google" slot="start"></ion-icon>
             Google
           </ion-button>
 
-          <ion-button fill="outline" class="social-button apple" (click)="onSocialLogin('apple')">
+          <ion-button
+            fill="outline"
+            class="social-button apple"
+            (click)="onSocialLogin('apple')"
+          >
             <ion-icon name="logo-apple" slot="start"></ion-icon>
             Apple
           </ion-button>
 
-          <ion-button fill="outline" class="social-button facebook" (click)="onSocialLogin('facebook')">
+          <ion-button
+            fill="outline"
+            class="social-button facebook"
+            (click)="onSocialLogin('facebook')"
+          >
             <ion-icon name="logo-facebook" slot="start"></ion-icon>
             Facebook
           </ion-button>
@@ -105,7 +130,6 @@
             <a routerLink="/register" class="signup-link">Sign up here</a>
           </ion-text>
         </div>
-
       </ion-card-content>
     </ion-card>
   </div>

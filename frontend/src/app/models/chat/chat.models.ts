@@ -7,14 +7,14 @@ export enum MessageTypeEnum {
   LOCATION = 'location',
   POLL = 'poll',
   EVENT = 'event',
-  SYSTEM = 'system'
+  SYSTEM = 'system',
 }
 
 export enum ChatRoomTypeEnum {
   GROUP = 'group',
   DIRECT = 'direct',
   ANNOUNCEMENT = 'announcement',
-  EMERGENCY = 'emergency'
+  EMERGENCY = 'emergency',
 }
 
 export interface ChatRoom {
@@ -120,51 +120,81 @@ export interface UpdateChatRoomRequest {
 // Utility functions
 export function getChatRoomTypeName(type: ChatRoomTypeEnum): string {
   switch (type) {
-    case ChatRoomTypeEnum.GROUP: return 'Group Chat';
-    case ChatRoomTypeEnum.DIRECT: return 'Direct Message';
-    case ChatRoomTypeEnum.ANNOUNCEMENT: return 'Announcements';
-    case ChatRoomTypeEnum.EMERGENCY: return 'Emergency';
-    default: return 'Chat';
+    case ChatRoomTypeEnum.GROUP:
+      return 'Group Chat';
+    case ChatRoomTypeEnum.DIRECT:
+      return 'Direct Message';
+    case ChatRoomTypeEnum.ANNOUNCEMENT:
+      return 'Announcements';
+    case ChatRoomTypeEnum.EMERGENCY:
+      return 'Emergency';
+    default:
+      return 'Chat';
   }
 }
 
 export function getMessageTypeName(type: MessageTypeEnum): string {
   switch (type) {
-    case MessageTypeEnum.TEXT: return 'Text';
-    case MessageTypeEnum.IMAGE: return 'Image';
-    case MessageTypeEnum.VIDEO: return 'Video';
-    case MessageTypeEnum.AUDIO: return 'Audio';
-    case MessageTypeEnum.FILE: return 'File';
-    case MessageTypeEnum.LOCATION: return 'Location';
-    case MessageTypeEnum.POLL: return 'Poll';
-    case MessageTypeEnum.EVENT: return 'Event';
-    case MessageTypeEnum.SYSTEM: return 'System';
-    default: return 'Message';
+    case MessageTypeEnum.TEXT:
+      return 'Text';
+    case MessageTypeEnum.IMAGE:
+      return 'Image';
+    case MessageTypeEnum.VIDEO:
+      return 'Video';
+    case MessageTypeEnum.AUDIO:
+      return 'Audio';
+    case MessageTypeEnum.FILE:
+      return 'File';
+    case MessageTypeEnum.LOCATION:
+      return 'Location';
+    case MessageTypeEnum.POLL:
+      return 'Poll';
+    case MessageTypeEnum.EVENT:
+      return 'Event';
+    case MessageTypeEnum.SYSTEM:
+      return 'System';
+    default:
+      return 'Message';
   }
 }
 
 export function getMessageTypeIcon(type: MessageTypeEnum): string {
   switch (type) {
-    case MessageTypeEnum.TEXT: return 'chatbubble-outline';
-    case MessageTypeEnum.IMAGE: return 'image-outline';
-    case MessageTypeEnum.VIDEO: return 'videocam-outline';
-    case MessageTypeEnum.AUDIO: return 'mic-outline';
-    case MessageTypeEnum.FILE: return 'document-outline';
-    case MessageTypeEnum.LOCATION: return 'location-outline';
-    case MessageTypeEnum.POLL: return 'bar-chart-outline';
-    case MessageTypeEnum.EVENT: return 'calendar-outline';
-    case MessageTypeEnum.SYSTEM: return 'information-circle-outline';
-    default: return 'chatbubble-outline';
+    case MessageTypeEnum.TEXT:
+      return 'chatbubble-outline';
+    case MessageTypeEnum.IMAGE:
+      return 'image-outline';
+    case MessageTypeEnum.VIDEO:
+      return 'videocam-outline';
+    case MessageTypeEnum.AUDIO:
+      return 'mic-outline';
+    case MessageTypeEnum.FILE:
+      return 'document-outline';
+    case MessageTypeEnum.LOCATION:
+      return 'location-outline';
+    case MessageTypeEnum.POLL:
+      return 'bar-chart-outline';
+    case MessageTypeEnum.EVENT:
+      return 'calendar-outline';
+    case MessageTypeEnum.SYSTEM:
+      return 'information-circle-outline';
+    default:
+      return 'chatbubble-outline';
   }
 }
 
 export function getChatRoomTypeIcon(type: ChatRoomTypeEnum): string {
   switch (type) {
-    case ChatRoomTypeEnum.GROUP: return 'people-outline';
-    case ChatRoomTypeEnum.DIRECT: return 'person-outline';
-    case ChatRoomTypeEnum.ANNOUNCEMENT: return 'megaphone-outline';
-    case ChatRoomTypeEnum.EMERGENCY: return 'warning-outline';
-    default: return 'chatbubble-outline';
+    case ChatRoomTypeEnum.GROUP:
+      return 'people-outline';
+    case ChatRoomTypeEnum.DIRECT:
+      return 'person-circle-outline';
+    case ChatRoomTypeEnum.ANNOUNCEMENT:
+      return 'megaphone-outline';
+    case ChatRoomTypeEnum.EMERGENCY:
+      return 'warning-outline';
+    default:
+      return 'chatbubble-outline';
   }
 }
 
@@ -178,7 +208,8 @@ export function formatMessageTime(dateString: string): string {
   if (diffInMs < 60000) return 'now';
   if (diffInMs < 3600000) return `${Math.floor(diffInMs / 60000)}m`;
   if (diffInHours < 24) return `${Math.floor(diffInHours)}h`;
-  if (diffInDays < 7) return date.toLocaleDateString('en-US', { weekday: 'short' });
+  if (diffInDays < 7)
+    return date.toLocaleDateString('en-US', { weekday: 'short' });
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
@@ -200,15 +231,21 @@ export function formatMessageDate(dateString: string): string {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
-    day: 'numeric'
+    day: 'numeric',
   });
 }
 
-export function isMessageFromCurrentUser(message: ChatMessage, currentUserId: number): boolean {
+export function isMessageFromCurrentUser(
+  message: ChatMessage,
+  currentUserId: number
+): boolean {
   return message.userId === currentUserId;
 }
 
-export function shouldShowAvatar(messages: ChatMessage[], index: number): boolean {
+export function shouldShowAvatar(
+  messages: ChatMessage[],
+  index: number
+): boolean {
   const currentMessage = messages[index];
   const nextMessage = messages[index + 1];
 
@@ -217,7 +254,10 @@ export function shouldShowAvatar(messages: ChatMessage[], index: number): boolea
   return currentMessage.userId !== nextMessage.userId;
 }
 
-export function shouldShowTimestamp(messages: ChatMessage[], index: number): boolean {
+export function shouldShowTimestamp(
+  messages: ChatMessage[],
+  index: number
+): boolean {
   const currentMessage = messages[index];
   const prevMessage = messages[index - 1];
 

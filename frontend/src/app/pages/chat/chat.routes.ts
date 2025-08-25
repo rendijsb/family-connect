@@ -8,20 +8,28 @@ export const chatRoutes: Routes = [
     children: [
       {
         path: '',
-        loadComponent: () => import('./chat-list/chat-list.page').then(m => m.ChatListPage)
+        loadComponent: () =>
+          import('./chat-list/chat-list.page').then((m) => m.ChatListPage),
       },
       {
         path: 'create',
-        loadComponent: () => import('./create-room/create-chat-room.modal').then(m => m.CreateChatRoomModal)
+        loadComponent: () =>
+          import('./create-room/create-chat-room.page').then(
+            (m) => m.CreateChatRoomPage
+          ),
       },
       {
         path: ':roomId',
-        loadComponent: () => import('./chat-room/chat-room.page').then(m => m.ChatRoomPage)
+        loadComponent: () =>
+          import('./chat-room/chat-room.page').then((m) => m.ChatRoomPage),
       },
       {
         path: ':roomId/settings',
-        loadComponent: () => import('./room-settings/room-settings.page').then(m => m.RoomSettingsPage)
-      }
-    ]
-  }
+        loadComponent: () =>
+          import('./room-settings/room-settings.page').then(
+            (m) => m.RoomSettingsPage
+          ),
+      },
+    ],
+  },
 ];

@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 services:
   mysql:
     image: mysql:8.0
@@ -13,6 +13,10 @@ services:
       - mysql_data:/var/lib/mysql
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
 
   redis:
     image: redis:alpine
@@ -24,7 +28,7 @@ services:
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     ports:
-      - "8080:80"
+      - "8081:80"
     environment:
       PMA_HOST: mysql
       MYSQL_ROOT_PASSWORD: root
@@ -45,6 +49,27 @@ services:
       - mysql
     networks:
       - app-network
+
+  websocket:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend:/var/www/html
+    env_file:
+      - ./backend/.env
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - app-network
+    command: >
+      sh -c "sleep 10 && php artisan reverb:start --host=0.0.0.0 --port=8080"
+    restart: unless-stopped
 
   frontend:
     build: ./frontend

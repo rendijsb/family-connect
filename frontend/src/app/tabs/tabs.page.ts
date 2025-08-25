@@ -1,8 +1,20 @@
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel } from '@ionic/angular/standalone';
+import {
+  IonTabs,
+  IonTabBar,
+  IonTabButton,
+  IonIcon,
+  IonLabel,
+} from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { homeOutline, peopleOutline, chatbubbleOutline, cameraOutline, personOutline } from 'ionicons/icons';
+import {
+  homeOutline,
+  peopleOutline,
+  chatbubbleOutline,
+  cameraOutline,
+  personCircleOutline,
+} from 'ionicons/icons';
 import { Subject, takeUntil } from 'rxjs';
 
 import { ChatService } from '../core/services/chat/chat.service';
@@ -12,7 +24,7 @@ import { ChatService } from '../core/services/chat/chat.service';
   templateUrl: 'tabs.page.html',
   styleUrls: ['tabs.page.scss'],
   standalone: true,
-  imports: [CommonModule, IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel]
+  imports: [CommonModule, IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel],
 })
 export class TabsPage implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
@@ -21,12 +33,16 @@ export class TabsPage implements OnInit, OnDestroy {
   readonly unreadMessages = this.chatService.totalUnreadCount;
 
   constructor() {
-    addIcons({ homeOutline, peopleOutline, chatbubbleOutline, cameraOutline, personOutline });
+    addIcons({
+      homeOutline,
+      peopleOutline,
+      chatbubbleOutline,
+      cameraOutline,
+      personCircleOutline,
+    });
   }
 
-  ngOnInit() {
-
-  }
+  ngOnInit() {}
 
   ngOnDestroy() {
     this.destroy$.next();
