@@ -18,13 +18,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     ]);
 });
 
-// Broadcasting Authentication Route - MUST be before Broadcast::routes()
 Route::post('/broadcasting/auth', [BroadcastController::class, 'authenticate'])
-    ->middleware(['auth:sanctum', 'cors']);
-
-// Standard broadcast routes (this registers the default Laravel broadcasting auth route)
-// We're overriding it above with our custom controller
-//Broadcast::routes(['middleware' => ['auth:sanctum']]);
+    ->middleware('auth:sanctum');
 
 AuthRoutes::api();
 FamilyRoutes::api();

@@ -1,17 +1,12 @@
-export const environment_prod = {
+export const environment = {
   production: true,
-  apiUrl: 'https://your-production-api.com/api',
-
+  apiUrl: 'https://your-api-domain.com/api',
   reverb: {
-    key: 'your-production-key',
-    host: 'your-production-host.com',
+    host: 'your-websocket-domain.com',
     port: 443,
     scheme: 'https',
-    cluster: '',
-  },
-
-  app: {
-    name: 'FamilyConnect',
-    version: '1.0.0',
+    key: 'your-production-key',
+    path: '',
+    cluster: 'mt1',
   },
 };

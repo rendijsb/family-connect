@@ -83,14 +83,17 @@ export class WebSocketService {
       this.disconnect();
 
       // Create Echo instance with proper Reverb configuration
+      const wsPath = (environment as any)?.reverb?.path ?? '';
       this.echo = new Echo({
         broadcaster: 'reverb',
         key: environment.reverb.key,
         wsHost: environment.reverb.host,
         wsPort: environment.reverb.port,
         wssPort: environment.reverb.port,
+        wsPath,
         forceTLS: environment.reverb.scheme === 'https',
-        enabledTransports: environment.reverb.scheme === 'https' ? ['wss'] : ['ws'],
+        enabledTransports:
+          environment.reverb.scheme === 'https' ? ['wss'] : ['ws'],
 
         // Custom authorization
         authEndpoint: `${environment.apiUrl}/broadcasting/auth`,
@@ -107,38 +110,51 @@ export class WebSocketService {
         authorizer: (channel: any, options: any) => {
           return {
             authorize: (socketId: string, callback: Function) => {
-              console.log('🔐 Authorizing channel:', channel.name, 'with socket:', socketId);
+              console.log(
+                '🔐 Authorizing channel:',
+                channel.name,
+                'with socket:',
+                socketId
+              );
 
               // Set a timeout for the authorization request
               const timeoutId = setTimeout(() => {
-                console.error('❌ Authorization timeout for channel:', channel.name);
+                console.error(
+                  '❌ Authorization timeout for channel:',
+                  channel.name
+                );
                 callback(new Error('Authorization timeout'), null);
               }, 10000); // 10 second timeout
 
               fetch(`${environment.apiUrl}/broadcasting/auth`, {
                 method: 'POST',
                 headers: {
-                  'Authorization': `Bearer ${token}`,
+                  Authorization: `Bearer ${token}`,
                   'Content-Type': 'application/json',
-                  'Accept': 'application/json',
+                  Accept: 'application/json',
                   'X-Requested-With': 'XMLHttpRequest',
-                  'X-Socket-ID': socketId,
-                  'X-Channel-Name': channel.name,
                 },
-                credentials: 'include',
+                // Remove credentials: 'include' to fix CORS issue
                 body: JSON.stringify({
                   socket_id: socketId,
                   channel_name: channel.name,
                 }),
               })
-                .then(response => {
+                .then((response) => {
                   clearTimeout(timeoutId);
 
-                  console.log('🔐 Authorization response status:', response.status);
-                  console.log('🔐 Authorization response headers:', response.headers);
+                  console.log(
+                    '🔐 Authorization response status:',
+                    response.status
+                  );
+                  console.log('🔐 Authorization response headers:', [
+                    ...response.headers.entries(),
+                  ]);
 
                   if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    throw new Error(
+                      `HTTP ${response.status}: ${response.statusText}`
+                    );
                   }
 
                   // Check if response has content
@@ -149,7 +165,7 @@ export class WebSocketService {
 
                   return response.text();
                 })
-                .then(text => {
+                .then((text) => {
                   console.log('🔐 Raw authorization response:', text);
 
                   if (!text || text.trim().length === 0) {
@@ -158,22 +174,32 @@ export class WebSocketService {
 
                   try {
                     const data = JSON.parse(text);
-                    console.log('✅ Channel authorization successful:', channel.name, data);
+                    console.log(
+                      '✅ Channel authorization successful:',
+                      channel.name,
+                      data
+                    );
                     callback(null, data);
                   } catch (parseError: any) {
-                    console.error('❌ Failed to parse authorization response:', parseError);
+                    console.error(
+                      '❌ Failed to parse authorization response:',
+                      parseError
+                    );
                     console.error('❌ Response text was:', text);
-                    callback(new Error(`Invalid JSON response: ${parseError.message}`), null);
+                    callback(
+                      new Error(`Invalid JSON response: ${parseError.message}`),
+                      null
+                    );
                   }
                 })
-                .catch(error => {
+                .catch((error) => {
                   clearTimeout(timeoutId);
                   console.error('❌ Channel authorization failed:', error);
                   console.error('❌ Channel:', channel.name);
                   console.error('❌ Socket ID:', socketId);
                   callback(error, null);
                 });
-            }
+            },
           };
         },
 
@@ -193,10 +219,9 @@ export class WebSocketService {
         }
       }, 15000);
 
-      this.isConnected = true;
+      // Mark as connected only after we get the 'connected' event
+      this.isConnected = false;
       this.reconnectAttempts = 0;
-      console.log('✅ WebSocket connection established');
-
     } catch (error) {
       console.error('❌ Failed to initialize WebSocket connection:', error);
       this.isConnected = false;
@@ -243,7 +268,12 @@ export class WebSocketService {
 
       // Add state change listener for debugging
       pusher.connection.bind('state_change', (states: any) => {
-        console.log('🔄 Connection state changed:', states.previous, '->', states.current);
+        console.log(
+          '🔄 Connection state changed:',
+          states.previous,
+          '->',
+          states.current
+        );
       });
     }
   }
@@ -262,7 +292,9 @@ export class WebSocketService {
 
   private handleReconnection() {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error(`❌ Max reconnection attempts reached (${this.maxReconnectAttempts})`);
+      console.error(
+        `❌ Max reconnection attempts reached (${this.maxReconnectAttempts})`
+      );
       return;
     }
 

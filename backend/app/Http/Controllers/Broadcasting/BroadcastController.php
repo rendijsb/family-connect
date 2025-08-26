@@ -9,8 +9,6 @@ use App\Models\Chat\ChatRoom;
 use App\Models\Families\FamilyMember;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Broadcasting\Broadcasters\ReverseProxyBroadcaster;
-use Laravel\Reverb\Contracts\ApplicationProvider;
 
 class BroadcastController extends Controller
 {
@@ -18,8 +16,10 @@ class BroadcastController extends Controller
     {
         try {
             Log::info('Broadcasting auth request received', [
+                'method' => $request->getMethod(),
                 'headers' => $request->headers->all(),
                 'body' => $request->all(),
+                'user_id' => $request->user()?->id,
             ]);
 
             $user = $request->user();
@@ -29,6 +29,7 @@ class BroadcastController extends Controller
                 return response()->json(['message' => 'Unauthenticated'], 401);
             }
 
+            // Get channel name and socket ID from request
             $channelName = $request->input('channel_name');
             $socketId = $request->input('socket_id');
 
@@ -56,12 +57,7 @@ class BroadcastController extends Controller
                 ]);
 
                 if ($this->canAccessChatRoom($user, $roomId)) {
-                    // For Reverb, we need to return the proper auth format
-                    $auth = $this->generateReverbAuth($channelName, $socketId, [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'email' => $user->email,
-                    ]);
+                    $auth = $this->generateReverbAuth($channelName, $socketId);
 
                     Log::info('Broadcasting auth successful', [
                         'user_id' => $user->id,
@@ -73,7 +69,7 @@ class BroadcastController extends Controller
                 }
             }
 
-            // Handle family presence channels
+            // Handle presence family channels
             if (preg_match('/^presence-family\.(\d+)$/', $channelName, $matches)) {
                 $familyId = (int) $matches[1];
 
@@ -193,27 +189,27 @@ class BroadcastController extends Controller
         }
     }
 
-    private function generateReverbAuth(string $channelName, string $socketId, array $userData = null)
+    private function generateReverbAuth(string $channelName, string $socketId): array
     {
         // For Reverb, we need to generate the auth signature
         $stringToSign = $socketId . ':' . $channelName;
-        $signature = hash_hmac('sha256', $stringToSign, config('broadcasting.connections.reverb.secret'));
+        $signature = hash_hmac('sha256', $stringToSign, config('reverb.apps.apps.0.secret'));
 
-        $auth = config('broadcasting.connections.reverb.key') . ':' . $signature;
+        $auth = config('reverb.apps.apps.0.key') . ':' . $signature;
 
         return [
             'auth' => $auth,
         ];
     }
 
-    private function generateReverbPresenceAuth(string $channelName, string $socketId, array $userData)
+    private function generateReverbPresenceAuth(string $channelName, string $socketId, array $userData): array
     {
         // For presence channels, include user data
         $presenceData = json_encode($userData);
         $stringToSign = $socketId . ':' . $channelName . ':' . $presenceData;
-        $signature = hash_hmac('sha256', $stringToSign, config('broadcasting.connections.reverb.secret'));
+        $signature = hash_hmac('sha256', $stringToSign, config('reverb.apps.apps.0.secret'));
 
-        $auth = config('broadcasting.connections.reverb.key') . ':' . $signature;
+        $auth = config('reverb.apps.apps.0.key') . ':' . $signature;
 
         return [
             'auth' => $auth,
