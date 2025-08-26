@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'default' => env('BROADCAST_DRIVER', 'null'),
+    'default' => env('BROADCAST_CONNECTION', 'reverb'),
 
     /*
     |--------------------------------------------------------------------------
@@ -23,22 +23,26 @@ return [
     |--------------------------------------------------------------------------
     |
     | Here you may define all of the broadcast connections that will be used
-    | to broadcast events to other systems or over WebSockets. Samples of
+    | to broadcast events to other systems or over websockets. Samples of
     | each available type of connection are provided inside this array.
     |
     */
 
     'connections' => [
+
         'reverb' => [
             'driver' => 'reverb',
             'key' => env('REVERB_APP_KEY'),
             'secret' => env('REVERB_APP_SECRET'),
             'app_id' => env('REVERB_APP_ID'),
             'options' => [
-                'host' => env('REVERB_HOST', '127.0.0.1'),
-                'port' => env('REVERB_PORT', 8080),
+                'host' => env('REVERB_HOST'),
+                'port' => env('REVERB_PORT'),
                 'scheme' => env('REVERB_SCHEME', 'http'),
                 'useTLS' => env('REVERB_SCHEME', 'http') === 'https',
+            ],
+            'client_options' => [
+                // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
             ],
         ],
 
@@ -60,6 +64,16 @@ return [
             ],
         ],
 
+        'ably' => [
+            'driver' => 'ably',
+            'key' => env('ABLY_KEY'),
+        ],
+
+        'redis' => [
+            'driver' => 'redis',
+            'connection' => 'default',
+        ],
+
         'log' => [
             'driver' => 'log',
         ],
@@ -67,6 +81,7 @@ return [
         'null' => [
             'driver' => 'null',
         ],
+
     ],
 
 ];

@@ -3,7 +3,7 @@ export const environment = {
   apiUrl: 'http://localhost:8000/api',
 
   reverb: {
-    key: 'local',
+    key: 'pgpnhrnxaatjesiykxct',
     host: 'localhost',
     port: 8080,
     scheme: 'http',

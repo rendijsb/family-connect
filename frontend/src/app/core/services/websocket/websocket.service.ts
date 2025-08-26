@@ -25,6 +25,7 @@ export class WebSocketService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectInterval = 5000;
+  private connectionTimeout: any;
 
   constructor() {
     this.loadLibraries();
@@ -78,6 +79,9 @@ export class WebSocketService {
     console.log('✅ Auth token retrieved');
 
     try {
+      // Clear any existing connection
+      this.disconnect();
+
       // Create Echo instance with proper Reverb configuration
       this.echo = new Echo({
         broadcaster: 'reverb',
@@ -87,16 +91,30 @@ export class WebSocketService {
         wssPort: environment.reverb.port,
         forceTLS: environment.reverb.scheme === 'https',
         enabledTransports: environment.reverb.scheme === 'https' ? ['wss'] : ['ws'],
+
+        // Custom authorization
         authEndpoint: `${environment.apiUrl}/broadcasting/auth`,
         auth: {
           headers: {
             Authorization: `Bearer ${token}`,
             Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
           },
         },
+
+        // Enhanced authorizer with better error handling
         authorizer: (channel: any, options: any) => {
           return {
             authorize: (socketId: string, callback: Function) => {
+              console.log('🔐 Authorizing channel:', channel.name, 'with socket:', socketId);
+
+              // Set a timeout for the authorization request
+              const timeoutId = setTimeout(() => {
+                console.error('❌ Authorization timeout for channel:', channel.name);
+                callback(new Error('Authorization timeout'), null);
+              }, 10000); // 10 second timeout
+
               fetch(`${environment.apiUrl}/broadcasting/auth`, {
                 method: 'POST',
                 headers: {
@@ -104,36 +122,81 @@ export class WebSocketService {
                   'Content-Type': 'application/json',
                   'Accept': 'application/json',
                   'X-Requested-With': 'XMLHttpRequest',
+                  'X-Socket-ID': socketId,
+                  'X-Channel-Name': channel.name,
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                   socket_id: socketId,
                   channel_name: channel.name,
                 }),
               })
                 .then(response => {
+                  clearTimeout(timeoutId);
+
+                  console.log('🔐 Authorization response status:', response.status);
+                  console.log('🔐 Authorization response headers:', response.headers);
+
                   if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                   }
-                  return response.json();
+
+                  // Check if response has content
+                  const contentLength = response.headers.get('content-length');
+                  if (contentLength === '0') {
+                    throw new Error('Empty response body');
+                  }
+
+                  return response.text();
                 })
-                .then(data => {
-                  callback(null, data);
+                .then(text => {
+                  console.log('🔐 Raw authorization response:', text);
+
+                  if (!text || text.trim().length === 0) {
+                    throw new Error('Empty authorization response');
+                  }
+
+                  try {
+                    const data = JSON.parse(text);
+                    console.log('✅ Channel authorization successful:', channel.name, data);
+                    callback(null, data);
+                  } catch (parseError: any) {
+                    console.error('❌ Failed to parse authorization response:', parseError);
+                    console.error('❌ Response text was:', text);
+                    callback(new Error(`Invalid JSON response: ${parseError.message}`), null);
+                  }
                 })
                 .catch(error => {
+                  clearTimeout(timeoutId);
                   console.error('❌ Channel authorization failed:', error);
+                  console.error('❌ Channel:', channel.name);
+                  console.error('❌ Socket ID:', socketId);
                   callback(error, null);
                 });
             }
           };
         },
+
+        // Connection error handling
+        cluster: environment.reverb.cluster || 'mt1',
+        encrypted: environment.reverb.scheme === 'https',
       });
 
       // Set up connection event handlers
       this.setupConnectionHandlers();
 
+      // Set connection timeout
+      this.connectionTimeout = setTimeout(() => {
+        if (!this.isConnected) {
+          console.error('❌ Connection timeout after 15 seconds');
+          this.handleConnectionFailure(new Error('Connection timeout'));
+        }
+      }, 15000);
+
       this.isConnected = true;
       this.reconnectAttempts = 0;
       console.log('✅ WebSocket connection established');
+
     } catch (error) {
       console.error('❌ Failed to initialize WebSocket connection:', error);
       this.isConnected = false;
@@ -153,6 +216,11 @@ export class WebSocketService {
         console.log('🎉 Pusher connection established');
         this.isConnected = true;
         this.reconnectAttempts = 0;
+
+        if (this.connectionTimeout) {
+          clearTimeout(this.connectionTimeout);
+          this.connectionTimeout = null;
+        }
       });
 
       pusher.connection.bind('disconnected', () => {
@@ -164,37 +232,69 @@ export class WebSocketService {
       pusher.connection.bind('error', (error: any) => {
         console.error('❌ Pusher connection error:', error);
         this.isConnected = false;
-        this.handleReconnection();
+        this.handleConnectionFailure(error);
       });
 
       pusher.connection.bind('failed', () => {
         console.error('❌ Pusher connection failed completely');
         this.isConnected = false;
+        this.handleConnectionFailure(new Error('Connection failed'));
+      });
+
+      // Add state change listener for debugging
+      pusher.connection.bind('state_change', (states: any) => {
+        console.log('🔄 Connection state changed:', states.previous, '->', states.current);
       });
     }
   }
 
+  private handleConnectionFailure(error: any) {
+    console.error('❌ WebSocket connection failure:', error);
+
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout = null;
+    }
+
+    this.isConnected = false;
+    this.handleReconnection();
+  }
+
   private handleReconnection() {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('❌ Max reconnection attempts reached');
+      console.error(`❌ Max reconnection attempts reached (${this.maxReconnectAttempts})`);
       return;
     }
 
     this.reconnectAttempts++;
+    const backoffDelay = Math.min(
+      this.reconnectInterval * Math.pow(2, this.reconnectAttempts - 1),
+      30000 // Max 30 seconds
+    );
+
     console.log(
-      `🔄 Attempting reconnection ${this.reconnectAttempts}/${this.maxReconnectAttempts}`
+      `🔄 Attempting reconnection ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${backoffDelay}ms`
     );
 
     setTimeout(() => {
       if (!this.isConnected && this.authService.isAuthenticated()) {
         this.connect().catch(console.error);
       }
-    }, this.reconnectInterval * this.reconnectAttempts);
+    }, backoffDelay);
   }
 
   disconnect(): void {
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout = null;
+    }
+
     if (this.echo) {
-      this.echo.disconnect();
+      try {
+        this.echo.disconnect();
+      } catch (error) {
+        console.error('Error disconnecting Echo:', error);
+      }
       this.echo = null;
       this.isConnected = false;
       console.log('🔌 WebSocket disconnected');
@@ -234,6 +334,14 @@ export class WebSocketService {
           ':',
           error
         );
+
+        // Try to reconnect if channel subscription fails
+        if (error.type === 'AuthError') {
+          console.log('🔄 Auth error detected, will attempt to reconnect...');
+          setTimeout(() => {
+            this.handleReconnection();
+          }, 2000);
+        }
       });
 
       return channel;
@@ -275,5 +383,25 @@ export class WebSocketService {
       );
       throw error;
     }
+  }
+
+  // Get connection status information
+  getConnectionInfo() {
+    return {
+      isConnected: this.isConnected,
+      reconnectAttempts: this.reconnectAttempts,
+      maxReconnectAttempts: this.maxReconnectAttempts,
+      hasEcho: !!this.echo,
+    };
+  }
+
+  // Force reconnection
+  forceReconnect(): void {
+    console.log('🔄 Forcing reconnection...');
+    this.reconnectAttempts = 0;
+    this.disconnect();
+    setTimeout(() => {
+      this.connect().catch(console.error);
+    }, 1000);
   }
 }

@@ -20,7 +20,7 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
 
-// Chat room channels with improved authorization
+// Chat room channels - Use the BroadcastController for authorization
 Broadcast::channel('chat-room.{roomId}', function ($user, $roomId) {
     try {
         Log::info('Channel authorization attempt', [
@@ -91,9 +91,14 @@ Broadcast::channel('chat-room.{roomId}', function ($user, $roomId) {
     }
 });
 
-// Family presence channel (optional - for family-wide presence)
+// Family presence channel
 Broadcast::channel('family.{familyId}', function ($user, $familyId) {
     try {
+        Log::info('Family channel authorization attempt', [
+            'user_id' => $user->id,
+            'family_id' => $familyId
+        ]);
+
         // Check if user is a member of this family
         $familyMember = FamilyMember::where('family_id', $familyId)
             ->where('user_id', $user->id)
@@ -101,8 +106,18 @@ Broadcast::channel('family.{familyId}', function ($user, $familyId) {
             ->first();
 
         if (!$familyMember) {
+            Log::warning('User is not a family member', [
+                'user_id' => $user->id,
+                'family_id' => $familyId
+            ]);
             return false;
         }
+
+        Log::info('Family channel authorization successful', [
+            'user_id' => $user->id,
+            'family_id' => $familyId,
+            'role' => $familyMember->role
+        ]);
 
         return [
             'id' => $user->id,
