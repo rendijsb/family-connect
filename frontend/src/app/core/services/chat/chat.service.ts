@@ -46,9 +46,9 @@ export class ChatService {
   private readonly _isLoadingMessages = signal<boolean>(false);
   private readonly _typingUsers = signal<TypingUser[]>([]);
 
-  // WebSocket channel management
   private currentChatChannel: any = null;
   private channelSubscriptions = new Map<number, any>();
+  private typingTimeouts = new Map<number, any>();
 
   // Subjects for real-time updates
   private readonly messageReceived$ = new Subject<ChatMessage>();
@@ -663,11 +663,18 @@ export class ChatService {
   // WebSocket Real-time Methods
   async initializeWebSocket(): Promise<void> {
     if (!this.authService.isAuthenticated()) {
+      console.warn('Cannot initialize WebSocket: User not authenticated');
       return;
     }
 
-    // Connect to WebSocket
-    await this.webSocketService.connect();
+    try {
+      console.log('🔌 Initializing WebSocket connection...');
+      await this.webSocketService.connect();
+      console.log('✅ WebSocket initialized successfully');
+    } catch (error) {
+      console.error('❌ Failed to initialize WebSocket:', error);
+      throw error;
+    }
   }
 
   joinChatRoom(roomId: number): void {
@@ -679,79 +686,282 @@ export class ChatService {
       this.leaveChatRoom();
     }
 
-    // Join new room channel
-    const channelName = `chat-room.${roomId}`;
-    console.log('🏠 Attempting to join channel:', channelName);
-    const channel = this.webSocketService.joinPrivateChannel(channelName);
+    if (!this.webSocketService.isWebSocketConnected()) {
+      console.error('❌ WebSocket not connected, cannot join chat room');
+      return;
+    }
 
-    if (channel) {
-      this.currentChatChannel = channel;
-      this.channelSubscriptions.set(roomId, channel);
+    try {
+      // Join new room channel
+      const channelName = `chat-room.${roomId}`;
+      console.log('🏠 Attempting to join channel:', channelName);
 
-      // Listen for new messages
-      channel.listen('message.sent', (event: any) => {
-        console.log('📨 REAL-TIME MESSAGE RECEIVED:', event);
-        console.log('📨 Message data:', event.message);
-        const newMessage: ChatMessage = event.message;
+      const channel = this.webSocketService.joinPrivateChannel(channelName);
 
-        // Only add message if it's for the current room
-        const currentRoom = this._currentChatRoom();
-        if (currentRoom && newMessage.chatRoomId === currentRoom.id) {
-          const currentMessages = this._messages();
+      if (channel) {
+        this.currentChatChannel = channel;
+        this.channelSubscriptions.set(roomId, channel);
 
-          // Check if message already exists to avoid duplicates
-          const messageExists = currentMessages.some(
-            (msg) => msg.id === newMessage.id
-          );
-          if (!messageExists) {
-            // Add new message to the end since messages should be ordered oldest first (chronological)
-            this._messages.set([...currentMessages, newMessage]);
-          }
-        }
+        this.setupChannelListeners(channel, roomId);
+        console.log('✅ Successfully joined chat room:', roomId);
+      }
+    } catch (error) {
+      console.error('❌ Failed to join chat room:', roomId, error);
+    }
+  }
 
-        // Emit the received message event
-        this.messageReceived$.next(newMessage);
-      });
+  private setupChannelListeners(channel: any, roomId: number): void {
+    // Listen for new messages
+    channel.listen('message.sent', (event: any) => {
+      console.log('📨 REAL-TIME MESSAGE RECEIVED:', event);
 
-      // Listen for message updates
-      channel.listen('message.updated', (event: any) => {
-        console.log('Message updated:', event);
-        const updatedMessage: ChatMessage = event.message;
+      const newMessage = event.message;
+      if (newMessage && newMessage.chatRoomId === roomId) {
+        this.handleRealtimeMessage(newMessage);
+      }
+    });
 
-        const currentMessages = this._messages();
-        const updatedMessages = currentMessages.map((msg) =>
-          msg.id === updatedMessage.id ? updatedMessage : msg
-        );
+    // Listen for message updates
+    channel.listen('message.updated', (event: any) => {
+      console.log('📝 REAL-TIME MESSAGE UPDATED:', event);
+
+      const updatedMessage = event.message;
+      if (updatedMessage) {
+        this.handleRealtimeMessageUpdate(updatedMessage);
+      }
+    });
+
+    // Listen for message deletions
+    channel.listen('message.deleted', (event: any) => {
+      console.log('🗑️ REAL-TIME MESSAGE DELETED:', event);
+
+      if (event.messageId && event.chatRoomId === roomId) {
+        this.handleRealtimeMessageDeletion(event.messageId);
+      }
+    });
+
+    // Listen for reactions
+    channel.listen('reaction.added', (event: any) => {
+      console.log('❤️ REAL-TIME REACTION ADDED:', event);
+
+      if (event.reaction && event.messageId) {
+        this.handleRealtimeReactionAdded(event.messageId, event.reaction);
+      }
+    });
+
+    channel.listen('reaction.removed', (event: any) => {
+      console.log('💔 REAL-TIME REACTION REMOVED:', event);
+
+      if (event.messageId && event.emoji && event.userId) {
+        this.handleRealtimeReactionRemoved(event.messageId, event.emoji, event.userId);
+      }
+    });
+
+    // Listen for typing indicators
+    channel.listen('user.typing', (event: any) => {
+      console.log('⌨️ USER TYPING:', event);
+
+      if (event.userId && event.userName && event.isTyping !== undefined) {
+        this.handleTypingEvent(roomId, {
+          id: event.userId,
+          name: event.userName
+        }, event.isTyping);
+      }
+    });
+
+    // Handle subscription success
+    channel.subscribed(() => {
+      console.log('✅ Successfully subscribed to chat room channel:', roomId);
+    });
+
+    // Handle subscription errors
+    channel.error((error: any) => {
+      console.error('❌ Channel subscription error for room', roomId, ':', error);
+    });
+  }
+
+  private handleRealtimeMessage(message: ChatMessage): void {
+    console.log('📨 Processing realtime message:', message);
+
+    const currentMessages = this._messages();
+
+    // Check if message already exists (avoid duplicates)
+    const messageExists = currentMessages.some(m => m.id === message.id);
+
+    if (!messageExists) {
+      // Add new message to the end (chronological order)
+      this._messages.set([...currentMessages, message]);
+
+      // Update chat room's last message
+      this.updateRoomLastMessage(message.chatRoomId, message);
+
+      // Emit event for components to react
+      this.messageReceived$.next(message);
+
+      console.log('✅ Realtime message added to list');
+    } else {
+      console.log('ℹ️ Message already exists, skipping duplicate');
+    }
+  }
+
+  private handleRealtimeMessageUpdate(message: ChatMessage): void {
+    console.log('📝 Processing realtime message update:', message);
+
+    const currentMessages = this._messages();
+    const messageIndex = currentMessages.findIndex(m => m.id === message.id);
+
+    if (messageIndex !== -1) {
+      const updatedMessages = [...currentMessages];
+      updatedMessages[messageIndex] = message;
+      this._messages.set(updatedMessages);
+
+      // Emit event
+      this.messageUpdated$.next(message);
+
+      console.log('✅ Message updated in list');
+    }
+  }
+
+  private handleRealtimeMessageDeletion(messageId: number): void {
+    console.log('🗑️ Processing realtime message deletion:', messageId);
+
+    const currentMessages = this._messages();
+    const messageIndex = currentMessages.findIndex(m => m.id === messageId);
+
+    if (messageIndex !== -1) {
+      const updatedMessages = [...currentMessages];
+      updatedMessages[messageIndex] = {
+        ...updatedMessages[messageIndex],
+        isDeleted: true,
+        message: 'This message was deleted',
+        attachments: null,
+        metadata: null
+      };
+      this._messages.set(updatedMessages);
+
+      // Emit event
+      this.messageDeleted$.next(messageId);
+
+      console.log('✅ Message marked as deleted');
+    }
+  }
+
+  private handleRealtimeReactionAdded(messageId: number, reaction: MessageReaction): void {
+    console.log('❤️ Processing realtime reaction added:', messageId, reaction);
+
+    const currentMessages = this._messages();
+    const messageIndex = currentMessages.findIndex(m => m.id === messageId);
+
+    if (messageIndex !== -1) {
+      const updatedMessages = [...currentMessages];
+      const message = { ...updatedMessages[messageIndex] };
+
+      if (!message.reactions) {
+        message.reactions = [];
+      }
+
+      // Check if reaction already exists
+      const reactionExists = message.reactions.some(
+        r => r.userId === reaction.userId && r.emoji === reaction.emoji
+      );
+
+      if (!reactionExists) {
+        message.reactions = [...message.reactions, reaction];
+        updatedMessages[messageIndex] = message;
         this._messages.set(updatedMessages);
+      }
+    }
+  }
 
-        this.messageUpdated$.next(updatedMessage);
-      });
+  private handleRealtimeReactionRemoved(messageId: number, emoji: string, userId: number): void {
+    console.log('💔 Processing realtime reaction removed:', messageId, emoji, userId);
 
-      // Listen for message deletions
-      channel.listen('message.deleted', (event: any) => {
-        console.log('Message deleted:', event);
-        const messageId = event.messageId;
+    const currentMessages = this._messages();
+    const messageIndex = currentMessages.findIndex(m => m.id === messageId);
 
-        const currentMessages = this._messages();
-        const filteredMessages = currentMessages.filter(
-          (msg) => msg.id !== messageId
+    if (messageIndex !== -1) {
+      const updatedMessages = [...currentMessages];
+      const message = { ...updatedMessages[messageIndex] };
+
+      if (message.reactions) {
+        message.reactions = message.reactions.filter(
+          r => !(r.userId === userId && r.emoji === emoji)
         );
-        this._messages.set(filteredMessages);
+        updatedMessages[messageIndex] = message;
+        this._messages.set(updatedMessages);
+      }
+    }
+  }
 
-        this.messageDeleted$.next(messageId);
-      });
+  private handleTypingEvent(roomId: number, user: any, isTyping: boolean): void {
+    const currentRoom = this._currentChatRoom();
+    if (!currentRoom || currentRoom.id !== roomId) {
+      return;
+    }
 
-      // Listen for typing indicators
-      channel.listen('user.typing', (event: any) => {
-        console.log('User typing:', event);
-        this.handleTypingEvent(roomId, event.user, true);
-      });
+    // Ignore own typing events
+    const currentUserId = this.authService.user()?.id;
+    if (user.id === currentUserId) {
+      return;
+    }
 
-      // Listen for stop typing
-      channel.listen('user.stopped-typing', (event: any) => {
-        console.log('User stopped typing:', event);
-        this.handleTypingEvent(roomId, event.user, false);
-      });
+    const currentTypingUsers = this._typingUsers();
+
+    if (isTyping) {
+      // Add user to typing list if not already there
+      const userExists = currentTypingUsers.some(tu => tu.userId === user.id);
+      if (!userExists) {
+        const typingUser: TypingUser = {
+          userId: user.id,
+          userName: user.name,
+          lastTyping: Date.now(),
+        };
+        this._typingUsers.set([...currentTypingUsers, typingUser]);
+
+        // Auto-remove typing indicator after 5 seconds
+        const timeoutId = setTimeout(() => {
+          this.removeTypingUser(user.id);
+        }, 5000);
+
+        this.typingTimeouts.set(user.id, timeoutId);
+      }
+    } else {
+      this.removeTypingUser(user.id);
+    }
+  }
+
+  private removeTypingUser(userId: number): void {
+    const currentTypingUsers = this._typingUsers();
+    const filteredUsers = currentTypingUsers.filter(tu => tu.userId !== userId);
+    this._typingUsers.set(filteredUsers);
+
+    // Clear timeout if exists
+    const timeoutId = this.typingTimeouts.get(userId);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      this.typingTimeouts.delete(userId);
+    }
+  }
+
+  private updateRoomLastMessage(roomId: number, message: ChatMessage): void {
+    const currentRooms = this._chatRooms();
+    const roomIndex = currentRooms.findIndex(r => r.id === roomId);
+
+    if (roomIndex !== -1) {
+      const updatedRooms = [...currentRooms];
+      updatedRooms[roomIndex] = {
+        ...updatedRooms[roomIndex],
+        lastMessage: message,
+        lastMessageAt: message.createdAt,
+      };
+
+      // Move room to top of list for recent activity
+      if (roomIndex > 0) {
+        const [updatedRoom] = updatedRooms.splice(roomIndex, 1);
+        updatedRooms.unshift(updatedRoom);
+      }
+
+      this._chatRooms.set(updatedRooms);
     }
   }
 
@@ -760,12 +970,25 @@ export class ChatService {
       const currentRoom = this._currentChatRoom();
       if (currentRoom) {
         const channelName = `chat-room.${currentRoom.id}`;
-        this.webSocketService.leaveChannel(channelName);
-        this.channelSubscriptions.delete(currentRoom.id);
+
+        try {
+          this.webSocketService.leaveChannel(channelName);
+          this.channelSubscriptions.delete(currentRoom.id);
+          console.log('🚪 Left chat room:', currentRoom.id);
+        } catch (error) {
+          console.error('❌ Error leaving chat room:', error);
+        }
       }
 
       this.currentChatChannel = null;
     }
+
+    // Clear typing indicators
+    this._typingUsers.set([]);
+
+    // Clear typing timeouts
+    this.typingTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+    this.typingTimeouts.clear();
   }
 
   disconnectWebSocket(): void {
@@ -778,40 +1001,14 @@ export class ChatService {
     this.channelSubscriptions.clear();
     this.currentChatChannel = null;
 
+    // Clear typing state
+    this._typingUsers.set([]);
+    this.typingTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+    this.typingTimeouts.clear();
+
     // Disconnect WebSocket
     this.webSocketService.disconnect();
-  }
-
-  private handleTypingEvent(
-    roomId: number,
-    user: any,
-    isTyping: boolean
-  ): void {
-    const currentRoom = this._currentChatRoom();
-    if (!currentRoom || currentRoom.id !== roomId) {
-      return;
-    }
-
-    const currentTypingUsers = this._typingUsers();
-
-    if (isTyping) {
-      // Add user to typing list if not already there
-      const userExists = currentTypingUsers.some((tu) => tu.userId === user.id);
-      if (!userExists) {
-        const typingUser: TypingUser = {
-          userId: user.id,
-          userName: user.name,
-          lastTyping: Date.now(),
-        };
-        this._typingUsers.set([...currentTypingUsers, typingUser]);
-      }
-    } else {
-      // Remove user from typing list
-      const filteredUsers = currentTypingUsers.filter(
-        (tu) => tu.userId !== user.id
-      );
-      this._typingUsers.set(filteredUsers);
-    }
+    console.log('🔌 WebSocket disconnected and cleaned up');
   }
 
   // Observable streams for real-time events

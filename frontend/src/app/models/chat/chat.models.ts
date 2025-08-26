@@ -46,7 +46,7 @@ export interface ChatMessage {
   replyToId?: number;
   message: string;
   type: MessageTypeEnum;
-  attachments?: any[];
+  attachments?: any[]|null;
   metadata?: any;
   isEdited: boolean;
   isDeleted: boolean;

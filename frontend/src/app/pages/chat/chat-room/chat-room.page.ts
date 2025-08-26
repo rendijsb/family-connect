@@ -10,10 +10,10 @@ import {
   AfterViewInit,
   effect,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
-import { Subject, takeUntil, debounceTime } from 'rxjs';
+import {CommonModule} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {Router, ActivatedRoute} from '@angular/router';
+import {Subject, takeUntil, debounceTime} from 'rxjs';
 import {
   IonContent,
   IonHeader,
@@ -30,7 +30,7 @@ import {
   IonAvatar,
   IonSkeletonText,
 } from '@ionic/angular/standalone';
-import { addIcons } from 'ionicons';
+import {addIcons} from 'ionicons';
 import {
   arrowBackOutline,
   sendOutline,
@@ -64,9 +64,9 @@ import {
   arrowDownOutline,
 } from 'ionicons/icons';
 
-import { ChatService } from '../../../core/services/chat/chat.service';
-import { AuthService } from '../../../core/services/auth/auth.service';
-import { ToastService } from '../../../shared/services/toast.service';
+import {ChatService} from '../../../core/services/chat/chat.service';
+import {AuthService} from '../../../core/services/auth/auth.service';
+import {ToastService} from '../../../shared/services/toast.service';
 import {
   ChatRoom,
   ChatMessage,
@@ -134,6 +134,10 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
   readonly isRecording = signal<boolean>(false);
   readonly currentPage = signal<number>(1);
   readonly hasMoreMessages = signal<boolean>(true);
+  readonly isWebSocketConnected = signal<boolean>(false);
+  readonly connectionError = signal<string | null>(null);
+  private connectionRetryCount = 0;
+  private maxRetries = 3;
 
   // Common emoji reactions
   readonly commonEmojis = ['👍', '❤️', '😂', '😮', '😢', '😡', '🎉', '🔥'];
@@ -157,11 +161,10 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
     this.roomId.set(roomId);
 
     if (familySlug && roomId) {
-      // Initialize WebSocket connection and setup real-time features
-      this.initializeRealtimeFeatures(roomId);
-
       this.loadChatRoom();
-      this.loadMessages();
+    } else {
+      console.error('Invalid route parameters');
+      this.goBack();
     }
   }
 
@@ -179,34 +182,90 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private async initializeRealtimeFeatures(roomId: number): Promise<void> {
+    console.log('🚀 Initializing real-time features for room:', roomId);
+
+    this.connectionError.set(null);
+
     try {
-      // Initialize WebSocket connection
+      // Step 1: Initialize WebSocket connection
+      console.log('🔌 Step 1: Initializing WebSocket connection...');
       await this.chatService.initializeWebSocket();
 
-      // Join the chat room for real-time updates
+      // Step 2: Wait a moment for connection to stabilize
+      await this.delay(1000);
+
+      // Step 3: Join the chat room
+      console.log('🏠 Step 2: Joining chat room...');
       this.chatService.joinChatRoom(roomId);
 
-      // Subscribe to real-time message events
+      // Step 4: Subscribe to real-time events
+      console.log('📡 Step 3: Setting up real-time event subscriptions...');
       this.subscribeToRealTimeEvents();
+
+      this.isWebSocketConnected.set(true);
+      this.connectionRetryCount = 0;
+
+      console.log('✅ Real-time features initialized successfully');
+
     } catch (error) {
-      console.error('Failed to initialize real-time features:', error);
+      console.error('❌ Failed to initialize real-time features:', error);
+      this.connectionError.set('Failed to connect to real-time chat');
+      this.isWebSocketConnected.set(false);
+
+      // Retry with exponential backoff
+      await this.retryConnection(roomId);
     }
   }
 
+  private async retryConnection(roomId: number): Promise<void> {
+    if (this.connectionRetryCount >= this.maxRetries) {
+      console.error('❌ Max connection retries reached');
+      this.connectionError.set('Unable to establish real-time connection. Please refresh the page.');
+      return;
+    }
+
+    this.connectionRetryCount++;
+    const retryDelay = Math.pow(2, this.connectionRetryCount) * 1000; // Exponential backoff
+
+    console.log(`🔄 Retrying connection (${this.connectionRetryCount}/${this.maxRetries}) in ${retryDelay}ms...`);
+
+    await this.delay(retryDelay);
+
+    try {
+      await this.initializeRealtimeFeatures(roomId);
+    } catch (error) {
+      console.error(`❌ Retry ${this.connectionRetryCount} failed:`, error);
+      await this.retryConnection(roomId);
+    }
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
   private subscribeToRealTimeEvents() {
+    console.log('📡 Setting up real-time event subscriptions...');
+
     // Subscribe to new messages
     this.chatService
       .getMessageReceivedStream()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (message) => {
-          console.log('Real-time message received:', message);
-          // The message is already added to the messages signal in ChatService
-          // Just scroll to bottom for new messages
-          setTimeout(() => this.scrollToBottom(), 100);
+          console.log('📨 Real-time message received in component:', message);
+
+          // Scroll to bottom for new messages (but not for older messages during pagination)
+          const currentRoom = this.chatService.currentChatRoom();
+          if (currentRoom && message.chatRoomId === currentRoom.id) {
+            // Small delay to allow DOM to update
+            setTimeout(() => {
+              this.scrollToBottom();
+            }, 100);
+          }
         },
         error: (error) => {
-          console.error('Error receiving real-time message:', error);
+          console.error('❌ Error receiving real-time message:', error);
+          this.handleRealtimeError('Failed to receive messages');
         },
       });
 
@@ -216,10 +275,11 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (message) => {
-          console.log('Real-time message updated:', message);
+          console.log('📝 Real-time message updated in component:', message);
         },
         error: (error) => {
-          console.error('Error receiving message update:', error);
+          console.error('❌ Error receiving message update:', error);
+          this.handleRealtimeError('Failed to receive message updates');
         },
       });
 
@@ -229,21 +289,76 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (messageId) => {
-          console.log('Real-time message deleted:', messageId);
+          console.log('🗑️ Real-time message deleted in component:', messageId);
         },
         error: (error) => {
-          console.error('Error receiving message deletion:', error);
+          console.error('❌ Error receiving message deletion:', error);
+          this.handleRealtimeError('Failed to receive message deletions');
+        },
+      });
+
+    console.log('✅ Real-time event subscriptions set up');
+  }
+
+  private handleRealtimeError(message: string) {
+    this.connectionError.set(message);
+    this.isWebSocketConnected.set(false);
+
+    // Show toast for user feedback
+    this.toastService.showToast(message, 'warning');
+  }
+
+// Replace the existing sendMessage method with retry logic
+  async sendMessage() {
+    const text = this.messageText().trim();
+    if (!text) return;
+
+    const request: SendMessageRequest = {
+      message: text,
+      type: MessageTypeEnum.TEXT,
+      replyToId: this.replyingTo()?.id,
+    };
+
+    // Clear input immediately for better UX
+    this.messageText.set('');
+    this.replyingTo.set(null);
+
+    this.chatService
+      .sendMessage(this.familySlug(), this.roomId(), request)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          console.log('✅ Message sent successfully');
+          // Message will be added to UI via real-time events
+          setTimeout(() => this.scrollToBottom(), 100);
+        },
+        error: (error) => {
+          console.error('❌ Send message error:', error);
+
+          // Restore message text on error
+          this.messageText.set(text);
+
+          // Show error and offer retry
+          this.toastService.showToast('Failed to send message. Please try again.', 'danger');
         },
       });
   }
 
   ngOnDestroy() {
-    // Clean up WebSocket connections
-    this.chatService.leaveChatRoom();
+    console.log('🔄 ChatRoomPage destroying, cleaning up...');
+
+    try {
+      this.chatService.leaveChatRoom();
+    } catch (error) {
+      console.error('Error leaving chat room:', error);
+    }
 
     this.destroy$.next();
     this.destroy$.complete();
+
     this.chatService.clearCurrentRoom();
+
+    console.log('✅ ChatRoomPage cleanup complete');
   }
 
   private addIcons() {
@@ -294,12 +409,20 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
       .getChatRoom(this.familySlug(), this.roomId())
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => {
+        next: async () => {
+          console.log('✅ Chat room loaded successfully');
+
           // Mark as read when opening room
           this.markAsRead();
+
+          // Load initial messages
+          await this.loadMessages();
+
+          // Initialize real-time features after room is loaded
+          await this.initializeRealtimeFeatures(this.roomId());
         },
         error: (error) => {
-          console.error('Load chat room error:', error);
+          console.error('❌ Load chat room error:', error);
           this.toastService.showToast('Failed to load chat room.', 'danger');
           this.goBack();
         },
@@ -376,33 +499,6 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  async sendMessage() {
-    const text = this.messageText().trim();
-    if (!text) return;
-
-    const request: SendMessageRequest = {
-      message: text,
-      type: MessageTypeEnum.TEXT,
-      replyToId: this.replyingTo()?.id,
-    };
-
-    this.messageText.set('');
-    this.replyingTo.set(null);
-
-    this.chatService
-      .sendMessage(this.familySlug(), this.roomId(), request)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          setTimeout(() => this.scrollToBottom(), 100);
-        },
-        error: (error) => {
-          console.error('Send message error:', error);
-          this.toastService.showToast('Failed to send message.', 'danger');
-        },
-      });
-  }
-
   // Missing methods that were referenced in template
   getRoomMemberCount(chatRoom: ChatRoom): string {
     return `${chatRoom.members?.length || 0}`;
@@ -419,8 +515,18 @@ export class ChatRoomPage implements OnInit, OnDestroy, AfterViewInit {
       `[data-message-id="${message.id}"]`
     );
     if (messageElement) {
-      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      messageElement.scrollIntoView({behavior: 'smooth', block: 'center'});
     }
+  }
+
+  isRealtimeConnected(): boolean {
+    return this.isWebSocketConnected() && !this.connectionError();
+  }
+
+  async retryRealtimeConnection() {
+    this.connectionRetryCount = 0;
+    this.connectionError.set(null);
+    await this.initializeRealtimeFeatures(this.roomId());
   }
 
   getMessagePreview(message: ChatMessage): string {

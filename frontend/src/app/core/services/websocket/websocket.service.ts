@@ -1,3 +1,4 @@
+// frontend/src/app/core/services/websocket/websocket.service.ts
 import { Injectable, inject } from '@angular/core';
 import { AuthService } from '../auth/auth.service';
 import { environment } from '../../../../environments/environment';
@@ -21,6 +22,9 @@ export class WebSocketService {
   private readonly authService = inject(AuthService);
   private echo: any = null;
   private isConnected = false;
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 5;
+  private reconnectInterval = 5000;
 
   constructor() {
     this.loadLibraries();
@@ -45,13 +49,14 @@ export class WebSocketService {
 
   async connect(): Promise<void> {
     console.log('🔌 WebSocket connect() called');
-    console.log('🔌 Current connection status:', this.isConnected);
-    console.log('🔌 User authenticated:', this.authService.isAuthenticated());
 
-    if (this.isConnected || !this.authService.isAuthenticated()) {
-      console.log(
-        '🔌 Skipping connection - already connected or not authenticated'
-      );
+    if (this.isConnected) {
+      console.log('🔌 Already connected');
+      return;
+    }
+
+    if (!this.authService.isAuthenticated()) {
+      console.log('🔌 User not authenticated');
       return;
     }
 
@@ -60,165 +65,105 @@ export class WebSocketService {
 
     if (!Echo || !Pusher) {
       console.error('❌ WebSocket libraries not loaded');
-      return;
+      throw new Error('WebSocket libraries not available');
     }
-    console.log('✅ WebSocket libraries loaded successfully');
 
+    // Get token from signal correctly
     const token = this.authService.authToken();
     if (!token) {
       console.error('❌ No auth token available for WebSocket connection');
-      return;
+      throw new Error('No authentication token');
     }
-    console.log('✅ Auth token retrieved:', token?.substring(0, 20) + '...');
+
+    console.log('✅ Auth token retrieved');
 
     try {
-      console.log('🔌 Initializing Echo with config:', {
-        broadcaster: 'reverb',
-        key: environment.reverb.key,
+      // Create Pusher instance with proper configuration for Reverb
+      const pusher = new Pusher(environment.reverb.key, {
+        cluster: environment.reverb.cluster || '',
         wsHost: environment.reverb.host,
         wsPort: environment.reverb.port,
         wssPort: environment.reverb.port,
         forceTLS: environment.reverb.scheme === 'https',
-        enabledTransports: ['ws', 'wss'],
-      });
-
-      console.log('🌐 Connecting to WebSocket with HTTP protocol...');
-
-      console.log(
-        '🌐 Creating Echo instance with explicit HTTP configuration...'
-      );
-
-      // Configure Pusher explicitly for HTTP
-      const pusherConfig = {
-        cluster: '',
-        host: environment.reverb.host,
-        port: environment.reverb.port,
-        scheme: 'http',
-        useTLS: false,
-        encrypted: false,
+        encrypted: environment.reverb.scheme === 'https',
+        enabledTransports: environment.reverb.scheme === 'https' ? ['wss'] : ['ws'],
         disableStats: true,
-        enabledTransports: ['ws', 'wss'],
-        disabledTransports: [
-          'sockjs',
-          'xhr_polling',
-          'xhr_streaming',
-          'htmlfile',
-        ],
-        forceTLS: false,
-        wsHost: environment.reverb.host,
-        wsPort: environment.reverb.port,
-        wssHost: environment.reverb.host,
-        wssPort: environment.reverb.port,
-      };
-
-      console.log('🌐 Configuring Echo with forced HTTP settings...');
-
-      // Create Pusher instance with explicit HTTP configuration
-      const pusher = new Pusher(environment.reverb.key, {
-        cluster: '',
-        host: environment.reverb.host,
-        port: environment.reverb.port,
-        scheme: 'http',
-        useTLS: false,
-        encrypted: false,
-        disableStats: true,
-        enabledTransports: ['ws'],
-        disabledTransports: [
-          'wss',
-          'sockjs',
-          'xhr_polling',
-          'xhr_streaming',
-          'htmlfile',
-        ],
-        forceTLS: false,
-        wsHost: environment.reverb.host,
-        wsPort: environment.reverb.port,
-        wssHost: environment.reverb.host,
-        wssPort: environment.reverb.port,
         channelAuthorization: {
           endpoint: `${environment.apiUrl}/broadcasting/auth`,
-          transport: 'ajax',
           headers: {
             Authorization: `Bearer ${token}`,
           },
         },
       });
 
+      // Create Echo instance
       this.echo = new Echo({
         broadcaster: 'reverb',
         key: environment.reverb.key,
         client: pusher,
-        wsHost: environment.reverb.host,
-        wsPort: environment.reverb.port,
-        wssPort: environment.reverb.port,
-        forceTLS: false,
-        enabledTransports: ['ws'],
-        disableStats: true,
         channelAuthorization: {
           endpoint: `${environment.apiUrl}/broadcasting/auth`,
-          transport: 'ajax',
           headers: {
             Authorization: `Bearer ${token}`,
           },
         },
       });
 
+      // Set up connection event handlers
+      this.setupConnectionHandlers(pusher);
+
       this.isConnected = true;
-      console.log('✅ WebSocket Echo instance created successfully');
-
-      // Handle Pusher connection events
-      pusher.connection.bind('connecting', () => {
-        console.log('🔄 Pusher connecting...');
-      });
-
-      pusher.connection.bind('connected', () => {
-        console.log('🎉 Pusher connection established');
-        console.log('🔗 Pusher connection details:', {
-          socketId: pusher.connection.socket_id,
-          transport: pusher.connection.transport?.name,
-          host: pusher.connection.options?.host,
-          port: pusher.connection.options?.port,
-        });
-      });
-
-      pusher.connection.bind('disconnected', () => {
-        console.log('💔 Pusher connection disconnected');
-      });
-
-      pusher.connection.bind('error', (error: any) => {
-        console.error('❌ Pusher connection error:', error);
-      });
-
-      pusher.connection.bind('failed', () => {
-        console.error('❌ Pusher connection failed completely');
-      });
-
-      // Handle Echo connection events
-      this.echo.connector.pusher.connection.bind('connected', () => {
-        console.log('🎉 WebSocket connection established');
-      });
-
-      this.echo.connector.pusher.connection.bind('disconnected', () => {
-        console.log('💔 WebSocket connection disconnected');
-        this.isConnected = false;
-      });
-
-      this.echo.connector.pusher.connection.bind('error', (error: any) => {
-        console.error('❌ WebSocket connection error:', error);
-        this.isConnected = false;
-      });
-
-      this.echo.connector.pusher.connection.bind('connecting', () => {
-        console.log('🔄 WebSocket connecting...');
-      });
-
-      this.echo.connector.pusher.connection.bind('unavailable', () => {
-        console.log('❌ WebSocket unavailable');
-      });
+      this.reconnectAttempts = 0;
+      console.log('✅ WebSocket connection established');
     } catch (error) {
       console.error('❌ Failed to initialize WebSocket connection:', error);
       this.isConnected = false;
+      this.handleReconnection();
+      throw error;
     }
+  }
+
+  private setupConnectionHandlers(pusher: any) {
+    pusher.connection.bind('connected', () => {
+      console.log('🎉 Pusher connection established');
+      this.isConnected = true;
+      this.reconnectAttempts = 0;
+    });
+
+    pusher.connection.bind('disconnected', () => {
+      console.log('💔 Pusher connection disconnected');
+      this.isConnected = false;
+      this.handleReconnection();
+    });
+
+    pusher.connection.bind('error', (error: any) => {
+      console.error('❌ Pusher connection error:', error);
+      this.isConnected = false;
+      this.handleReconnection();
+    });
+
+    pusher.connection.bind('failed', () => {
+      console.error('❌ Pusher connection failed completely');
+      this.isConnected = false;
+    });
+  }
+
+  private handleReconnection() {
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.error('❌ Max reconnection attempts reached');
+      return;
+    }
+
+    this.reconnectAttempts++;
+    console.log(
+      `🔄 Attempting reconnection ${this.reconnectAttempts}/${this.maxReconnectAttempts}`
+    );
+
+    setTimeout(() => {
+      if (!this.isConnected && this.authService.isAuthenticated()) {
+        this.connect().catch(console.error);
+      }
+    }, this.reconnectInterval * this.reconnectAttempts);
   }
 
   disconnect(): void {
@@ -226,7 +171,7 @@ export class WebSocketService {
       this.echo.disconnect();
       this.echo = null;
       this.isConnected = false;
-      console.log('WebSocket disconnected');
+      console.log('🔌 WebSocket disconnected');
     }
   }
 
@@ -235,43 +180,40 @@ export class WebSocketService {
   }
 
   isWebSocketConnected(): boolean {
-    return this.isConnected;
+    return this.isConnected && this.echo !== null;
   }
 
   // Join a private channel (for chat rooms)
   joinPrivateChannel(channelName: string) {
     console.log('📢 Attempting to join private channel:', channelName);
 
-    if (!this.echo) {
+    if (!this.echo || !this.isConnected) {
       console.error('❌ WebSocket not connected. Call connect() first.');
-      return null;
+      throw new Error('WebSocket not connected');
     }
 
     try {
-      console.log('✅ Echo is available, joining channel:', channelName);
       const channel = this.echo.private(channelName);
-      console.log('📢 Channel created:', channelName, channel);
+      console.log('📢 Channel created:', channelName);
 
-      // Add channel-specific event listeners for debugging
-      if (channel) {
-        channel.subscribed(() => {
-          console.log('✅ Successfully subscribed to channel:', channelName);
-        });
+      // Add debugging event listeners
+      channel.subscribed(() => {
+        console.log('✅ Successfully subscribed to channel:', channelName);
+      });
 
-        channel.error((error: any) => {
-          console.error(
-            '❌ Channel subscription error for',
-            channelName,
-            ':',
-            error
-          );
-        });
-      }
+      channel.error((error: any) => {
+        console.error(
+          '❌ Channel subscription error for',
+          channelName,
+          ':',
+          error
+        );
+      });
 
       return channel;
     } catch (error) {
       console.error(`❌ Failed to join private channel ${channelName}:`, error);
-      return null;
+      throw error;
     }
   }
 
@@ -283,26 +225,29 @@ export class WebSocketService {
 
     try {
       this.echo.leave(channelName);
-      console.log(`Left channel: ${channelName}`);
+      console.log(`📢 Left channel: ${channelName}`);
     } catch (error) {
-      console.error(`Failed to leave channel ${channelName}:`, error);
+      console.error(`❌ Failed to leave channel ${channelName}:`, error);
     }
   }
 
   // Join a presence channel (for typing indicators, user presence)
   joinPresenceChannel(channelName: string) {
-    if (!this.echo) {
-      console.error('WebSocket not connected. Call connect() first.');
-      return null;
+    if (!this.echo || !this.isConnected) {
+      console.error('❌ WebSocket not connected. Call connect() first.');
+      throw new Error('WebSocket not connected');
     }
 
     try {
       const channel = this.echo.join(channelName);
-      console.log(`Joined presence channel: ${channelName}`);
+      console.log(`📢 Joined presence channel: ${channelName}`);
       return channel;
     } catch (error) {
-      console.error(`Failed to join presence channel ${channelName}:`, error);
-      return null;
+      console.error(
+        `❌ Failed to join presence channel ${channelName}:`,
+        error
+      );
+      throw error;
     }
   }
 }
