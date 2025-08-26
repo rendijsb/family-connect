@@ -50,14 +50,14 @@ export class WebSocketService {
   async connect(): Promise<void> {
     console.log('🔌 WebSocket connect() called');
 
-    if (this.isConnected) {
+    if (this.isConnected && this.echo) {
       console.log('🔌 Already connected');
       return;
     }
 
     if (!this.authService.isAuthenticated()) {
       console.log('🔌 User not authenticated');
-      return;
+      throw new Error('User not authenticated');
     }
 
     console.log('🔌 Loading WebSocket libraries...');
@@ -68,8 +68,8 @@ export class WebSocketService {
       throw new Error('WebSocket libraries not available');
     }
 
-    // Get token from signal correctly
-    const token = this.authService.authToken();
+    // Get token from auth service
+    const token = this.authService.getToken();
     if (!token) {
       console.error('❌ No auth token available for WebSocket connection');
       throw new Error('No authentication token');
@@ -78,39 +78,58 @@ export class WebSocketService {
     console.log('✅ Auth token retrieved');
 
     try {
-      // Create Pusher instance with proper configuration for Reverb
-      const pusher = new Pusher(environment.reverb.key, {
-        cluster: environment.reverb.cluster || '',
+      // Create Echo instance with proper Reverb configuration
+      this.echo = new Echo({
+        broadcaster: 'reverb',
+        key: environment.reverb.key,
         wsHost: environment.reverb.host,
         wsPort: environment.reverb.port,
         wssPort: environment.reverb.port,
         forceTLS: environment.reverb.scheme === 'https',
-        encrypted: environment.reverb.scheme === 'https',
         enabledTransports: environment.reverb.scheme === 'https' ? ['wss'] : ['ws'],
-        disableStats: true,
-        channelAuthorization: {
-          endpoint: `${environment.apiUrl}/broadcasting/auth`,
+        authEndpoint: `${environment.apiUrl}/broadcasting/auth`,
+        auth: {
           headers: {
             Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
           },
         },
-      });
-
-      // Create Echo instance
-      this.echo = new Echo({
-        broadcaster: 'reverb',
-        key: environment.reverb.key,
-        client: pusher,
-        channelAuthorization: {
-          endpoint: `${environment.apiUrl}/broadcasting/auth`,
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        authorizer: (channel: any, options: any) => {
+          return {
+            authorize: (socketId: string, callback: Function) => {
+              fetch(`${environment.apiUrl}/broadcasting/auth`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json',
+                  'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({
+                  socket_id: socketId,
+                  channel_name: channel.name,
+                }),
+              })
+                .then(response => {
+                  if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                  }
+                  return response.json();
+                })
+                .then(data => {
+                  callback(null, data);
+                })
+                .catch(error => {
+                  console.error('❌ Channel authorization failed:', error);
+                  callback(error, null);
+                });
+            }
+          };
         },
       });
 
       // Set up connection event handlers
-      this.setupConnectionHandlers(pusher);
+      this.setupConnectionHandlers();
 
       this.isConnected = true;
       this.reconnectAttempts = 0;
@@ -123,29 +142,36 @@ export class WebSocketService {
     }
   }
 
-  private setupConnectionHandlers(pusher: any) {
-    pusher.connection.bind('connected', () => {
-      console.log('🎉 Pusher connection established');
-      this.isConnected = true;
-      this.reconnectAttempts = 0;
-    });
+  private setupConnectionHandlers() {
+    if (!this.echo) return;
 
-    pusher.connection.bind('disconnected', () => {
-      console.log('💔 Pusher connection disconnected');
-      this.isConnected = false;
-      this.handleReconnection();
-    });
+    // Listen for connection events if available
+    if (this.echo.connector && this.echo.connector.pusher) {
+      const pusher = this.echo.connector.pusher;
 
-    pusher.connection.bind('error', (error: any) => {
-      console.error('❌ Pusher connection error:', error);
-      this.isConnected = false;
-      this.handleReconnection();
-    });
+      pusher.connection.bind('connected', () => {
+        console.log('🎉 Pusher connection established');
+        this.isConnected = true;
+        this.reconnectAttempts = 0;
+      });
 
-    pusher.connection.bind('failed', () => {
-      console.error('❌ Pusher connection failed completely');
-      this.isConnected = false;
-    });
+      pusher.connection.bind('disconnected', () => {
+        console.log('💔 Pusher connection disconnected');
+        this.isConnected = false;
+        this.handleReconnection();
+      });
+
+      pusher.connection.bind('error', (error: any) => {
+        console.error('❌ Pusher connection error:', error);
+        this.isConnected = false;
+        this.handleReconnection();
+      });
+
+      pusher.connection.bind('failed', () => {
+        console.error('❌ Pusher connection failed completely');
+        this.isConnected = false;
+      });
+    }
   }
 
   private handleReconnection() {
