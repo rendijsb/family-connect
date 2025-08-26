@@ -2,10 +2,10 @@ export const environment = {
   production: false,
   apiUrl: 'http://localhost:8000/api',
   reverb: {
-    host: 'localhost',
+    host: 'localhost', // since Angular frontend runs on host browser
     port: 8080,
-    scheme: 'http', // or 'https' for production
-    key: 'family-connect-key', // Should match REVERB_APP_KEY in .env
+    scheme: 'http',
+    key: 'family-connect-key', // must match .env
     path: '',
     cluster: 'mt1',
   },
