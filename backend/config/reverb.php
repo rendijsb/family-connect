@@ -8,14 +8,12 @@ return [
         'reverb' => [
             'host' => env('REVERB_SERVER_HOST', '0.0.0.0'),
             'port' => env('REVERB_SERVER_PORT', 8080),
-            'hostname' => env('REVERB_HOST', 'localhost'),
+            'path' => env('REVERB_SERVER_PATH', ''),
+            'hostname' => env('REVERB_HOST', 'websocket'),
             'options' => [
                 'tls' => [],
             ],
             'max_request_size' => env('REVERB_MAX_REQUEST_SIZE', 10000),
-            'max_message_size' => env('REVERB_MAX_MESSAGE_SIZE', 10000),
-            'pulse_ingest_interval' => env('REVERB_PULSE_INGEST_INTERVAL', 15),
-            'telescope_ingest_interval' => env('REVERB_TELESCOPE_INGEST_INTERVAL', 15),
             'scaling' => [
                 'enabled' => env('REVERB_SCALING_ENABLED', false),
                 'channel' => env('REVERB_SCALING_CHANNEL', 'reverb'),
@@ -26,12 +24,11 @@ return [
                     'username' => env('REDIS_USERNAME'),
                     'password' => env('REDIS_PASSWORD'),
                     'database' => env('REDIS_DB', '0'),
+                    'timeout' => env('REDIS_TIMEOUT', 60),
                 ],
             ],
-            'pulse' => [
-                'enabled' => env('REVERB_PULSE_ENABLED', false),
-                'interval' => env('REVERB_PULSE_INTERVAL', 30),
-            ],
+            'pulse_ingest_interval' => env('REVERB_PULSE_INGEST_INTERVAL', 15),
+            'telescope_ingest_interval' => env('REVERB_TELESCOPE_INGEST_INTERVAL', 15),
         ],
     ],
 
@@ -39,14 +36,19 @@ return [
         'provider' => 'config',
         'apps' => [
             [
-                'id' => env('REVERB_APP_ID', 'family-connect-app'),
-                'name' => env('APP_NAME', 'Laravel'),
                 'key' => env('REVERB_APP_KEY', 'family-connect-key'),
                 'secret' => env('REVERB_APP_SECRET', 'family-connect-secret'),
-                'capacity' => null,
-                'enable_client_messages' => false,
-                'enable_statistics' => true,
+                'app_id' => env('REVERB_APP_ID', 'family-connect'),
+                'options' => [
+                    'host' => env('REVERB_HOST', 'websocket'),
+                    'port' => env('REVERB_PORT', 8080),
+                    'scheme' => env('REVERB_SCHEME', 'http'),
+                    'useTLS' => env('REVERB_SCHEME', 'http') === 'https',
+                ],
                 'allowed_origins' => ['*'],
+                'ping_interval' => env('REVERB_APP_PING_INTERVAL', 60),
+                'activity_timeout' => env('REVERB_APP_ACTIVITY_TIMEOUT', 30),
+                'max_message_size' => env('REVERB_APP_MAX_MESSAGE_SIZE', 10000),
             ],
         ],
     ],

@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   mysql:
     image: mysql:8.0
@@ -24,6 +23,10 @@ services:
       - "6379:6379"
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 10s
+      retries: 5
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
@@ -49,13 +52,16 @@ services:
       mysql:
         condition: service_healthy
       redis:
-        condition: service_started
-      websocket:
-        condition: service_started
+        condition: service_healthy
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  # WebSocket service - Fixed
+  # WebSocket service - Clean configuration without variable substitution
   websocket:
     build:
       context: ./backend
@@ -70,24 +76,54 @@ services:
       mysql:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     networks:
       - app-network
+    environment:
+      # Override environment variables to ensure they're set correctly
+      BROADCAST_DRIVER: reverb
+      REVERB_APP_ID: family-connect
+      REVERB_APP_KEY: family-connect-key
+      REVERB_APP_SECRET: family-connect-secret
+      REVERB_HOST: websocket
+      REVERB_PORT: 8080
+      REVERB_SCHEME: http
+      REVERB_SERVER_HOST: 0.0.0.0
+      REVERB_SERVER_PORT: 8080
     command: >
-      sh -c "sleep 20 && 
-             echo 'Starting Reverb WebSocket Server...' && 
-             php artisan config:clear && 
-             php artisan config:cache && 
-             php artisan reverb:start --host=0.0.0.0 --port=8080 --debug"
+      sh -c "
+        echo '🔧 Starting WebSocket Service Setup...' &&
+        echo '📊 Environment Check:' &&
+        echo 'BROADCAST_DRIVER=' && echo $$BROADCAST_DRIVER &&
+        echo 'REVERB_APP_ID=' && echo $$REVERB_APP_ID &&
+        echo 'REVERB_APP_KEY=' && echo $$REVERB_APP_KEY &&
+        echo 'REVERB_HOST=' && echo $$REVERB_HOST &&
+        echo 'REVERB_PORT=' && echo $$REVERB_PORT &&
+        echo '' &&
+        echo '🧹 Clearing caches...' &&
+        php artisan config:clear &&
+        php artisan cache:clear &&
+        php artisan route:clear &&
+        echo '⚙️ Caching fresh config...' &&
+        php artisan config:cache &&
+        echo '🔍 Running broadcast debug...' &&
+        php artisan debug:broadcast &&
+        echo '🚀 Starting Reverb WebSocket Server...' &&
+        php artisan reverb:start --host=0.0.0.0 --port=8080 --debug
+      "
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -sS -m 3 -o /dev/null http://localhost:8080 || exit 1",
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 60s
 
-  # Queue Worker Service - Fixed with websocket dependency
+  # Queue Worker Service
   queue-worker:
     build:
       context: ./backend
@@ -100,16 +136,30 @@ services:
       mysql:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
       websocket:
-        condition: service_started
+        condition: service_healthy
     networks:
       - app-network
+    environment:
+      BROADCAST_DRIVER: reverb
+      REVERB_APP_ID: family-connect
+      REVERB_APP_KEY: family-connect-key
+      REVERB_APP_SECRET: family-connect-secret
     command: >
-      sh -c "sleep 20 && php artisan queue:work redis --verbose --tries=3 --timeout=60"
+      sh -c "
+        echo '🔄 Starting Queue Worker...' &&
+        sleep 30 &&
+        echo '🧹 Clearing caches for queue worker...' &&
+        php artisan config:clear &&
+        php artisan cache:clear &&
+        php artisan config:cache &&
+        echo '👷 Starting queue work...' &&
+        php artisan queue:work redis --verbose --tries=3 --timeout=60 --sleep=3 --max-jobs=1000 --max-time=3600
+      "
     restart: unless-stopped
     deploy:
-      replicas: 2
+      replicas: 1
 
   frontend:
     build: ./frontend
@@ -120,6 +170,9 @@ services:
       - /app/node_modules
     networks:
       - app-network
+    depends_on:
+      - api
+      - websocket
 
 volumes:
   mysql_data:
