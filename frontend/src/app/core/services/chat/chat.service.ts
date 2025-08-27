@@ -712,7 +712,7 @@ export class ChatService {
 
   private setupChannelListeners(channel: any, roomId: number): void {
     // Listen for new messages
-    channel.listen('message.sent', (event: any) => {
+    channel.listen('.message.sent', (event: any) => {
       console.log('📨 REAL-TIME MESSAGE RECEIVED:', event);
 
       const newMessage = event.message;
@@ -722,7 +722,7 @@ export class ChatService {
     });
 
     // Listen for message updates
-    channel.listen('message.updated', (event: any) => {
+    channel.listen('.message.updated', (event: any) => {
       console.log('📝 REAL-TIME MESSAGE UPDATED:', event);
 
       const updatedMessage = event.message;
@@ -732,7 +732,7 @@ export class ChatService {
     });
 
     // Listen for message deletions
-    channel.listen('message.deleted', (event: any) => {
+    channel.listen('.message.deleted', (event: any) => {
       console.log('🗑️ REAL-TIME MESSAGE DELETED:', event);
 
       if (event.messageId && event.chatRoomId === roomId) {
@@ -741,7 +741,7 @@ export class ChatService {
     });
 
     // Listen for reactions
-    channel.listen('reaction.added', (event: any) => {
+    channel.listen('.reaction.added', (event: any) => {
       console.log('❤️ REAL-TIME REACTION ADDED:', event);
 
       if (event.reaction && event.messageId) {
@@ -749,23 +749,31 @@ export class ChatService {
       }
     });
 
-    channel.listen('reaction.removed', (event: any) => {
+    channel.listen('.reaction.removed', (event: any) => {
       console.log('💔 REAL-TIME REACTION REMOVED:', event);
 
       if (event.messageId && event.emoji && event.userId) {
-        this.handleRealtimeReactionRemoved(event.messageId, event.emoji, event.userId);
+        this.handleRealtimeReactionRemoved(
+          event.messageId,
+          event.emoji,
+          event.userId
+        );
       }
     });
 
     // Listen for typing indicators
-    channel.listen('user.typing', (event: any) => {
+    channel.listen('.user.typing', (event: any) => {
       console.log('⌨️ USER TYPING:', event);
 
       if (event.userId && event.userName && event.isTyping !== undefined) {
-        this.handleTypingEvent(roomId, {
-          id: event.userId,
-          name: event.userName
-        }, event.isTyping);
+        this.handleTypingEvent(
+          roomId,
+          {
+            id: event.userId,
+            name: event.userName,
+          },
+          event.isTyping
+        );
       }
     });
 
@@ -776,7 +784,12 @@ export class ChatService {
 
     // Handle subscription errors
     channel.error((error: any) => {
-      console.error('❌ Channel subscription error for room', roomId, ':', error);
+      console.error(
+        '❌ Channel subscription error for room',
+        roomId,
+        ':',
+        error
+      );
     });
   }
 
@@ -785,12 +798,36 @@ export class ChatService {
 
     const currentMessages = this._messages();
 
+    // If this is our own message, try to replace an optimistic one instead of duplicating
+    const currentUserId = this.authService.user()?.id;
+    if (currentUserId && message.userId === currentUserId) {
+      const optimisticIndex = currentMessages.findIndex(
+        (m) =>
+          (m as any).isOptimistic === true &&
+          m.userId === currentUserId &&
+          m.message === message.message &&
+          (m.replyToId ?? null) === (message.replyToId ?? null) &&
+          m.type === message.type
+      );
+
+      if (optimisticIndex !== -1) {
+        const replaced = [...currentMessages];
+        replaced[optimisticIndex] = message;
+        this._messages.set(this.sortMessagesChronologically(replaced));
+
+        this.updateRoomLastMessage(message.chatRoomId, message);
+        this.messageReceived$.next(message);
+        console.log('🔄 Replaced optimistic message with realtime message');
+        return;
+      }
+    }
+
     // Check if message already exists (avoid duplicates)
-    const messageExists = currentMessages.some(m => m.id === message.id);
+    const messageExists = currentMessages.some((m) => m.id === message.id);
 
     if (!messageExists) {
-      // Add new message to the end (chronological order)
-      this._messages.set([...currentMessages, message]);
+      const next = [...currentMessages, message];
+      this._messages.set(this.sortMessagesChronologically(next));
 
       // Update chat room's last message
       this.updateRoomLastMessage(message.chatRoomId, message);
@@ -808,12 +845,12 @@ export class ChatService {
     console.log('📝 Processing realtime message update:', message);
 
     const currentMessages = this._messages();
-    const messageIndex = currentMessages.findIndex(m => m.id === message.id);
+    const messageIndex = currentMessages.findIndex((m) => m.id === message.id);
 
     if (messageIndex !== -1) {
       const updatedMessages = [...currentMessages];
       updatedMessages[messageIndex] = message;
-      this._messages.set(updatedMessages);
+      this._messages.set(this.sortMessagesChronologically(updatedMessages));
 
       // Emit event
       this.messageUpdated$.next(message);
@@ -826,7 +863,7 @@ export class ChatService {
     console.log('🗑️ Processing realtime message deletion:', messageId);
 
     const currentMessages = this._messages();
-    const messageIndex = currentMessages.findIndex(m => m.id === messageId);
+    const messageIndex = currentMessages.findIndex((m) => m.id === messageId);
 
     if (messageIndex !== -1) {
       const updatedMessages = [...currentMessages];
@@ -835,9 +872,9 @@ export class ChatService {
         isDeleted: true,
         message: 'This message was deleted',
         attachments: null,
-        metadata: null
+        metadata: null,
       };
-      this._messages.set(updatedMessages);
+      this._messages.set(this.sortMessagesChronologically(updatedMessages));
 
       // Emit event
       this.messageDeleted$.next(messageId);
@@ -846,11 +883,14 @@ export class ChatService {
     }
   }
 
-  private handleRealtimeReactionAdded(messageId: number, reaction: MessageReaction): void {
+  private handleRealtimeReactionAdded(
+    messageId: number,
+    reaction: MessageReaction
+  ): void {
     console.log('❤️ Processing realtime reaction added:', messageId, reaction);
 
     const currentMessages = this._messages();
-    const messageIndex = currentMessages.findIndex(m => m.id === messageId);
+    const messageIndex = currentMessages.findIndex((m) => m.id === messageId);
 
     if (messageIndex !== -1) {
       const updatedMessages = [...currentMessages];
@@ -862,22 +902,31 @@ export class ChatService {
 
       // Check if reaction already exists
       const reactionExists = message.reactions.some(
-        r => r.userId === reaction.userId && r.emoji === reaction.emoji
+        (r) => r.userId === reaction.userId && r.emoji === reaction.emoji
       );
 
       if (!reactionExists) {
         message.reactions = [...message.reactions, reaction];
         updatedMessages[messageIndex] = message;
-        this._messages.set(updatedMessages);
+        this._messages.set(this.sortMessagesChronologically(updatedMessages));
       }
     }
   }
 
-  private handleRealtimeReactionRemoved(messageId: number, emoji: string, userId: number): void {
-    console.log('💔 Processing realtime reaction removed:', messageId, emoji, userId);
+  private handleRealtimeReactionRemoved(
+    messageId: number,
+    emoji: string,
+    userId: number
+  ): void {
+    console.log(
+      '💔 Processing realtime reaction removed:',
+      messageId,
+      emoji,
+      userId
+    );
 
     const currentMessages = this._messages();
-    const messageIndex = currentMessages.findIndex(m => m.id === messageId);
+    const messageIndex = currentMessages.findIndex((m) => m.id === messageId);
 
     if (messageIndex !== -1) {
       const updatedMessages = [...currentMessages];
@@ -885,15 +934,19 @@ export class ChatService {
 
       if (message.reactions) {
         message.reactions = message.reactions.filter(
-          r => !(r.userId === userId && r.emoji === emoji)
+          (r) => !(r.userId === userId && r.emoji === emoji)
         );
         updatedMessages[messageIndex] = message;
-        this._messages.set(updatedMessages);
+        this._messages.set(this.sortMessagesChronologically(updatedMessages));
       }
     }
   }
 
-  private handleTypingEvent(roomId: number, user: any, isTyping: boolean): void {
+  private handleTypingEvent(
+    roomId: number,
+    user: any,
+    isTyping: boolean
+  ): void {
     const currentRoom = this._currentChatRoom();
     if (!currentRoom || currentRoom.id !== roomId) {
       return;
@@ -909,7 +962,7 @@ export class ChatService {
 
     if (isTyping) {
       // Add user to typing list if not already there
-      const userExists = currentTypingUsers.some(tu => tu.userId === user.id);
+      const userExists = currentTypingUsers.some((tu) => tu.userId === user.id);
       if (!userExists) {
         const typingUser: TypingUser = {
           userId: user.id,
@@ -932,7 +985,9 @@ export class ChatService {
 
   private removeTypingUser(userId: number): void {
     const currentTypingUsers = this._typingUsers();
-    const filteredUsers = currentTypingUsers.filter(tu => tu.userId !== userId);
+    const filteredUsers = currentTypingUsers.filter(
+      (tu) => tu.userId !== userId
+    );
     this._typingUsers.set(filteredUsers);
 
     // Clear timeout if exists
@@ -945,7 +1000,7 @@ export class ChatService {
 
   private updateRoomLastMessage(roomId: number, message: ChatMessage): void {
     const currentRooms = this._chatRooms();
-    const roomIndex = currentRooms.findIndex(r => r.id === roomId);
+    const roomIndex = currentRooms.findIndex((r) => r.id === roomId);
 
     if (roomIndex !== -1) {
       const updatedRooms = [...currentRooms];
@@ -987,7 +1042,7 @@ export class ChatService {
     this._typingUsers.set([]);
 
     // Clear typing timeouts
-    this.typingTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+    this.typingTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
     this.typingTimeouts.clear();
   }
 
@@ -1003,7 +1058,7 @@ export class ChatService {
 
     // Clear typing state
     this._typingUsers.set([]);
-    this.typingTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+    this.typingTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
     this.typingTimeouts.clear();
 
     // Disconnect WebSocket
@@ -1034,5 +1089,15 @@ export class ChatService {
 
   getRoomUpdatedStream(): Observable<ChatRoom> {
     return this.roomUpdated$.asObservable();
+  }
+
+  // Ensure messages remain in chronological order by createdAt (fallback to id)
+  private sortMessagesChronologically(messages: ChatMessage[]): ChatMessage[] {
+    return [...messages].sort((a, b) => {
+      const at = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bt = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      if (at !== bt) return at - bt;
+      return (a.id || 0) - (b.id || 0);
+    });
   }
 }
