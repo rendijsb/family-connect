@@ -19,36 +19,36 @@ export const routes: Routes = [
     path: 'register',
     loadComponent: () => import('./pages/register/register.page').then(m => m.RegisterPage)
   },
-  // {
-  //   path: 'forgot-password',
-  //   loadComponent: () => import('./pages/forgot-password/forgot-password.page').then(m => m.ForgotPasswordPage)
-  // },
-  {
-    path: 'dashboard',
-    canActivate: [authGuard],
-    loadComponent: () => import('./pages/dashboard/dashboard.page').then(m => m.DashboardPage)
-  },
-
   {
     path: 'tabs',
     canActivate: [authGuard],
     loadChildren: () => import('./tabs/tabs.routes').then(m => m.routes)
   },
-
+  {
+    path: 'family',
+    canActivate: [authGuard],
+    loadChildren: () => import('./pages/family/family.routes').then(m => m.familyRoutes)
+  },
   // {
-  //   path: 'admin',
-  //   canActivate: [authGuard, roleGuard([RoleEnum.ADMIN, RoleEnum.MODERATOR])],
-  //   loadChildren: () => import('./admin/admin.routes').then(m => m.routes)
+  //   path: 'profile/:userId',
+  //   canActivate: [authGuard],
+  //   loadComponent: () => import('./pages/profile/profile.page').then(m => m.ProfilePage)
   // },
-
   // {
-  //   path: 'unauthorized',
-  //   loadComponent: () => import('./pages/unauthorized/unauthorized.page').then(m => m.UnauthorizedPage)
+  //   path: 'chat',
+  //   canActivate: [authGuard],
+  //   loadChildren: () => import('./pages/chat/chat.routes').then(m => m.chatRoutes)
   // },
   // {
   //   path: 'not-found',
   //   loadComponent: () => import('./pages/not-found/not-found.page').then(m => m.NotFoundPage)
   // },
-
-  { path: '**', redirectTo: '/not-found' }
+  // {
+  //   path: 'unauthorized',
+  //   loadComponent: () => import('./pages/unauthorized/unauthorized.page').then(m => m.UnauthorizedPage)
+  // },
+  {
+    path: '**',
+    redirectTo: '/not-found'
+  }
 ];

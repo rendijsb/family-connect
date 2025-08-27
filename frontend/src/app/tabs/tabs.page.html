@@ -13,6 +13,9 @@
     <ion-tab-button tab="chat" class="custom-tab-button">
       <ion-icon name="chatbubble-outline"></ion-icon>
       <ion-label>Chat</ion-label>
+      <div class="notification-badge" *ngIf="unreadMessages > 0">
+        {{ unreadMessages > 99 ? '99+' : unreadMessages }}
+      </div>
     </ion-tab-button>
 
     <ion-tab-button tab="photos" class="custom-tab-button">

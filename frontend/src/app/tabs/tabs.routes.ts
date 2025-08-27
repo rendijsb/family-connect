@@ -10,10 +10,10 @@ export const routes: Routes = [
         path: 'home',
         loadComponent: () => import('./home/home.page').then(m => m.HomePage)
       },
-      // {
-      //   path: 'family',
-      //   loadComponent: () => import('./family/family.page').then(m => m.FamilyPage)
-      // },
+      {
+        path: 'family',
+        loadComponent: () => import('./family/family.page').then(m => m.FamilyPage)
+      },
       // {
       //   path: 'chat',
       //   loadComponent: () => import('./chat/chat.page').then(m => m.ChatPage)

@@ -1,27 +1,36 @@
-import { Component, inject, signal, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import {Component, inject, signal, OnInit, OnDestroy, ViewChild, ElementRef} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {
+  FormsModule,
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+  AbstractControl,
+  ValidationErrors
+} from '@angular/forms';
 import {
   IonContent, IonButton, IonInput, IonItem, IonLabel, IonCheckbox,
   IonCard, IonCardContent, IonIcon, IonText, IonGrid, IonRow, IonCol,
-  IonHeader, IonToolbar, IonTitle, IonBackButton, IonButtons, IonSelect, IonSelectOption,
-  IonAlert, IonLoading, IonToast, Platform
+  Platform
 } from '@ionic/angular/standalone';
-import { Router, RouterLink } from '@angular/router';
-import { addIcons } from 'ionicons';
+import {Router, RouterLink} from '@angular/router';
+import {addIcons} from 'ionicons';
 import {
   mailOutline, lockClosedOutline, eyeOutline, eyeOffOutline,
   personOutline, phonePortraitOutline, checkmarkOutline,
   logoApple, logoGoogle, logoFacebook, arrowBackOutline,
   alertCircleOutline, reloadOutline
 } from 'ionicons/icons';
-import { AuthService } from '../../core/services/auth/auth.service';
-import { catchError, EMPTY, finalize, tap } from 'rxjs';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { Capacitor } from '@capacitor/core';
-import { Keyboard } from '@capacitor/keyboard';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import {AuthService} from '../../core/services/auth/auth.service';
+import {catchError, EMPTY, finalize, tap} from 'rxjs';
+import {Subject} from 'rxjs';
+import {takeUntil} from 'rxjs/operators';
+import {Capacitor} from '@capacitor/core';
+import {Keyboard} from '@capacitor/keyboard';
+import {Haptics, ImpactStyle} from '@capacitor/haptics';
+import {ValidationErrorDirective} from '../../shared/directives/validation-error.directive';
+import {ToastService} from '../../shared/services/toast.service';
 
 @Component({
   selector: 'app-register',
@@ -32,32 +41,31 @@ import { Haptics, ImpactStyle } from '@capacitor/haptics';
     CommonModule, FormsModule, ReactiveFormsModule, RouterLink,
     IonContent, IonButton, IonInput, IonItem, IonLabel, IonCheckbox,
     IonCard, IonCardContent, IonIcon, IonText, IonGrid, IonRow, IonCol,
-    IonHeader, IonToolbar, IonTitle, IonBackButton, IonButtons, IonSelect, IonSelectOption,
-    IonAlert, IonLoading, IonToast
+    ValidationErrorDirective
   ]
 })
 export class RegisterPage implements OnInit, OnDestroy {
-  @ViewChild('registerCard', { read: ElementRef }) registerCard!: ElementRef;
+  @ViewChild('registerCard', {read: ElementRef}) registerCard!: ElementRef;
 
   private readonly formBuilder = inject(FormBuilder);
   private readonly authService = inject(AuthService);
+  private readonly toastService = inject(ToastService);
   private readonly router = inject(Router);
   private readonly platform = inject(Platform);
   private readonly destroy$ = new Subject<void>();
 
   registerForm!: FormGroup;
 
-  // Signals for reactive state management
-  showPassword = signal<boolean>(false);
-  showConfirmPassword = signal<boolean>(false);
-  isLoading = signal<boolean>(false);
-  currentStep = signal<number>(1);
-  totalSteps = signal<number>(2);
-  keyboardHeight = signal<number>(0);
+  readonly showPassword = signal<boolean>(false);
+  readonly showConfirmPassword = signal<boolean>(false);
+  readonly isLoading = signal<boolean>(false);
+  readonly currentStep = signal<number>(1);
+  readonly totalSteps = signal<number>(2);
+  readonly keyboardHeight = signal<number>(0);
+  readonly isSubmitted = signal<boolean>(false);
 
-  // Form validation state
-  step1Valid = signal<boolean>(false);
-  step2Valid = signal<boolean>(false);
+  readonly step1Valid = signal<boolean>(false);
+  readonly step2Valid = signal<boolean>(false);
 
   constructor() {
     this.addIcons();
@@ -124,10 +132,6 @@ export class RegisterPage implements OnInit, OnDestroy {
   }
 
   private setupFormValidation() {
-    // Watch for changes in step 1 fields
-    const step1Fields = ['firstName', 'lastName', 'email', 'phone'];
-    const step2Fields = ['password', 'confirmPassword', 'agreeToTerms'];
-
     this.registerForm.valueChanges.pipe(
       takeUntil(this.destroy$)
     ).subscribe(() => {
@@ -135,19 +139,12 @@ export class RegisterPage implements OnInit, OnDestroy {
       this.validateStep2();
     });
 
-    // Initial validation
     this.validateStep1();
     this.validateStep2();
   }
 
   private validateStep1() {
     const step1Fields = ['firstName', 'lastName', 'email'];
-    const isValid = step1Fields.every(field => {
-      const control = this.registerForm.get(field);
-      return control?.valid || (control?.value === '' && !control?.hasError('required'));
-    });
-
-    // Email is required, others can be empty but must be valid if filled
     const emailValid = this.registerForm.get('email')?.valid;
     const firstNameValid = this.registerForm.get('firstName')?.valid;
     const lastNameValid = this.registerForm.get('lastName')?.valid;
@@ -197,13 +194,12 @@ export class RegisterPage implements OnInit, OnDestroy {
     }
   }
 
-  // Custom Validators
   private nameValidator(control: AbstractControl): ValidationErrors | null {
     if (!control.value) return null;
 
     const namePattern = /^[a-zA-Z\s'-]+$/;
     if (!namePattern.test(control.value)) {
-      return { invalidName: true };
+      return {invalidName: true};
     }
     return null;
   }
@@ -213,7 +209,7 @@ export class RegisterPage implements OnInit, OnDestroy {
 
     const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailPattern.test(control.value)) {
-      return { invalidEmail: true };
+      return {invalidEmail: true};
     }
     return null;
   }
@@ -223,7 +219,7 @@ export class RegisterPage implements OnInit, OnDestroy {
 
     const phonePattern = /^[\+]?[\d\s\-\(\)]{10,}$/;
     if (!phonePattern.test(control.value)) {
-      return { invalidPhone: true };
+      return {invalidPhone: true};
     }
     return null;
   }
@@ -256,12 +252,11 @@ export class RegisterPage implements OnInit, OnDestroy {
     const confirmPassword = form.get('confirmPassword');
 
     if (password && confirmPassword && password.value !== confirmPassword.value) {
-      return { passwordMismatch: true };
+      return {passwordMismatch: true};
     }
     return null;
   }
 
-  // UI Event Handlers
   togglePasswordVisibility() {
     this.showPassword.set(!this.showPassword());
     this.triggerHapticFeedback();
@@ -275,23 +270,23 @@ export class RegisterPage implements OnInit, OnDestroy {
   private async triggerHapticFeedback() {
     if (Capacitor.isNativePlatform()) {
       try {
-        await Haptics.impact({ style: ImpactStyle.Light });
+        await Haptics.impact({style: ImpactStyle.Light});
       } catch (error) {
         console.log('Haptics not available:', error);
       }
     }
   }
 
-  // Step Navigation
-  nextStep() {
+  async nextStep() {
     if (this.currentStep() < this.totalSteps()) {
       if (this.currentStep() === 1 && !this.step1Valid()) {
         this.markStep1FieldsAsTouched();
-        this.showValidationErrors('Please fill in all required fields correctly.');
+        await this.toastService.showToast('Please fill in all required fields correctly.', 'danger');
         return;
       }
 
       this.currentStep.set(this.currentStep() + 1);
+      this.isSubmitted.set(false);
       this.triggerHapticFeedback();
       this.scrollToTop();
     }
@@ -300,6 +295,7 @@ export class RegisterPage implements OnInit, OnDestroy {
   previousStep() {
     if (this.currentStep() > 1) {
       this.currentStep.set(this.currentStep() - 1);
+      this.isSubmitted.set(false);
       this.triggerHapticFeedback();
       this.scrollToTop();
     }
@@ -319,9 +315,9 @@ export class RegisterPage implements OnInit, OnDestroy {
     step1Fields.forEach(field => {
       this.registerForm.get(field)?.markAsTouched();
     });
+    this.isSubmitted.set(true);
   }
 
-  // Password Strength Calculation
   getPasswordStrength(): { strength: string, color: string, width: string } {
     const password = this.registerForm.get('password')?.value || '';
     let score = 0;
@@ -334,173 +330,82 @@ export class RegisterPage implements OnInit, OnDestroy {
 
     switch (score) {
       case 0:
-      case 1: return { strength: 'Weak', color: '#ef4444', width: '20%' };
-      case 2: return { strength: 'Fair', color: '#f97316', width: '40%' };
-      case 3: return { strength: 'Good', color: '#eab308', width: '60%' };
-      case 4: return { strength: 'Strong', color: '#22c55e', width: '80%' };
-      case 5: return { strength: 'Very Strong', color: '#16a34a', width: '100%' };
-      default: return { strength: 'Weak', color: '#ef4444', width: '20%' };
+      case 1:
+        return {strength: 'Weak', color: '#ef4444', width: '20%'};
+      case 2:
+        return {strength: 'Fair', color: '#f97316', width: '40%'};
+      case 3:
+        return {strength: 'Good', color: '#eab308', width: '60%'};
+      case 4:
+        return {strength: 'Strong', color: '#22c55e', width: '80%'};
+      case 5:
+        return {strength: 'Very Strong', color: '#16a34a', width: '100%'};
+      default:
+        return {strength: 'Weak', color: '#ef4444', width: '20%'};
     }
   }
 
-  // Registration Process
   async onRegister() {
+    this.isSubmitted.set(true);
+
     if (!this.registerForm.valid) {
       this.markAllFieldsAsTouched();
-      this.showValidationErrors('Please fix the errors in the form.');
+      await this.toastService.showToast('Please fix the errors in the form.', 'danger');
       return;
     }
 
     if (!this.step2Valid()) {
-      this.showValidationErrors('Please complete all required fields in step 2.');
+      await this.toastService.showToast('Please complete all required fields.', 'danger');
       return;
     }
 
     this.isLoading.set(true);
 
-    try {
-      const formValue = this.registerForm.value;
-      const payload = {
-        ...formValue,
-        password_confirmation: formValue.confirmPassword
-      };
+    const formValue = this.registerForm.value;
+    const payload = {
+      ...formValue,
+      password_confirmation: formValue.confirmPassword
+    };
 
-      this.authService.register(payload)
-        .pipe(
-          tap(() => {
-            this.triggerHapticFeedback();
-            this.redirectUser();
-          }),
-          catchError(error => {
-            console.error('Registration error:', error);
-            this.showValidationErrors('Registration failed. Please try again.');
-            return EMPTY;
-          }),
-          finalize(() => {
-            this.isLoading.set(false);
-          }),
-          takeUntil(this.destroy$)
-        )
-        .subscribe();
+    this.authService.register(payload)
+      .pipe(
+        tap(async () => {
+          await this.triggerHapticFeedback();
+          await this.toastService.showToast('Account created successfully! Welcome to Family Connect.', 'success');
+          this.redirectUser();
+        }),
+        catchError(async (error) => {
+          if (error.status === 422) {
+            await this.toastService.showToast('Please check your input and try again.', 'danger');
+          } else {
+            await this.toastService.showToast('Registration failed. Please try again.', 'danger');
+          }
 
-    } catch (error) {
-      this.isLoading.set(false);
-      this.showValidationErrors('An unexpected error occurred. Please try again.');
-    }
+          return EMPTY;
+        }),
+        finalize(() => {
+          this.isLoading.set(false);
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe();
   }
 
-  // Social Registration
-  onSocialRegister(provider: string) {
+  async onSocialRegister(provider: string) {
     console.log('Social registration with:', provider);
-    this.triggerHapticFeedback();
+    await this.triggerHapticFeedback();
     // TODO: Implement social registration
-    this.showValidationErrors(`${provider} registration will be available soon!`);
+    await this.toastService.showToast(`${provider} registration will be available soon!`, 'warning');
   }
 
-  // Utility Methods
   private markAllFieldsAsTouched() {
     Object.keys(this.registerForm.controls).forEach(key => {
       this.registerForm.get(key)?.markAsTouched();
     });
-  }
-
-  private async showValidationErrors(message: string) {
-    const toast = document.createElement('ion-toast');
-    toast.message = message;
-    toast.duration = 3000;
-    toast.color = 'danger';
-    toast.position = 'top';
-    toast.buttons = [
-      {
-        text: 'Dismiss',
-        role: 'cancel'
-      }
-    ];
-
-    document.body.appendChild(toast);
-    await toast.present();
+    this.isSubmitted.set(true);
   }
 
   private redirectUser() {
-    const user = this.authService.user();
-    if (user) {
-      switch (user.role?.name) {
-        case 'admin':
-        case 'moderator':
-          this.router.navigate(['/dashboard']);
-          break;
-        default:
-          this.router.navigate(['/tabs/home']);
-          break;
-      }
-    } else {
-      this.router.navigate(['/tabs/home']);
-    }
-  }
-
-  // Getters for template
-  get currentStepValue() {
-    return this.currentStep();
-  }
-
-  get totalStepsValue() {
-    return this.totalSteps();
-  }
-
-  get canProceedToNextStep() {
-    return this.currentStep() === 1 ? this.step1Valid() : this.step2Valid();
-  }
-
-  get isLastStep() {
-    return this.currentStep() === this.totalSteps();
-  }
-
-  get showPreviousButton() {
-    return this.currentStep() > 1;
-  }
-
-  get showNextButton() {
-    return this.currentStep() < this.totalSteps();
-  }
-
-  get showRegisterButton() {
-    return this.currentStep() === this.totalSteps();
-  }
-
-  // Error handling for template
-  getFieldError(fieldName: string): string | null {
-    const field = this.registerForm.get(fieldName);
-    if (!field || !field.touched || !field.errors) {
-      return null;
-    }
-
-    const errors = field.errors;
-
-    if (errors['required']) return `${this.getFieldDisplayName(fieldName)} is required`;
-    if (errors['email']) return 'Please enter a valid email address';
-    if (errors['minlength']) return `${this.getFieldDisplayName(fieldName)} is too short`;
-    if (errors['maxlength']) return `${this.getFieldDisplayName(fieldName)} is too long`;
-    if (errors['invalidName']) return 'Please enter a valid name';
-    if (errors['invalidEmail']) return 'Please enter a valid email address';
-    if (errors['invalidPhone']) return 'Please enter a valid phone number';
-    if (errors['weakPassword']) return 'Password must contain uppercase, lowercase, number and special character';
-
-    return 'Invalid value';
-  }
-
-  private getFieldDisplayName(fieldName: string): string {
-    const displayNames: { [key: string]: string } = {
-      firstName: 'First name',
-      lastName: 'Last name',
-      email: 'Email',
-      phone: 'Phone',
-      password: 'Password',
-      confirmPassword: 'Confirm password'
-    };
-    return displayNames[fieldName] || fieldName;
-  }
-
-  hasFieldError(fieldName: string): boolean {
-    return !!this.getFieldError(fieldName);
+    this.router.navigate(['/tabs/home']);
   }
 }

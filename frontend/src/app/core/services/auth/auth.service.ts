@@ -1,11 +1,11 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from "@angular/common/http";
-import { RoleEnum, User } from "../../../models/users/user.models";
-import { Router } from "@angular/router";
-import { catchError, from, Observable, switchMap, tap, throwError } from "rxjs";
-import { ApiUrlService } from "../api.service";
-import { StorageService } from "../storage.service";
-import { ToastController, LoadingController, AlertController } from '@ionic/angular';
+import {computed, inject, Injectable, signal} from '@angular/core';
+import {HttpClient} from "@angular/common/http";
+import {RoleEnum, User} from "../../../models/users/user.models";
+import {Router} from "@angular/router";
+import {catchError, EMPTY, Observable, switchMap, tap, throwError} from "rxjs";
+import {ApiUrlService} from "../api.service";
+import {StorageService} from "../storage.service";
+import {ToastController, LoadingController, AlertController} from '@ionic/angular';
 
 interface AuthResponse {
   success: boolean;
@@ -56,17 +56,14 @@ export class AuthService {
   private readonly loadingController = inject(LoadingController);
   private readonly alertController = inject(AlertController);
 
-  // ✅ FIXED: Ensure proper signal initialization
   private readonly _currentUser = signal<User | null>(null);
   private readonly _token = signal<string | null>(null);
   private readonly _isInitialized = signal<boolean>(false);
 
-  // ✅ FIXED: Public readonly access to signals
   readonly currentUser = this._currentUser.asReadonly();
   readonly authToken = this._token.asReadonly();
   readonly isInitialized = this._isInitialized.asReadonly();
 
-  // ✅ FIXED: Computed properties
   readonly isAdmin = computed(() => this._currentUser()?.role?.id === 1);
   readonly isModerator = computed(() => this._currentUser()?.role?.id === 2);
   readonly isFamilyOwner = computed(() => this._currentUser()?.role?.id === 3);
@@ -103,7 +100,7 @@ export class AuthService {
   }
 
   private verifyTokenValidity(): Observable<User> {
-    return this.http.get<{success: boolean, data: User}>(
+    return this.http.get<{ success: boolean, data: User }>(
       this.apiUrlService.getUrl('auth/me')
     ).pipe(
       tap(response => {
@@ -136,7 +133,6 @@ export class AuthService {
     try {
       return this._currentUser();
     } catch (error) {
-      console.error('Error getting current user:', error);
       return null;
     }
   }
@@ -180,9 +176,7 @@ export class AuthService {
     ).pipe(
       tap(async (response) => {
         await this.handleAuthSuccess(response.data.user, response.data.token);
-        await this.showToast(response.message || 'Registration successful!', 'success');
       }),
-      catchError(error => this.handleAuthError(error))
     );
   }
 
@@ -197,9 +191,7 @@ export class AuthService {
     ).pipe(
       tap(async (response) => {
         await this.handleAuthSuccess(response.data.user, response.data.token);
-        await this.showToast(response.message || 'Login successful!', 'success');
       }),
-      catchError(error => this.handleAuthError(error))
     );
   }
 
@@ -210,28 +202,22 @@ export class AuthService {
         this._currentUser.set(null);
         this._token.set(null);
         await this.router.navigate(['/login']);
-        await this.showToast('Logged out successfully', 'success');
       }),
       catchError(async (error) => {
         await this.clearAuthData();
         this._currentUser.set(null);
         this._token.set(null);
         await this.router.navigate(['/login']);
-        return throwError(() => error);
+        return EMPTY;
       })
     );
   }
 
-  forgotPassword(email: string): Observable<{success: boolean, message: string}> {
-    return this.http.post<{success: boolean, message: string}>(
+  forgotPassword(email: string): Observable<{ success: boolean, message: string }> {
+    return this.http.post<{ success: boolean, message: string }>(
       this.apiUrlService.getUrl('auth/forgot-password'),
-      { email }
-    ).pipe(
-      tap(response => {
-        this.showToast(response.message, 'success');
-      }),
-      catchError(error => this.handleAuthError(error))
-    );
+      {email}
+    ).pipe();
   }
 
   resetPassword(resetData: {
@@ -239,20 +225,15 @@ export class AuthService {
     email: string;
     password: string;
     password_confirmation: string;
-  }): Observable<{success: boolean, message: string}> {
-    return this.http.post<{success: boolean, message: string}>(
+  }): Observable<{ success: boolean, message: string }> {
+    return this.http.post<{ success: boolean, message: string }>(
       this.apiUrlService.getUrl('auth/reset-password'),
       resetData
-    ).pipe(
-      tap(response => {
-        this.showToast(response.message, 'success');
-      }),
-      catchError(error => this.handleAuthError(error))
-    );
+    ).pipe();
   }
 
   refreshUser(): Observable<User> {
-    return this.http.get<{success: boolean, data: User}>(
+    return this.http.get<{ success: boolean, data: User }>(
       this.apiUrlService.getUrl('user')
     ).pipe(
       tap(response => {
@@ -260,7 +241,6 @@ export class AuthService {
         this.saveUserToStorage(response.data);
       }),
       switchMap(response => [response.data]),
-      catchError(error => this.handleAuthError(error))
     );
   }
 
@@ -297,35 +277,6 @@ export class AuthService {
     await this.setUserData(user, token);
     this._currentUser.set(user);
     this._token.set(token);
-    this.redirectBasedOnRole(user.role?.name);
-  }
-
-  private handleAuthError(error: HttpErrorResponse): Observable<never> {
-    let errorMessage = 'An error occurred';
-
-    if (error.error) {
-      const errorResponse = error.error as ErrorResponse;
-
-      if (errorResponse.message) {
-        errorMessage = errorResponse.message;
-      } else if (errorResponse.errors) {
-        const firstError = Object.values(errorResponse.errors)[0];
-        errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
-      } else if (errorResponse.error) {
-        errorMessage = errorResponse.error;
-      }
-    } else if (error.status === 0) {
-      errorMessage = 'Network error. Please check your connection.';
-    } else if (error.status >= 500) {
-      errorMessage = 'Server error. Please try again later.';
-    } else if (error.status === 422) {
-      errorMessage = 'Please check your input and try again.';
-    } else if (error.status === 401) {
-      errorMessage = 'Invalid credentials. Please try again.';
-    }
-
-    this.showToast(errorMessage, 'danger');
-    return throwError(() => error);
   }
 
   private async setUserData(user: User, token: string): Promise<void> {
@@ -340,56 +291,5 @@ export class AuthService {
   private async clearAuthData(): Promise<void> {
     await this.storage.removeItem(this.tokenKey);
     await this.storage.removeItem(this.userKey);
-  }
-
-  private redirectBasedOnRole(roleName?: string): void {
-    switch (roleName) {
-      case 'admin':
-      case 'moderator':
-        this.router.navigate(['/dashboard']);
-        break;
-      case 'family_owner':
-      case 'family_member':
-        this.router.navigate(['/tabs/home']);
-        break;
-      case 'client':
-      default:
-        this.router.navigate(['/tabs/home']);
-        break;
-    }
-  }
-
-  private async showToast(message: string, color: 'success' | 'danger' | 'warning' = 'success'): Promise<void> {
-    const toast = await this.toastController.create({
-      message,
-      duration: 3000,
-      color,
-      position: 'top',
-      buttons: [
-        {
-          text: 'Dismiss',
-          role: 'cancel'
-        }
-      ]
-    });
-    await toast.present();
-  }
-
-  async showLoading(message: string = 'Please wait...'): Promise<HTMLIonLoadingElement> {
-    const loading = await this.loadingController.create({
-      message,
-      spinner: 'crescent'
-    });
-    await loading.present();
-    return loading;
-  }
-
-  async showAlert(header: string, message: string, buttons: string[] = ['OK']): Promise<void> {
-    const alert = await this.alertController.create({
-      header,
-      message,
-      buttons
-    });
-    await alert.present();
   }
 }
