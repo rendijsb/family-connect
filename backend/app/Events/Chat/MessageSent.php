@@ -10,11 +10,11 @@ use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow; // Changed from ShouldBroadcast
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class MessageSent implements ShouldBroadcast
+class MessageSent implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -45,5 +45,11 @@ class MessageSent implements ShouldBroadcast
         return [
             'message' => new ChatMessageResource($this->message),
         ];
+    }
+
+    // Add this method to ensure the event is not queued
+    public function shouldQueue(): bool
+    {
+        return false;
     }
 }

@@ -50,6 +50,7 @@ services:
     networks:
       - app-network
 
+  # Updated WebSocket service
   websocket:
     build:
       context: ./backend
@@ -70,6 +71,28 @@ services:
     command: >
       sh -c "sleep 10 && php artisan reverb:start --host=0.0.0.0 --port=8080"
     restart: unless-stopped
+
+  # NEW: Queue Worker Service for Real-time Broadcasting
+  queue-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend:/var/www/html
+    env_file:
+      - ./backend/.env
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - app-network
+    command: >
+      sh -c "sleep 15 && php artisan queue:work redis --verbose --tries=3 --timeout=60"
+    restart: unless-stopped
+    deploy:
+      replicas: 2  # Run 2 queue workers for better performance
 
   frontend:
     build: ./frontend

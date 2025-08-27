@@ -11,10 +11,11 @@ use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class ReactionAdded implements ShouldBroadcast
+class ReactionAdded implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -45,5 +46,10 @@ class ReactionAdded implements ShouldBroadcast
             'reaction' => new MessageReactionResource($this->reaction),
             'messageId' => $this->reaction->message_id,
         ];
+    }
+
+    public function shouldQueue(): bool
+    {
+        return false;
     }
 }

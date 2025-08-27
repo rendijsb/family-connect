@@ -2,9 +2,8 @@ FROM php:8.2-fpm
 
 WORKDIR /var/www/html
 
-RUN echo "memory_limit = 512M" > /usr/local/etc/php/conf.d/memory-limit.ini
-
-RUN apt-get update && apt-get install -y \
+# Install system dependencies and PHP extensions in single RUN (reduces layers)
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     libpng-dev \
@@ -15,29 +14,36 @@ RUN apt-get update && apt-get install -y \
     supervisor \
     nginx \
     && pecl install redis \
-    && docker-php-ext-enable redis
+    && docker-php-ext-enable redis \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+# Set memory limit
+RUN echo "memory_limit = 512M" > /usr/local/etc/php/conf.d/memory-limit.ini
 
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
-
+# Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-COPY composer.* ./
+# Copy composer files first (better caching)
+COPY composer.json composer.lock ./
 
+# Set permissions early
 RUN chown -R www-data:www-data /var/www/html
 
+# Copy application code
 COPY . .
 
-RUN composer install --no-scripts --no-autoloader
+# Install dependencies and optimize (reduce final size)
+RUN composer install --no-scripts --no-autoloader --optimize-autoloader \
+    && composer dump-autoload --optimize \
+    && composer clear-cache
 
-RUN composer dump-autoload --optimize
-
+# Final permissions and cleanup
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html \
-    && chmod -R 777 storage bootstrap/cache
-
-RUN php artisan storage:link
+    && chmod -R 777 storage bootstrap/cache \
+    && php artisan storage:link || true
 
 EXPOSE 8000
 
