@@ -46,11 +46,16 @@ services:
     env_file:
       - ./backend/.env
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      websocket:
+        condition: service_started
     networks:
       - app-network
 
-  # Updated WebSocket service
+  # WebSocket service - Fixed
   websocket:
     build:
       context: ./backend
@@ -69,10 +74,20 @@ services:
     networks:
       - app-network
     command: >
-      sh -c "sleep 10 && php artisan reverb:start --host=0.0.0.0 --port=8080"
+      sh -c "sleep 20 && 
+             echo 'Starting Reverb WebSocket Server...' && 
+             php artisan config:clear && 
+             php artisan config:cache && 
+             php artisan reverb:start --host=0.0.0.0 --port=8080 --debug"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
-  # NEW: Queue Worker Service for Real-time Broadcasting
+  # Queue Worker Service - Fixed with websocket dependency
   queue-worker:
     build:
       context: ./backend
@@ -86,13 +101,15 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+      websocket:
+        condition: service_started
     networks:
       - app-network
     command: >
-      sh -c "sleep 15 && php artisan queue:work redis --verbose --tries=3 --timeout=60"
+      sh -c "sleep 20 && php artisan queue:work redis --verbose --tries=3 --timeout=60"
     restart: unless-stopped
     deploy:
-      replicas: 2  # Run 2 queue workers for better performance
+      replicas: 2
 
   frontend:
     build: ./frontend
