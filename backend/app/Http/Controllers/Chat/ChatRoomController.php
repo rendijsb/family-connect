@@ -17,6 +17,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ChatRoomController extends Controller
 {
@@ -24,7 +25,7 @@ class ChatRoomController extends Controller
     {
         $user = $request->user();
         $family = $request->get('_family');
-        
+
         // Get chat rooms where the user is a member
         $chatRooms = ChatRoom::query()
             ->forFamily($family->getId())
@@ -160,8 +161,8 @@ class ChatRoomController extends Controller
             ], 404);
         }
 
-        // Verify user is an admin of the room
-        if (!$room->isAdmin($user)) {
+        // Verify user can manage the room
+        if (!$room->canUserManage($user)) {
             return response()->json([
                 'success' => false,
                 'message' => 'You do not have permission to update this chat room.'
@@ -206,7 +207,7 @@ class ChatRoomController extends Controller
 
         // Only the creator or family owner can delete a room
         $familyMember = $request->get('_family_member');
-        if ($room->created_by !== $user->id && $familyMember->getRole()->value !== '1') { // OWNER role
+        if (!$room->canUserManage($user) && $familyMember->getRole()->value !== '1') { // OWNER role
             return response()->json([
                 'success' => false,
                 'message' => 'You do not have permission to delete this chat room.'
@@ -280,7 +281,7 @@ class ChatRoomController extends Controller
 
         // Broadcast typing indicator via WebSocket
         broadcast(new UserTyping($user, $room->id, $isTyping));
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Typing indicator sent.'
@@ -291,7 +292,7 @@ class ChatRoomController extends Controller
     {
         $user = $request->user();
         $family = $request->get('_family');
-        
+
         $request->validate([
             'otherUserId' => 'required|integer|exists:users,id'
         ]);
@@ -369,6 +370,233 @@ class ChatRoomController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create direct message room.',
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
+            ], 500);
+        }
+    }
+
+    // NEW: Add member to chat room
+    public function addMember(Request $request, string $family_slug, ChatRoom $room): JsonResponse
+    {
+        $user = $request->user();
+        $family = $request->get('_family');
+
+        // Verify the room belongs to the family
+        if ($room->family_id !== $family->getId()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chat room not found.'
+            ], 404);
+        }
+
+        // Verify user can manage the room
+        if (!$room->canUserManage($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to add members to this chat room.'
+            ], 403);
+        }
+
+        $request->validate([
+            'userId' => 'required|integer|exists:users,id',
+            'isAdmin' => 'boolean'
+        ]);
+
+        $userId = $request->integer('userId');
+        $isAdmin = $request->boolean('isAdmin', false);
+
+        // Verify the user is a family member
+        $familyMember = FamilyMember::where('family_id', $family->getId())
+            ->where('user_id', $userId)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$familyMember) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User is not a member of this family.'
+            ], 404);
+        }
+
+        // Check if user is already a member
+        if ($room->isMember($familyMember->relatedUser())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User is already a member of this chat room.'
+            ], 409);
+        }
+
+        try {
+            $room->addMember($familyMember->relatedUser(), $isAdmin);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Member added successfully.'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to add member.',
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
+            ], 500);
+        }
+    }
+
+    // NEW: Remove member from chat room
+    public function removeMember(Request $request, string $family_slug, ChatRoom $room, User $member): JsonResponse
+    {
+        $user = $request->user();
+        $family = $request->get('_family');
+
+        // Verify the room belongs to the family
+        if ($room->family_id !== $family->getId()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chat room not found.'
+            ], 404);
+        }
+
+        // Verify user can manage the room
+        if (!$room->canUserManage($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to remove members from this chat room.'
+            ], 403);
+        }
+
+        // Prevent removing yourself
+        if ($member->id === $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot remove yourself from the chat room. Use leave room instead.'
+            ], 400);
+        }
+
+        // Check if user is a member
+        if (!$room->isMember($member)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User is not a member of this chat room.'
+            ], 404);
+        }
+
+        try {
+            $room->removeMember($member);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Member removed successfully.'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to remove member.',
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
+            ], 500);
+        }
+    }
+
+    // NEW: Toggle member admin status
+    public function toggleMemberAdmin(Request $request, string $family_slug, ChatRoom $room, User $member): JsonResponse
+    {
+        $user = $request->user();
+        $family = $request->get('_family');
+
+        // Verify the room belongs to the family
+        if ($room->family_id !== $family->getId()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chat room not found.'
+            ], 404);
+        }
+
+        // Verify user can manage the room
+        if (!$room->canUserManage($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to manage member roles in this chat room.'
+            ], 403);
+        }
+
+        // Check if user is a member
+        if (!$room->isMember($member)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User is not a member of this chat room.'
+            ], 404);
+        }
+
+        try {
+            $wasAdmin = $room->isAdmin($member);
+            $room->toggleMemberAdmin($member);
+
+            $action = $wasAdmin ? 'removed' : 'granted';
+
+            return response()->json([
+                'success' => true,
+                'message' => "Admin privileges {$action} successfully.",
+                'data' => [
+                    'userId' => $member->id,
+                    'isAdmin' => !$wasAdmin
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to toggle admin status.',
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
+            ], 500);
+        }
+    }
+
+    // NEW: Leave chat room (for current user)
+    public function leaveRoom(Request $request, string $family_slug, ChatRoom $room): JsonResponse
+    {
+        $user = $request->user();
+        $family = $request->get('_family');
+
+        // Verify the room belongs to the family
+        if ($room->family_id !== $family->getId()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chat room not found.'
+            ], 404);
+        }
+
+        // Check if user is a member
+        if (!$room->isMember($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not a member of this chat room.'
+            ], 404);
+        }
+
+        // Prevent room creator from leaving if they're the only admin
+        if ($room->created_by === $user->id) {
+            $adminCount = $room->members()->where('is_admin', true)->count();
+            if ($adminCount <= 1) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'As the room creator and only admin, you cannot leave. Please transfer admin rights to another member first or delete the room.'
+                ], 400);
+            }
+        }
+
+        try {
+            $room->removeMember($user);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'You have successfully left the chat room.'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to leave chat room.',
                 'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
             ], 500);
         }

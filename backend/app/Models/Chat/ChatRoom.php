@@ -27,6 +27,7 @@ class ChatRoom extends Model
         'is_archived',
         'settings',
         'last_message_at',
+        'last_message_id',
     ];
 
     protected $casts = [
@@ -187,8 +188,38 @@ class ChatRoom extends Model
             ->increment('unread_count');
     }
 
+    public function updateLastMessage(ChatMessage $message): void
+    {
+        $this->update([
+            'last_message_at' => $message->created_at,
+            'last_message_id' => $message->id,
+        ]);
+    }
+
     public function updateLastMessageAt(): void
     {
         $this->update(['last_message_at' => now()]);
+    }
+
+    public function toggleMemberAdmin(User $user): bool
+    {
+        $member = $this->members()->where('user_id', $user->id)->first();
+        if (!$member) {
+            return false;
+        }
+
+        $member->update(['is_admin' => !$member->is_admin]);
+        return true;
+    }
+
+    public function canUserManage(User $user): bool
+    {
+        // Room creator can always manage
+        if ($this->created_by === $user->id) {
+            return true;
+        }
+
+        // Room admins can manage
+        return $this->isAdmin($user);
     }
 }

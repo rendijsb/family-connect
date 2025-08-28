@@ -106,8 +106,6 @@ services:
         php artisan route:clear &&
         echo '⚙️ Caching fresh config...' &&
         php artisan config:cache &&
-        echo '🔍 Running broadcast debug...' &&
-        php artisan debug:broadcast &&
         echo '🚀 Starting Reverb WebSocket Server...' &&
         php artisan reverb:start --host=0.0.0.0 --port=8080 --debug
       "
