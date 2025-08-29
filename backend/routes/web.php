@@ -81,14 +81,12 @@ Route::post('/upload', function (Request $request) {
 })->name('simple.upload.post');
 
 // Admin routes (commented out until you create the controller)
-/*
 Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/uploads', [AppUploadController::class, 'index'])->name('admin.uploads');
     Route::post('/upload/android', [AppUploadController::class, 'uploadAndroid'])->name('admin.upload.android');
     Route::post('/upload/ios', [AppUploadController::class, 'uploadIOS'])->name('admin.upload.ios');
     Route::delete('/upload/delete/{platform}', [AppUploadController::class, 'deleteFile'])->name('admin.upload.delete');
 });
-*/
 
 Route::get('/admin/login', function () {
     return view('admin.login');
