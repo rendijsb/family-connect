@@ -164,7 +164,7 @@ export class CreateChatRoomModal implements OnInit {
   ngOnInit() {
     // Pre-select all available members by default (excluding current user)
     const allMemberIds =
-      this.availableMembers().map((member) => member.id) || [];
+      this.availableMembers().map((member) => member.userId) || [];
     this.selectedMembers.set(allMemberIds);
     if (this.chatRoomForm) {
       this.chatRoomForm.patchValue({
@@ -224,9 +224,11 @@ export class CreateChatRoomModal implements OnInit {
       this.selectedMembers.set([]);
       this.chatRoomForm.get('isPrivate')?.setValue(true);
 
-      // For direct messages, disable the name field as it will be auto-generated
-      this.chatRoomForm.get('name')?.disable();
-      this.chatRoomForm.get('name')?.clearValidators();
+      // For direct messages, disable and clear validators for the name field
+      const nameCtrl = this.chatRoomForm.get('name');
+      nameCtrl?.clearValidators();
+      nameCtrl?.setValue('');
+      nameCtrl?.disable();
     } else {
       // For other types, enable name field and require it
       this.chatRoomForm.get('name')?.enable();
@@ -250,7 +252,53 @@ export class CreateChatRoomModal implements OnInit {
   async onCreateRoom() {
     this.isSubmitted.set(true);
 
-    if (!this.chatRoomForm || !this.chatRoomForm.valid) {
+    if (!this.chatRoomForm) {
+      return;
+    }
+
+    // Direct message: call dedicated endpoint and skip name validation
+    if (this.isDirectMessage()) {
+      if (this.selectedMembers().length !== 1) {
+        this.markFormGroupTouched();
+        return;
+      }
+
+      this.isCreating.set(true);
+      try {
+        const familySlug = this.family?.slug;
+        if (!familySlug) throw new Error('Family not found');
+
+        const otherMemberId = this.selectedMembers()[0];
+        this.chatService
+          .findOrCreateDirectMessage(familySlug, otherMemberId)
+          .subscribe({
+            next: async () => {
+              this.toastService.showToast('Direct message ready!', 'success');
+              this.isCreating.set(false);
+              await this.modalController.dismiss({ created: true }, 'confirm');
+            },
+            error: (error) => {
+              console.error('Create direct message error:', error);
+              this.toastService.showToast(
+                'Failed to create direct message. Please try again.',
+                'danger'
+              );
+              this.isCreating.set(false);
+            },
+          });
+      } catch (error) {
+        console.error('Direct message setup error:', error);
+        this.toastService.showToast(
+          'Failed to create direct message. Please try again.',
+          'danger'
+        );
+        this.isCreating.set(false);
+      }
+      return;
+    }
+
+    // Non-direct: validate full form (including name)
+    if (!this.chatRoomForm.valid) {
       this.markFormGroupTouched();
       return;
     }
@@ -265,17 +313,8 @@ export class CreateChatRoomModal implements OnInit {
         memberIds.push(currentUserId);
       }
 
-      // For direct messages, auto-generate name from member names
-      let roomName = this.chatRoomForm.value.name?.trim() || '';
-      if (this.isDirectMessage() && this.selectedMembers().length === 1) {
-        const otherMember = this.availableMembers().find(
-          (member) => member.id === this.selectedMembers()[0]
-        );
-        const currentUserName = this.currentUser()?.name || 'You';
-        const otherMemberName =
-          otherMember?.user?.name || otherMember?.nickname || 'Unknown';
-        roomName = `${currentUserName}, ${otherMemberName}`;
-      }
+      // Group/other types: use entered name
+      const roomName = this.chatRoomForm.value.name?.trim() || '';
 
       const request: CreateChatRoomRequest = {
         name: roomName,
@@ -342,7 +381,7 @@ export class CreateChatRoomModal implements OnInit {
 
   toggleAllMembers() {
     const allMemberIds =
-      this.availableMembers().map((member) => member.id) || [];
+      this.availableMembers().map((member) => member.userId) || [];
     const currentSelected = this.selectedMembers();
 
     if (currentSelected.length === allMemberIds.length) {

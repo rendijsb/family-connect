@@ -4,58 +4,68 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Chat;
 
+use App\Enums\Chat\ChatRoomTypeEnum;
+use App\Enums\Families\FamilyRoleEnum;
 use App\Events\Chat\UserTyping;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Chat\CreateChatRoomRequest;
 use App\Http\Requests\Chat\UpdateChatRoomRequest;
 use App\Http\Resources\Chat\ChatRoomResource;
+use App\Models\Chat\ChatMessage;
 use App\Models\Chat\ChatRoom;
+use App\Models\Chat\ChatRoomMember;
 use App\Models\Families\Family;
 use App\Models\Families\FamilyMember;
 use App\Models\Users\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
+use Throwable;
 
 class ChatRoomController extends Controller
 {
-    public function index(Request $request): AnonymousResourceCollection
+    public function getAll(Request $request): AnonymousResourceCollection
     {
+        /** @var User $user */
         $user = $request->user();
+
+        /** @var Family $family */
         $family = $request->get('_family');
 
-        // Get chat rooms where the user is a member
+        /** @var ChatRoom $chatRooms */
         $chatRooms = ChatRoom::query()
             ->forFamily($family->getId())
             ->active()
-            ->whereHas('members', function ($query) use ($user) {
-                $query->where('user_id', $user->id);
+            ->whereHas(ChatRoom::MEMBERS_RELATION, function (Builder $query) use ($user) {
+                $query->where(ChatRoomMember::USER_ID, $user->getId());
             })
             ->with([
-                'creator:id,name,email',
-                'lastMessage.user:id,name,email',
-                'members' => function ($query) use ($user) {
-                    $query->where('user_id', $user->id);
+                ChatRoom::CREATOR_RELATION . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
+                ChatRoom::LAST_MESSAGE_RELATION . '.' . ChatMessage::USER_RELATION . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
+                ChatRoom::MEMBERS_RELATION => function ($query) use ($user) {
+                    $query->where(ChatRoomMember::USER_ID, $user->getId());
                 }
             ])
-            ->orderByDesc('last_message_at')
-            ->orderByDesc('created_at')
+            ->orderByDesc(ChatRoom::LAST_MESSAGE_AT)
+            ->orderByDesc(ChatRoom::CREATED_AT)
             ->get();
 
         return ChatRoomResource::collection($chatRooms);
     }
 
-    public function store(CreateChatRoomRequest $request): JsonResponse
+    /**
+     * @throws Throwable
+     */
+    public function createChatRoom(CreateChatRoomRequest $request): JsonResponse
     {
         $user = $request->user();
         $family = $request->get('_family');
         $data = $request->getData();
 
-        // Verify all members belong to the family
-        $familyMemberIds = FamilyMember::where('family_id', $family->getId())
-            ->pluck('user_id')
+        $familyMemberIds = FamilyMember::where(FamilyMember::FAMILY_ID, $family->getId())
+            ->pluck(FamilyMember::USER_ID)
             ->toArray();
 
         $invalidMembers = array_diff($data->memberIds, $familyMemberIds);
@@ -68,51 +78,38 @@ class ChatRoomController extends Controller
         }
 
         DB::beginTransaction();
-        try {
-            // Create the chat room
-            $chatRoom = ChatRoom::create([
-                'family_id' => $family->getId(),
-                'name' => $data->name,
-                'type' => $data->type,
-                'description' => $data->description,
-                'created_by' => $user->id,
-                'is_private' => $data->isPrivate,
-            ]);
+        /** @var ChatRoom $chatRoom */
+        $chatRoom = ChatRoom::create([
+            ChatRoom::FAMILY_ID => $family->getId(),
+            ChatRoom::NAME => $data->name,
+            ChatRoom::TYPE => $data->type,
+            ChatRoom::DESCRIPTION => $data->description,
+            ChatRoom::CREATED_BY => $user->getId(),
+            ChatRoom::IS_PRIVATE => $data->isPrivate,
+        ]);
 
-            // Add the creator as an admin
-            $chatRoom->addMember($user, true);
+        $chatRoom->addMember($user, true);
 
-            // Add other members
-            $usersToAdd = User::whereIn('id', $data->memberIds)
-                ->where('id', '!=', $user->id)
-                ->get();
+        $usersToAdd = User::whereIn(User::ID, $data->memberIds)
+            ->where(User::ID, '!=', $user->getId())
+            ->get();
 
-            foreach ($usersToAdd as $memberUser) {
-                $chatRoom->addMember($memberUser, false);
-            }
-
-            DB::commit();
-
-            // Load relations for response
-            $chatRoom->load([
-                'creator:id,name,email',
-                'members.user:id,name,email'
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Chat room created successfully.',
-                'data' => new ChatRoomResource($chatRoom)
-            ], 201);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create chat room.',
-                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
-            ], 500);
+        foreach ($usersToAdd as $memberUser) {
+            $chatRoom->addMember($memberUser);
         }
+
+        DB::commit();
+
+        $chatRoom->load([
+            ChatRoom::CREATOR_RELATION . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
+            ChatRoom::MEMBERS_RELATION . '.' . ChatRoomMember::USER_RELATION . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Chat room created successfully.',
+            'data' => new ChatRoomResource($chatRoom)
+        ], 201);
     }
 
     public function show(Request $request, string $family_slug, ChatRoom $room): JsonResponse
@@ -120,15 +117,13 @@ class ChatRoomController extends Controller
         $user = $request->user();
         $family = $request->get('_family');
 
-        // Verify the room belongs to the family
-        if ($room->family_id !== $family->getId()) {
+        if ($room->getFamilyId() !== $family->getId()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Chat room not found.'
             ], 404);
         }
 
-        // Verify user is a member of the room
         if (!$room->isMember($user)) {
             return response()->json([
                 'success' => false,
@@ -137,9 +132,9 @@ class ChatRoomController extends Controller
         }
 
         $room->load([
-            'creator:id,name,email',
-            'members.user:id,name,email',
-            'lastMessage.user:id,name,email'
+            ChatRoom::CREATOR_RELATION . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
+            ChatRoom::MEMBERS_RELATION . '.' . ChatRoomMember::USER_RELATION . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
+            ChatRoom::LAST_MESSAGE_RELATION . '.' . ChatMessage::USER_RELATION . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
         ]);
 
         return response()->json([
@@ -153,15 +148,13 @@ class ChatRoomController extends Controller
         $user = $request->user();
         $family = $request->get('_family');
 
-        // Verify the room belongs to the family
-        if ($room->family_id !== $family->getId()) {
+        if ($room->getFamilyId() !== $family->getId()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Chat room not found.'
             ], 404);
         }
 
-        // Verify user can manage the room
         if (!$room->canUserManage($user)) {
             return response()->json([
                 'success' => false,
@@ -181,8 +174,8 @@ class ChatRoomController extends Controller
         $room->update($data->toArray());
 
         $room->load([
-            'creator:id,name,email',
-            'members.user:id,name,email'
+            ChatRoom::CREATOR_RELATION . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
+            ChatRoom::MEMBERS_RELATION . '.' . ChatRoomMember::USER_RELATION . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
         ]);
 
         return response()->json([
@@ -197,24 +190,21 @@ class ChatRoomController extends Controller
         $user = $request->user();
         $family = $request->get('_family');
 
-        // Verify the room belongs to the family
-        if ($room->family_id !== $family->getId()) {
+        if ($room->getFamilyId() !== $family->getId()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Chat room not found.'
             ], 404);
         }
 
-        // Only the creator or family owner can delete a room
         $familyMember = $request->get('_family_member');
-        if (!$room->canUserManage($user) && $familyMember->getRole()->value !== '1') { // OWNER role
+        if (!$room->canUserManage($user) && $familyMember->getRole()->value !== FamilyRoleEnum::OWNER->value) { // OWNER role
             return response()->json([
                 'success' => false,
                 'message' => 'You do not have permission to delete this chat room.'
             ], 403);
         }
 
-        // Archive instead of hard delete to preserve message history
         $room->update(['is_archived' => true]);
 
         return response()->json([
@@ -225,18 +215,18 @@ class ChatRoomController extends Controller
 
     public function markAsRead(Request $request, string $family_slug, ChatRoom $room): JsonResponse
     {
+        /** @var User $user */
         $user = $request->user();
+        /** @var Family $family */
         $family = $request->get('_family');
 
-        // Verify the room belongs to the family
-        if ($room->family_id !== $family->getId()) {
+        if ($room->getFamilyId() !== $family->getId()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Chat room not found.'
             ], 404);
         }
 
-        // Verify user is a member of the room
         if (!$room->isMember($user)) {
             return response()->json([
                 'success' => false,
@@ -254,18 +244,18 @@ class ChatRoomController extends Controller
 
     public function typing(Request $request, string $family_slug, ChatRoom $room): JsonResponse
     {
+        /** @var User $user */
         $user = $request->user();
+        /** @var Family $family */
         $family = $request->get('_family');
 
-        // Verify the room belongs to the family
-        if ($room->family_id !== $family->getId()) {
+        if ($room->getFamilyId() !== $family->getId()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Chat room not found.'
             ], 404);
         }
 
-        // Verify user is a member of the room
         if (!$room->isMember($user)) {
             return response()->json([
                 'success' => false,
@@ -279,8 +269,7 @@ class ChatRoomController extends Controller
 
         $isTyping = $request->boolean('isTyping', true);
 
-        // Broadcast typing indicator via WebSocket
-        broadcast(new UserTyping($user, $room->id, $isTyping));
+        broadcast(new UserTyping($user, $room->getId(), $isTyping));
 
         return response()->json([
             'success' => true,
@@ -288,6 +277,9 @@ class ChatRoomController extends Controller
         ]);
     }
 
+    /**
+     * @throws Throwable
+     */
     public function findOrCreateDirectMessage(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -299,10 +291,9 @@ class ChatRoomController extends Controller
 
         $otherUserId = $request->integer('otherUserId');
 
-        // Check if the other user is a member of this family
-        $otherMember = FamilyMember::where('family_id', $family->getId())
-            ->where('user_id', $otherUserId)
-            ->where('is_active', true)
+        $otherMember = FamilyMember::where(FamilyMember::FAMILY_ID, $family->getId())
+            ->where(FamilyMember::USER_ID, $otherUserId)
+            ->where(FamilyMember::IS_ACTIVE, true)
             ->first();
 
         if (!$otherMember) {
@@ -312,15 +303,13 @@ class ChatRoomController extends Controller
             ], 404);
         }
 
-        // Prevent direct message with yourself
-        if ($user->id === $otherUserId) {
+        if ($user->getId() === $otherUserId) {
             return response()->json([
                 'success' => false,
                 'message' => 'Cannot create direct message with yourself.',
             ], 400);
         }
 
-        // Check if a direct message room already exists
         $existingRoom = ChatRoom::findDirectMessageRoom($family->getId(), $user->id, $otherUserId);
 
         if ($existingRoom) {
@@ -328,68 +317,56 @@ class ChatRoomController extends Controller
                 'success' => true,
                 'message' => 'Direct message room found.',
                 'data' => new ChatRoomResource($existingRoom->load([
-                    'creator:id,name,email',
-                    'members.user:id,name,email'
+                    ChatRoom::CREATOR_RELATION . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
+                    ChatRoom::MEMBERS_RELATION . '.' . ChatRoomMember::USER_RELATION . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
                 ])),
             ]);
         }
 
-        // Create new direct message room
+        /** @var User $otherUser */
         $otherUser = $otherMember->relatedUser();
-        $roomName = "{$user->name}, {$otherUser->name}";
+
+        $roomName = "{$user->getName()}, {$otherUser->getName()}";
 
         DB::beginTransaction();
-        try {
-            $chatRoom = ChatRoom::create([
-                'family_id' => $family->getId(),
-                'name' => $roomName,
-                'type' => \App\Enums\Chat\ChatRoomTypeEnum::DIRECT,
-                'created_by' => $user->id,
-                'is_private' => true,
-            ]);
+        /** @var ChatRoom $chatRoom */
+        $chatRoom = ChatRoom::create([
+            ChatRoom::FAMILY_ID => $family->getId(),
+            ChatRoom::NAME => $roomName,
+            ChatRoom::TYPE => ChatRoomTypeEnum::DIRECT,
+            ChatRoom::CREATED_BY => $user->getId(),
+            ChatRoom::IS_PRIVATE => true,
+        ]);
 
-            // Add both users as members using the addMember method
-            $chatRoom->addMember($user, false);
-            $chatRoom->addMember($otherUser, false);
+        $chatRoom->addMember($user, false);
+        $chatRoom->addMember($otherUser, false);
 
-            DB::commit();
+        DB::commit();
 
-            $chatRoom->load([
-                'creator:id,name,email',
-                'members.user:id,name,email'
-            ]);
+        $chatRoom->load([
+            ChatRoom::CREATOR_RELATION . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
+            ChatRoom::MEMBERS_RELATION . '.' . ChatRoomMember::USER_RELATION . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
+        ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Direct message room created successfully.',
-                'data' => new ChatRoomResource($chatRoom),
-            ], 201);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create direct message room.',
-                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Direct message room created successfully.',
+            'data' => new ChatRoomResource($chatRoom),
+        ], 201);
     }
 
-    // NEW: Add member to chat room
     public function addMember(Request $request, string $family_slug, ChatRoom $room): JsonResponse
     {
         $user = $request->user();
         $family = $request->get('_family');
 
-        // Verify the room belongs to the family
-        if ($room->family_id !== $family->getId()) {
+        if ($room->getFamilyId() !== $family->getId()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Chat room not found.'
             ], 404);
         }
 
-        // Verify user can manage the room
         if (!$room->canUserManage($user)) {
             return response()->json([
                 'success' => false,
@@ -405,10 +382,9 @@ class ChatRoomController extends Controller
         $userId = $request->integer('userId');
         $isAdmin = $request->boolean('isAdmin', false);
 
-        // Verify the user is a family member
-        $familyMember = FamilyMember::where('family_id', $family->getId())
-            ->where('user_id', $userId)
-            ->where('is_active', true)
+        $familyMember = FamilyMember::where(FamilyMember::FAMILY_ID, '=', $family->getId())
+            ->where(FamilyMember::USER_ID, '=', $userId)
+            ->where(FamilyMember::IS_ACTIVE, '=', true)
             ->first();
 
         if (!$familyMember) {
@@ -418,7 +394,6 @@ class ChatRoomController extends Controller
             ], 404);
         }
 
-        // Check if user is already a member
         if ($room->isMember($familyMember->relatedUser())) {
             return response()->json([
                 'success' => false,
@@ -426,38 +401,26 @@ class ChatRoomController extends Controller
             ], 409);
         }
 
-        try {
-            $room->addMember($familyMember->relatedUser(), $isAdmin);
+        $room->addMember($familyMember->relatedUser(), $isAdmin);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Member added successfully.'
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to add member.',
-                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Member added successfully.'
+        ]);
     }
 
-    // NEW: Remove member from chat room
     public function removeMember(Request $request, string $family_slug, ChatRoom $room, User $member): JsonResponse
     {
         $user = $request->user();
         $family = $request->get('_family');
 
-        // Verify the room belongs to the family
-        if ($room->family_id !== $family->getId()) {
+        if ($room->getFamilyId() !== $family->getId()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Chat room not found.'
             ], 404);
         }
 
-        // Verify user can manage the room
         if (!$room->canUserManage($user)) {
             return response()->json([
                 'success' => false,
@@ -465,15 +428,13 @@ class ChatRoomController extends Controller
             ], 403);
         }
 
-        // Prevent removing yourself
-        if ($member->id === $user->id) {
+        if ($member->getId() === $user->getId()) {
             return response()->json([
                 'success' => false,
                 'message' => 'You cannot remove yourself from the chat room. Use leave room instead.'
             ], 400);
         }
 
-        // Check if user is a member
         if (!$room->isMember($member)) {
             return response()->json([
                 'success' => false,
@@ -481,38 +442,26 @@ class ChatRoomController extends Controller
             ], 404);
         }
 
-        try {
-            $room->removeMember($member);
+        $room->removeMember($member);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Member removed successfully.'
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to remove member.',
-                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Member removed successfully.'
+        ]);
     }
 
-    // NEW: Toggle member admin status
     public function toggleMemberAdmin(Request $request, string $family_slug, ChatRoom $room, User $member): JsonResponse
     {
         $user = $request->user();
         $family = $request->get('_family');
 
-        // Verify the room belongs to the family
-        if ($room->family_id !== $family->getId()) {
+        if ($room->getFamilyId() !== $family->getId()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Chat room not found.'
             ], 404);
         }
 
-        // Verify user can manage the room
         if (!$room->canUserManage($user)) {
             return response()->json([
                 'success' => false,
@@ -520,7 +469,6 @@ class ChatRoomController extends Controller
             ], 403);
         }
 
-        // Check if user is a member
         if (!$room->isMember($member)) {
             return response()->json([
                 'success' => false,
@@ -528,45 +476,33 @@ class ChatRoomController extends Controller
             ], 404);
         }
 
-        try {
-            $wasAdmin = $room->isAdmin($member);
-            $room->toggleMemberAdmin($member);
+        $wasAdmin = $room->isAdmin($member);
+        $room->toggleMemberAdmin($member);
 
-            $action = $wasAdmin ? 'removed' : 'granted';
+        $action = $wasAdmin ? 'removed' : 'granted';
 
-            return response()->json([
-                'success' => true,
-                'message' => "Admin privileges {$action} successfully.",
-                'data' => [
-                    'userId' => $member->id,
-                    'isAdmin' => !$wasAdmin
-                ]
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to toggle admin status.',
-                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => "Admin privileges {$action} successfully.",
+            'data' => [
+                'userId' => $member->getId(),
+                'isAdmin' => !$wasAdmin
+            ]
+        ]);
     }
 
-    // NEW: Leave chat room (for current user)
     public function leaveRoom(Request $request, string $family_slug, ChatRoom $room): JsonResponse
     {
         $user = $request->user();
         $family = $request->get('_family');
 
-        // Verify the room belongs to the family
-        if ($room->family_id !== $family->getId()) {
+        if ($room->getFamilyId() !== $family->getId()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Chat room not found.'
             ], 404);
         }
 
-        // Check if user is a member
         if (!$room->isMember($user)) {
             return response()->json([
                 'success' => false,
@@ -574,9 +510,8 @@ class ChatRoomController extends Controller
             ], 404);
         }
 
-        // Prevent room creator from leaving if they're the only admin
-        if ($room->created_by === $user->id) {
-            $adminCount = $room->members()->where('is_admin', true)->count();
+        if ($room->getCreatedBy() === $user->getId()) {
+            $adminCount = $room->relatedMembers()->where(ChatRoomMember::IS_ADMIN, true)->count();
             if ($adminCount <= 1) {
                 return response()->json([
                     'success' => false,
@@ -585,20 +520,11 @@ class ChatRoomController extends Controller
             }
         }
 
-        try {
-            $room->removeMember($user);
+        $room->removeMember($user);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'You have successfully left the chat room.'
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to leave chat room.',
-                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'You have successfully left the chat room.'
+        ]);
     }
 }

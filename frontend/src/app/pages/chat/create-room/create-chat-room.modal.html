@@ -188,7 +188,7 @@
         </div>
 
         <div class="members-list">
-          @for (member of availableMembers(); track member.id) {
+          @for (member of availableMembers(); track member.userId) {
           <div class="member-item">
             <div class="member-info">
               <ion-avatar class="member-avatar">
@@ -211,8 +211,8 @@
             </div>
 
             <ion-checkbox
-              [checked]="isMemberSelected(member.id)"
-              (ionChange)="onMemberToggle(member.id, $event)"
+              [checked]="isMemberSelected(member.userId)"
+              (ionChange)="onMemberToggle(member.userId, $event)"
               class="member-checkbox"
             >
             </ion-checkbox>

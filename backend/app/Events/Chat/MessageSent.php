@@ -6,6 +6,7 @@ namespace App\Events\Chat;
 
 use App\Http\Resources\Chat\ChatMessageResource;
 use App\Models\Chat\ChatMessage;
+use App\Models\Users\User;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
@@ -22,16 +23,17 @@ class MessageSent implements ShouldBroadcastNow
         public ChatMessage $message
     ) {
         $this->message->load([
-            'user:id,name,email',
-            'replyTo.user:id,name,email',
-            'reactions.user:id,name,email'
+            ChatMessage::USER_RELATION . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
+            ChatMessage::REPLY_TO_RELATION . '.' . ChatMessage::USER_RELATION . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
+            ChatMessage::REACTIONS_RELATION,
+            ChatMessage::REACTIONS_RELATION . '.userRelation' . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
         ]);
     }
 
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel("chat-room.{$this->message->chat_room_id}"),
+            new PrivateChannel("chat-room.{$this->message->getChatRoomId()}"),
         ];
     }
 
@@ -47,7 +49,6 @@ class MessageSent implements ShouldBroadcastNow
         ];
     }
 
-    // Add this method to ensure the event is not queued
     public function shouldQueue(): bool
     {
         return false;

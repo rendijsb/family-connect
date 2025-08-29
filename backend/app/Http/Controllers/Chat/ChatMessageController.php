@@ -12,10 +12,14 @@ use App\Http\Requests\Chat\SendMessageRequest;
 use App\Http\Resources\Chat\ChatMessageResource;
 use App\Models\Chat\ChatMessage;
 use App\Models\Chat\ChatRoom;
+use App\Models\Chat\ChatRoomMember;
+use App\Models\Chat\MessageReaction;
+use App\Models\Users\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class ChatMessageController extends Controller
 {
@@ -24,12 +28,10 @@ class ChatMessageController extends Controller
         $user = $request->user();
         $family = $request->get('_family');
 
-        // Verify the room belongs to the family
-        if ($room->family_id !== $family->getId()) {
+        if ($room->getFamilyId() !== $family->getId()) {
             abort(404, 'Chat room not found.');
         }
 
-        // Verify user is a member of the room
         if (!$room->isMember($user)) {
             abort(403, 'You are not a member of this chat room.');
         }
@@ -38,41 +40,45 @@ class ChatMessageController extends Controller
         $beforeId = $request->integer('before_id');
 
         $query = ChatMessage::query()
-            ->forRoom($room->id)
+            ->forRoom($room->getId())
             ->notDeleted()
             ->with([
-                'user:id,name,email',
-                'replyTo.user:id,name,email',
-                'reactions.user:id,name,email'
+                ChatMessage::USER_RELATION . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
+                ChatMessage::REPLY_TO_RELATION . '.' . ChatMessage::USER_RELATION . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
+                ChatMessage::REACTIONS_RELATION, // Load all reaction columns
+                ChatMessage::REACTIONS_RELATION . '.' . MessageReaction::USER_RELATION => function ($query) {
+                    $query->select(User::ID, User::NAME, User::EMAIL);
+                },
             ])
-            ->orderByDesc('created_at');
+            ->orderByDesc(ChatMessage::CREATED_AT);
 
         if ($beforeId) {
-            $query->where('id', '<', $beforeId);
+            $query->where(ChatMessage::ID, '<', $beforeId);
         }
 
         $messages = $query->paginate($perPage);
 
-        // Mark messages as read
         $room->markAsRead($user);
 
         return ChatMessageResource::collection($messages);
     }
 
+    /**
+     * @throws Throwable
+     */
     public function store(SendMessageRequest $request, string $family_slug, ChatRoom $room): JsonResponse
     {
+        /** @var User $user */
         $user = $request->user();
         $family = $request->get('_family');
 
-        // Verify the room belongs to the family
-        if ($room->family_id !== $family->getId()) {
+        if ($room->getFamilyId() !== $family->getId()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Chat room not found.'
             ], 404);
         }
 
-        // Verify user is a member of the room
         if (!$room->isMember($user)) {
             return response()->json([
                 'success' => false,
@@ -80,7 +86,6 @@ class ChatMessageController extends Controller
             ], 403);
         }
 
-        // Check if user is muted
         if ($room->isMuted($user)) {
             return response()->json([
                 'success' => false,
@@ -90,10 +95,9 @@ class ChatMessageController extends Controller
 
         $data = $request->getData();
 
-        // Verify reply-to message exists and belongs to this room
         if ($data->replyToId) {
-            $replyToMessage = ChatMessage::where('id', $data->replyToId)
-                ->where('chat_room_id', $room->id)
+            $replyToMessage = ChatMessage::where(ChatMessage::ID, $data->replyToId)
+                ->where(ChatMessage::CHAT_ROOM_ID, $room->getId())
                 ->first();
 
             if (!$replyToMessage) {
@@ -106,36 +110,31 @@ class ChatMessageController extends Controller
 
         DB::beginTransaction();
         try {
-            // Create the message
             $message = ChatMessage::create([
-                'chat_room_id' => $room->id,
-                'user_id' => $user->id,
-                'reply_to_id' => $data->replyToId,
-                'message' => $data->message,
-                'type' => $data->type,
-                'attachments' => $data->attachments,
-                'metadata' => $data->metadata,
+                ChatMessage::CHAT_ROOM_ID => $room->getId(),
+                ChatMessage::USER_ID => $user->getId(),
+                ChatMessage::REPLY_TO_ID => $data->replyToId,
+                ChatMessage::MESSAGE => $data->message,
+                ChatMessage::TYPE => $data->type,
+                ChatMessage::ATTACHMENTS => $data->attachments,
+                ChatMessage::METADATA => $data->metadata,
             ]);
 
-            // Update chat room's last message timestamp
             $room->updateLastMessageAt();
 
             // Increment unread count for other members
-            $room->members()
-                ->where('user_id', '!=', $user->id)
-                ->each(function ($member) {
-                    $member->incrementUnreadCount();
-                });
+            $room->membersRelation()
+                ->where(ChatRoomMember::USER_ID, '!=', $user->getId())
+                ->increment(ChatRoomMember::UNREAD_COUNT, 1);
 
             DB::commit();
 
-            // Load relations for response
             $message->load([
-                'user:id,name,email',
-                'replyTo.user:id,name,email'
+                'userRelation:id,name,email',
+                'replyToRelation:id,user_id,message,created_at',
+                'replyToRelation.userRelation:id,name,email',
             ]);
 
-            // Broadcast message via WebSocket
             broadcast(new MessageSent($message));
 
             return response()->json([
@@ -143,14 +142,9 @@ class ChatMessageController extends Controller
                 'message' => 'Message sent successfully.',
                 'data' => new ChatMessageResource($message)
             ], 201);
-
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to send message.',
-                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
-            ], 500);
+            throw $e;
         }
     }
 
@@ -158,17 +152,15 @@ class ChatMessageController extends Controller
     {
         $user = $request->user();
         $family = $request->get('_family');
-        $room = $message->chatRoom;
+        $room = $message->relatedChatRoom();
 
-        // Verify the room belongs to the family
-        if ($room->family_id !== $family->getId()) {
+        if ($room->getFamilyId() !== $family->getId()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Message not found.'
             ], 404);
         }
 
-        // Verify user can edit this message
         if (!$message->canEdit($user)) {
             return response()->json([
                 'success' => false,
@@ -181,17 +173,16 @@ class ChatMessageController extends Controller
         ]);
 
         $message->update([
-            'message' => $request->input('message'),
+            ChatMessage::MESSAGE => $request->input('message'),
         ]);
 
         $message->markAsEdited();
 
         $message->load([
-            'user:id,name,email',
-            'replyTo.user:id,name,email'
+            ChatMessage::USER_RELATION . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
+            ChatMessage::REPLY_TO_RELATION . '.' . ChatMessage::USER_RELATION . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
         ]);
 
-        // Broadcast message update via WebSocket
         broadcast(new MessageUpdated($message));
 
         return response()->json([
@@ -205,17 +196,15 @@ class ChatMessageController extends Controller
     {
         $user = $request->user();
         $family = $request->get('_family');
-        $room = $message->chatRoom;
+        $room = $message->relatedChatRoom();
 
-        // Verify the room belongs to the family
-        if ($room->family_id !== $family->getId()) {
+        if ($room->getFamilyId() !== $family->getId()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Message not found.'
             ], 404);
         }
 
-        // Verify user can delete this message
         if (!$message->canDelete($user)) {
             return response()->json([
                 'success' => false,
@@ -225,11 +214,10 @@ class ChatMessageController extends Controller
 
         $message->softDelete();
 
-        // Broadcast message deletion via WebSocket
         broadcast(new MessageDeleted(
-            $message->id,
-            $message->chat_room_id,
-            $user->id
+            $message->getId(),
+            $message->getChatRoomId(),
+            $user->getId()
         ));
 
         return response()->json([

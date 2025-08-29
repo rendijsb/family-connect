@@ -6,6 +6,7 @@ namespace App\Events\Chat;
 
 use App\Http\Resources\Chat\MessageReactionResource;
 use App\Models\Chat\MessageReaction;
+use App\Models\Users\User;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
@@ -23,15 +24,15 @@ class ReactionAdded implements ShouldBroadcastNow
         public MessageReaction $reaction
     ) {
         $this->reaction->load([
-            'user:id,name,email',
-            'message'
+            MessageReaction::USER_RELATION . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
+            MessageReaction::MESSAGE_RELATION,
         ]);
     }
 
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel("chat-room.{$this->reaction->message->chat_room_id}"),
+            new PrivateChannel("chat-room.{$this->reaction->relatedMessage()->getChatRoomId()}"),
         ];
     }
 
@@ -44,7 +45,7 @@ class ReactionAdded implements ShouldBroadcastNow
     {
         return [
             'reaction' => new MessageReactionResource($this->reaction),
-            'messageId' => $this->reaction->message_id,
+            'messageId' => $this->reaction->getMessageId(),
         ];
     }
 

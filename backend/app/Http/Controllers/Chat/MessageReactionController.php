@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Chat\MessageReactionResource;
 use App\Models\Chat\ChatMessage;
 use App\Models\Chat\MessageReaction;
+use App\Models\Users\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -19,17 +20,15 @@ class MessageReactionController extends Controller
     {
         $user = $request->user();
         $family = $request->get('_family');
-        $room = $message->chatRoom;
+        $room = $message->relatedChatRoom();
 
-        // Verify the room belongs to the family
-        if ($room->family_id !== $family->getId()) {
+        if ($room->getFamilyId() !== $family->getId()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Message not found.'
             ], 404);
         }
 
-        // Verify user is a member of the room
         if (!$room->isMember($user)) {
             return response()->json([
                 'success' => false,
@@ -37,14 +36,12 @@ class MessageReactionController extends Controller
             ], 403);
         }
 
-        // Validate emoji
         $request->validate([
             'emoji' => [
                 'required',
                 'string',
                 'max:10',
                 function ($attribute, $value, $fail) {
-                    // Basic emoji validation - you might want to use a more sophisticated check
                     if (!preg_match('/^[\x{1F600}-\x{1F64F}]|[\x{1F300}-\x{1F5FF}]|[\x{1F680}-\x{1F6FF}]|[\x{1F1E0}-\x{1F1FF}]|[\x{2600}-\x{26FF}]|[\x{2700}-\x{27BF}]/u', $value)) {
                         $fail('Invalid emoji format.');
                     }
@@ -54,10 +51,9 @@ class MessageReactionController extends Controller
 
         $emoji = $request->input('emoji');
 
-        // Check if user already reacted with this emoji
-        $existingReaction = MessageReaction::where('message_id', $message->id)
-            ->where('user_id', $user->id)
-            ->where('emoji', $emoji)
+        $existingReaction = MessageReaction::where(MessageReaction::MESSAGE_ID, $message->getId())
+            ->where(MessageReaction::USER_ID, $user->getId())
+            ->where(MessageReaction::EMOJI, $emoji)
             ->first();
 
         if ($existingReaction) {
@@ -67,12 +63,12 @@ class MessageReactionController extends Controller
             ], 422);
         }
 
-        // Create the reaction
         $reaction = $message->addReaction($user, $emoji);
 
-        $reaction->load('user:id,name,email');
+        $reaction->load(
+            MessageReaction::USER_RELATION . ':' . User::ID . ',' . User::NAME . ',' . User::EMAIL,
+        );
 
-        // Broadcast reaction via WebSocket
         broadcast(new ReactionAdded($reaction));
 
         return response()->json([
@@ -86,17 +82,15 @@ class MessageReactionController extends Controller
     {
         $user = $request->user();
         $family = $request->get('_family');
-        $room = $message->chatRoom;
+        $room = $message->relatedChatRoom();
 
-        // Verify the room belongs to the family
-        if ($room->family_id !== $family->getId()) {
+        if ($room->getFamilyId() !== $family->getId()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Message not found.'
             ], 404);
         }
 
-        // Verify user is a member of the room
         if (!$room->isMember($user)) {
             return response()->json([
                 'success' => false,
@@ -104,10 +98,9 @@ class MessageReactionController extends Controller
             ], 403);
         }
 
-        // Find and remove the reaction
-        $reaction = MessageReaction::where('message_id', $message->id)
-            ->where('user_id', $user->id)
-            ->where('emoji', $emoji)
+        $reaction = MessageReaction::where(MessageReaction::MESSAGE_ID, $message->getId())
+            ->where(MessageReaction::USER_ID, $user->getId())
+            ->where(MessageReaction::EMOJI, $emoji)
             ->first();
 
         if (!$reaction) {
@@ -119,11 +112,10 @@ class MessageReactionController extends Controller
 
         $reaction->delete();
 
-        // Broadcast reaction removal via WebSocket
         broadcast(new ReactionRemoved(
-            $message->id,
-            $room->id,
-            $user->id,
+            $message->getId(),
+            $room->getId(),
+            $user->getId(),
             $emoji
         ));
 
