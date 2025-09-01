@@ -5,155 +5,277 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Models\Apps\AppUpload;
+use App\Services\Apps\AppUploadService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 
 class AppUploadController extends Controller
 {
+    public function __construct(
+        private readonly AppUploadService $appUploadService
+    ) {}
+
     public function index(): View
     {
-        $downloads = [
+        $statistics = $this->appUploadService->getStatistics();
+
+        $platforms = [
             'android' => [
-                'exists' => file_exists(public_path('downloads/family-connect.apk')),
-                'size' => file_exists(public_path('downloads/family-connect.apk'))
-                    ? $this->formatBytes(filesize(public_path('downloads/family-connect.apk')))
-                    : null,
-                'modified' => file_exists(public_path('downloads/family-connect.apk'))
-                    ? date('Y-m-d H:i:s', filemtime(public_path('downloads/family-connect.apk')))
-                    : null,
+                'active_version' => AppUpload::getActiveVersion(AppUpload::PLATFORM_ANDROID),
+                'all_versions' => AppUpload::getVersionsForPlatform(AppUpload::PLATFORM_ANDROID)->take(10),
+                'total_downloads' => AppUpload::platform(AppUpload::PLATFORM_ANDROID)->sum('download_count'),
             ],
             'ios' => [
-                'exists' => file_exists(public_path('downloads/family-connect.ipa')),
-                'size' => file_exists(public_path('downloads/family-connect.ipa'))
-                    ? $this->formatBytes(filesize(public_path('downloads/family-connect.ipa')))
-                    : null,
-                'modified' => file_exists(public_path('downloads/family-connect.ipa'))
-                    ? date('Y-m-d H:i:s', filemtime(public_path('downloads/family-connect.ipa')))
-                    : null,
-            ]
+                'active_version' => AppUpload::getActiveVersion(AppUpload::PLATFORM_IOS),
+                'all_versions' => AppUpload::getVersionsForPlatform(AppUpload::PLATFORM_IOS)->take(10),
+                'total_downloads' => AppUpload::platform(AppUpload::PLATFORM_IOS)->sum('download_count'),
+            ],
         ];
 
-        return view('admin.app-uploads', compact('downloads'));
+        return view('admin.s3-app-uploads', compact('platforms', 'statistics'));
     }
 
     public function uploadAndroid(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'apk_file' => [
-                'required',
-                'file',
-                'mimes:apk',
-                'max:204800', // 200MB max
-            ],
-            'version' => 'required|string|max:20'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        try {
-            $file = $request->file('apk_file');
-            $downloadsPath = public_path('downloads');
-
-            // Create directory if it doesn't exist
-            if (!file_exists($downloadsPath)) {
-                mkdir($downloadsPath, 0755, true);
-            }
-
-            // Backup existing file
-            $existingFile = $downloadsPath . '/family-connect.apk';
-            if (file_exists($existingFile)) {
-                $backupName = 'family-connect-backup-' . date('Y-m-d-H-i-s') . '.apk';
-                rename($existingFile, $downloadsPath . '/' . $backupName);
-            }
-
-            // Move new file
-            $file->move($downloadsPath, 'family-connect.apk');
-
-            // Log the upload
-            \Log::info('Android APK uploaded', [
-                'version' => $request->input('version'),
-                'file_size' => $file->getSize(),
-                'uploaded_by' => auth()->user()->email ?? 'system'
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Android APK uploaded successfully',
-                'version' => $request->input('version'),
-                'size' => $this->formatBytes($file->getSize())
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Upload failed: ' . $e->getMessage()
-            ], 500);
-        }
+        return $this->handleUpload($request, AppUpload::PLATFORM_ANDROID, 'apk_file');
     }
 
     public function uploadIOS(Request $request): JsonResponse
     {
+        return $this->handleUpload($request, AppUpload::PLATFORM_IOS, 'ipa_file');
+    }
+
+    private function handleUpload(Request $request, string $platform, string $fileField): JsonResponse
+    {
+        // Log request info for debugging
+        \Log::info('Upload attempt', [
+            'platform' => $platform,
+            'field' => $fileField,
+            'has_file' => $request->hasFile($fileField),
+            'content_length' => $request->header('Content-Length'),
+            'php_limits' => [
+                'upload_max_filesize' => ini_get('upload_max_filesize'),
+                'post_max_size' => ini_get('post_max_size'),
+                'memory_limit' => ini_get('memory_limit'),
+            ]
+        ]);
+
+        // Check if file exists in request
+        $allFiles = $request->allFiles();
+        $hasFile = $request->hasFile($fileField);
+
+        if (!$hasFile) {
+            // File exists but hasFile() returns false - let's see why
+            $fileFromRequest = $request->file($fileField);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'File upload failed validation',
+                'debug' => [
+                    'expected_field' => $fileField,
+                    'available_files' => array_keys($allFiles),
+                    'content_length' => $request->header('Content-Length'),
+                    'hasFile_result' => $hasFile,
+                    'file_exists_in_request' => isset($allFiles[$fileField]),
+                    'file_object_details' => $fileFromRequest ? [
+                        'original_name' => $fileFromRequest->getClientOriginalName(),
+                        'size' => $fileFromRequest->getSize(),
+                        'mime_type' => $fileFromRequest->getPathname() ? $fileFromRequest->getMimeType() : 'file_missing',
+                        'is_valid' => $fileFromRequest->isValid(),
+                        'error_code' => $fileFromRequest->getError(),
+                        'temp_path' => $fileFromRequest->getPathname(),
+                        'temp_exists' => $fileFromRequest->getPathname() ? file_exists($fileFromRequest->getPathname()) : false,
+                    ] : 'No file object',
+                    'php_settings' => [
+                        'upload_max_filesize' => ini_get('upload_max_filesize'),
+                        'post_max_size' => ini_get('post_max_size'),
+                        'file_uploads' => ini_get('file_uploads') ? 'enabled' : 'disabled',
+                        'max_file_uploads' => ini_get('max_file_uploads'),
+                    ],
+                    'server_info' => [
+                        'tmp_dir' => sys_get_temp_dir(),
+                        'tmp_writable' => is_writable(sys_get_temp_dir()),
+                        'disk_free_mb' => round(disk_free_space(sys_get_temp_dir()) / 1024 / 1024, 2),
+                    ]
+                ]
+            ], 422);
+        }
+
+        $file = $request->file($fileField);
+
+        // CRITICAL: Check upload error immediately
+        if (!$file->isValid()) {
+            $error = $file->getError();
+            $errorMessages = [
+                UPLOAD_ERR_OK => 'No error',
+                UPLOAD_ERR_INI_SIZE => 'File exceeds upload_max_filesize in php.ini',
+                UPLOAD_ERR_FORM_SIZE => 'File exceeds MAX_FILE_SIZE in form',
+                UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+                UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+                UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder',
+                UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+                UPLOAD_ERR_EXTENSION => 'A PHP extension stopped the upload',
+            ];
+
+            $message = $errorMessages[$error] ?? 'Unknown upload error';
+
+            return response()->json([
+                'success' => false,
+                'message' => "Upload failed: {$message}",
+                'debug' => [
+                    'error_code' => $error,
+                    'file_size_mb' => $file->getSize() ? round($file->getSize() / 1024 / 1024, 2) : 'unknown',
+                    'php_settings' => [
+                        'upload_max_filesize' => ini_get('upload_max_filesize'),
+                        'post_max_size' => ini_get('post_max_size'),
+                        'memory_limit' => ini_get('memory_limit'),
+                        'file_uploads' => ini_get('file_uploads') ? 'enabled' : 'disabled',
+                    ],
+                    'server' => [
+                        'tmp_dir' => sys_get_temp_dir(),
+                        'tmp_writable' => is_writable(sys_get_temp_dir()),
+                        'disk_free_gb' => round(disk_free_space(sys_get_temp_dir()) / 1024 / 1024 / 1024, 2),
+                    ]
+                ]
+            ], 422);
+        }
+
+        // Enhanced file validation with specific error messages
         $validator = Validator::make($request->all(), [
-            'ipa_file' => [
+            $fileField => [
                 'required',
                 'file',
-                'mimes:ipa',
-                'max:204800', // 200MB max
+                'max:512000', // 500MB in KB
+                function ($attribute, $value, $fail) use ($platform) {
+                    if (!$value instanceof \Illuminate\Http\UploadedFile) {
+                        $fail('Invalid file upload.');
+                        return;
+                    }
+
+                    // Check if upload was successful
+                    if (!$value->isValid()) {
+                        $error = $value->getError();
+                        $errorMessages = [
+                            UPLOAD_ERR_INI_SIZE => 'File exceeds upload_max_filesize directive in php.ini',
+                            UPLOAD_ERR_FORM_SIZE => 'File exceeds MAX_FILE_SIZE directive in HTML form',
+                            UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+                            UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+                            UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder',
+                            UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+                            UPLOAD_ERR_EXTENSION => 'A PHP extension stopped the file upload',
+                        ];
+
+                        $message = $errorMessages[$error] ?? 'Unknown upload error';
+                        $fail("Upload failed: {$message} (Error code: {$error})");
+                        return;
+                    }
+
+                    // Check file extension
+                    $extension = strtolower($value->getClientOriginalExtension());
+                    $expectedExtension = $platform === AppUpload::PLATFORM_ANDROID ? 'apk' : 'ipa';
+
+                    if ($extension !== $expectedExtension) {
+                        $fail("File must be a {$expectedExtension} file for {$platform} platform");
+                    }
+
+                    // Check file size against our limit
+                    if ($value->getSize() > 500 * 1024 * 1024) { // 500MB
+                        $fail('File size exceeds 500MB limit');
+                    }
+                }
             ],
-            'version' => 'required|string|max:20'
+            'version' => 'required|string|max:50',
+            'build_number' => 'nullable|string|max:50',
+            'notes' => 'nullable|string|max:1000',
         ]);
 
         if ($validator->fails()) {
+            \Log::warning('Upload validation failed', [
+                'platform' => $platform,
+                'errors' => $validator->errors()->toArray(),
+                'file_info' => $file ? [
+                    'size' => $file->getSize(),
+                    'original_name' => $file->getClientOriginalName(),
+                    'mime_type' => $file->getMimeType(),
+                    'extension' => $file->getClientOriginalExtension(),
+                    'is_valid' => $file->isValid(),
+                    'error' => $file->getError(),
+                ] : null
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
+                'debug' => $file ? [
+                    'file_size_mb' => round($file->getSize() / 1024 / 1024, 2),
+                    'upload_error_code' => $file->getError(),
+                    'php_max_upload' => ini_get('upload_max_filesize'),
+                    'php_max_post' => ini_get('post_max_size'),
+                ] : null
             ], 422);
         }
 
         try {
-            $file = $request->file('ipa_file');
-            $downloadsPath = public_path('downloads');
+            $version = trim($request->input('version'));
+            $buildNumber = $request->input('build_number') ? trim($request->input('build_number')) : null;
+            $notes = $request->input('notes');
 
-            // Create directory if it doesn't exist
-            if (!file_exists($downloadsPath)) {
-                mkdir($downloadsPath, 0755, true);
+            $metadata = [];
+            if ($notes) {
+                $metadata['notes'] = $notes;
             }
 
-            // Backup existing file
-            $existingFile = $downloadsPath . '/family-connect.ipa';
-            if (file_exists($existingFile)) {
-                $backupName = 'family-connect-backup-' . date('Y-m-d-H-i-s') . '.ipa';
-                rename($existingFile, $downloadsPath . '/' . $backupName);
-            }
+            $appUpload = $this->appUploadService->uploadApp(
+                $file,
+                $platform,
+                $version,
+                $buildNumber,
+                $metadata,
+                auth()->user()
+            );
 
-            // Move new file
-            $file->move($downloadsPath, 'family-connect.ipa');
-
-            // Log the upload
-            \Log::info('iOS IPA uploaded', [
-                'version' => $request->input('version'),
+            \Log::info('Upload successful', [
+                'platform' => $platform,
+                'version' => $version,
+                'build_number' => $buildNumber,
                 'file_size' => $file->getSize(),
-                'uploaded_by' => auth()->user()->email ?? 'system'
+                'upload_id' => $appUpload->getId(),
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'iOS IPA uploaded successfully',
-                'version' => $request->input('version'),
-                'size' => $this->formatBytes($file->getSize())
+                'message' => ucfirst($platform) . ' app uploaded successfully!',
+                'data' => [
+                    'id' => $appUpload->getId(),
+                    'version' => $appUpload->getFullVersion(),
+                    'size' => $appUpload->getFormattedFileSize(),
+                    'download_url' => $appUpload->getDownloadUrl(60),
+                    'uploaded_at' => $appUpload->getUploadedAt()->format('Y-m-d H:i:s'),
+                ]
             ]);
 
+        } catch (\InvalidArgumentException $e) {
+            \Log::warning('Upload validation error', [
+                'platform' => $platform,
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
         } catch (\Exception $e) {
+            \Log::error('App upload failed', [
+                'platform' => $platform,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user' => auth()->user()?->getEmail(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Upload failed: ' . $e->getMessage()
@@ -161,29 +283,52 @@ class AppUploadController extends Controller
         }
     }
 
-    public function deleteFile(Request $request, string $platform): JsonResponse
+    public function setActiveVersion(Request $request, int $uploadId): JsonResponse
     {
-        if (!in_array($platform, ['android', 'ios'])) {
-            return response()->json(['success' => false, 'message' => 'Invalid platform'], 400);
-        }
-
-        $filename = $platform === 'android' ? 'family-connect.apk' : 'family-connect.ipa';
-        $filepath = public_path('downloads/' . $filename);
-
-        if (!file_exists($filepath)) {
-            return response()->json(['success' => false, 'message' => 'File not found'], 404);
-        }
-
         try {
-            // Create backup before deletion
-            $backupName = 'deleted-' . pathinfo($filename, PATHINFO_FILENAME) . '-' . date('Y-m-d-H-i-s') . '.' . pathinfo($filename, PATHINFO_EXTENSION);
-            rename($filepath, public_path('downloads/' . $backupName));
+            $activeUpload = $this->appUploadService->setActiveVersion($uploadId);
 
             return response()->json([
                 'success' => true,
-                'message' => ucfirst($platform) . ' app file deleted successfully'
+                'message' => 'Active version updated successfully',
+                'data' => [
+                    'platform' => $activeUpload->getPlatform(),
+                    'version' => $activeUpload->getFullVersion(),
+                ]
             ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update active version: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 
+    public function deleteUpload(int $uploadId): JsonResponse
+    {
+        try {
+            $upload = AppUpload::findOrFail($uploadId);
+
+            if ($upload->getIsActive()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot delete the active version. Please set another version as active first.'
+                ], 400);
+            }
+
+            $deleted = $this->appUploadService->deleteUpload($uploadId);
+
+            if ($deleted) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'App upload deleted successfully'
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to delete the upload'
+                ], 500);
+            }
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -192,11 +337,93 @@ class AppUploadController extends Controller
         }
     }
 
-    private function formatBytes($size, $precision = 2): string
+    public function downloadApp(string $platform): JsonResponse
     {
-        $base = log($size, 1024);
-        $suffixes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        try {
+            $downloadUrl = $this->appUploadService->getActiveDownloadUrl($platform, 30); // 30 min expiry
 
-        return round(pow(1024, $base - floor($base)), $precision) .' '. $suffixes[floor($base)];
+            if (!$downloadUrl) {
+                return response()->json([
+                    'success' => false,
+                    'message' => ucfirst($platform) . ' app is not available for download'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'download_url' => $downloadUrl,
+                'expires_in_minutes' => 30
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate download URL: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getUploadHistory(string $platform): JsonResponse
+    {
+        try {
+            $uploads = AppUpload::getVersionsForPlatform($platform)
+                ->load('uploader')
+                ->map(function ($upload) {
+                    return [
+                        'id' => $upload->getId(),
+                        'version' => $upload->getFullVersion(),
+                        'size' => $upload->getFormattedFileSize(),
+                        'downloads' => $upload->getDownloadCount(),
+                        'is_active' => $upload->getIsActive(),
+                        'uploader' => $upload->uploader->getName(),
+                        'uploaded_at' => $upload->getUploadedAt()->format('Y-m-d H:i:s'),
+                        'metadata' => $upload->getMetadata(),
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $uploads
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch upload history: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getStatistics(): JsonResponse
+    {
+        try {
+            $stats = $this->appUploadService->getStatistics();
+            return response()->json([
+                'success' => true,
+                'data' => $stats
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch statistics: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function cleanupOldUploads(): JsonResponse
+    {
+        try {
+            $cleaned = $this->appUploadService->cleanupOldUploads(5); // Keep last 5 versions
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cleanup completed successfully',
+                'data' => $cleaned
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cleanup failed: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
