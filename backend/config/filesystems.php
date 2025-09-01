@@ -32,10 +32,9 @@ return [
 
         'local' => [
             'driver' => 'local',
-            'root' => storage_path('app/private'),
-            'serve' => true,
-            'throw' => false,
-            'report' => false,
+            'root' => public_path('downloads'),
+            'url' => env('APP_URL').'/downloads',
+            'visibility' => 'public',
         ],
 
         'public' => [
