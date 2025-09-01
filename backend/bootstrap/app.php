@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
+            'family.access' => \App\Http\Middleware\FamilyAccessMiddleware::class,
             'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
     })
