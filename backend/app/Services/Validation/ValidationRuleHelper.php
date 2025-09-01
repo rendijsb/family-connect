@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Validation;
 
+use Illuminate\Validation\Rules\Enum;
+
 class ValidationRuleHelper
 {
     public const REQUIRED = 'required';
@@ -42,5 +44,10 @@ class ValidationRuleHelper
     public static function existsOnDatabase(string $model, string $column): string
     {
         return 'exists:' . (new $model)->getTable() . ',' . $column;
+    }
+
+    public static function enum(string $fullyQualifiedClassNamespace): Enum
+    {
+        return new Enum($fullyQualifiedClassNamespace);
     }
 }

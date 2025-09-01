@@ -22,14 +22,10 @@
                 type="email"
                 placeholder="Enter your email"
                 formControlName="email"
-                class="custom-input"
-                [class.error]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+                [appValidationError]="isSubmitted()"
+                class="custom-input">
               </ion-input>
             </ion-item>
-            <div class="error-text" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
-              <span *ngIf="loginForm.get('email')?.errors?.['required']">Email is required</span>
-              <span *ngIf="loginForm.get('email')?.errors?.['email']">Please enter a valid email</span>
-            </div>
           </div>
 
           <!-- Password Input -->
@@ -40,8 +36,8 @@
                 [type]="showPassword() ? 'text' : 'password'"
                 placeholder="Enter your password"
                 formControlName="password"
-                class="custom-input"
-                [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+                [appValidationError]="isSubmitted()"
+                class="custom-input">
               </ion-input>
               <ion-icon
                 [name]="showPassword() ? 'eye-off-outline' : 'eye-outline'"
@@ -50,10 +46,6 @@
                 (click)="togglePasswordVisibility()">
               </ion-icon>
             </ion-item>
-            <div class="error-text" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
-              <span *ngIf="loginForm.get('password')?.errors?.['required']">Password is required</span>
-              <span *ngIf="loginForm.get('password')?.errors?.['minlength']">Password must be at least 6 characters</span>
-            </div>
           </div>
 
           <!-- Remember Me & Forgot Password -->
@@ -74,8 +66,11 @@
             type="submit"
             class="login-button"
             [disabled]="!loginForm.valid || isLoading()">
-            <span *ngIf="!isLoading()">Sign In</span>
-            <ion-icon *ngIf="isLoading()" name="reload-outline" class="spinning"></ion-icon>
+            @if (!isLoading()) {
+              <span>Sign In</span>
+            } @else {
+              <ion-icon name="reload-outline" class="spinning"></ion-icon>
+            }
           </ion-button>
 
         </form>
