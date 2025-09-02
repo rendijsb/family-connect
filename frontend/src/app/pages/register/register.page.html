@@ -91,7 +91,7 @@
                   <ion-icon name="phone-portrait-outline" slot="start" class="input-icon"></ion-icon>
                   <ion-input
                     type="tel"
-                    placeholder="Phone Number"
+                    placeholder="Phone Number (minimum 8 digits)"
                     formControlName="phone"
                     class="custom-input"
                     [appValidationError]="isSubmitted()">
@@ -104,6 +104,10 @@
                     </ion-icon>
                   }
                 </ion-item>
+                <!-- Show phone is optional -->
+                <div class="input-hint">
+                  <span class="hint-text">Phone number is optional</span>
+                </div>
               </div>
 
             </div>
@@ -212,7 +216,22 @@
               </ion-button>
             }
 
-            @if (currentStep() < totalSteps()) {
+            <!-- Always show Continue button on step 1, but change behavior based on validation -->
+            @if (currentStep() === 1) {
+              <ion-button
+                expand="block"
+                class="primary-button"
+                [class.button-disabled]="!step1Valid()"
+                (click)="nextStep()">
+                @if (step1Valid()) {
+                  <span>Continue</span>
+                } @else {
+                  <span>Continue (Complete required fields)</span>
+                }
+              </ion-button>
+            }
+
+            @if (currentStep() === 2 && currentStep() < totalSteps()) {
               <ion-button
                 expand="block"
                 class="primary-button"

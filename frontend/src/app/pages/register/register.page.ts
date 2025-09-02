@@ -144,11 +144,22 @@ export class RegisterPage implements OnInit, OnDestroy {
   }
 
   private validateStep1() {
-    const step1Fields = ['firstName', 'lastName', 'email'];
     const emailValid = this.registerForm.get('email')?.valid;
     const firstNameValid = this.registerForm.get('firstName')?.valid;
     const lastNameValid = this.registerForm.get('lastName')?.valid;
-    const phoneValid = this.registerForm.get('phone')?.valid || !this.registerForm.get('phone')?.value;
+    const phoneControl = this.registerForm.get('phone');
+
+    // Phone is valid if it's empty OR if it passes validation
+    const phoneValid = !phoneControl?.value || phoneControl?.valid;
+
+    console.log('Step 1 validation:', {
+      emailValid,
+      firstNameValid,
+      lastNameValid,
+      phoneValid,
+      phoneValue: phoneControl?.value,
+      phoneErrors: phoneControl?.errors
+    });
 
     this.step1Valid.set(!!(emailValid && firstNameValid && lastNameValid && phoneValid));
   }
@@ -214,10 +225,11 @@ export class RegisterPage implements OnInit, OnDestroy {
     return null;
   }
 
+  // FIXED: Changed phone validation to require at least 8 characters instead of 10
   private phoneValidator(control: AbstractControl): ValidationErrors | null {
     if (!control.value) return null;
 
-    const phonePattern = /^[\+]?[\d\s\-\(\)]{10,}$/;
+    const phonePattern = /^[\+]?[\d\s\-\(\)]{8,}$/;
     if (!phonePattern.test(control.value)) {
       return {invalidPhone: true};
     }
@@ -278,9 +290,13 @@ export class RegisterPage implements OnInit, OnDestroy {
   }
 
   async nextStep() {
+    console.log('nextStep called, currentStep:', this.currentStep(), 'totalSteps:', this.totalSteps());
+    console.log('step1Valid:', this.step1Valid());
+
     if (this.currentStep() < this.totalSteps()) {
       if (this.currentStep() === 1 && !this.step1Valid()) {
         this.markStep1FieldsAsTouched();
+        console.log('Step 1 validation failed, form errors:', this.getStep1Errors());
         await this.toastService.showToast('Please fill in all required fields correctly.', 'danger');
         return;
       }
@@ -290,6 +306,16 @@ export class RegisterPage implements OnInit, OnDestroy {
       this.triggerHapticFeedback();
       this.scrollToTop();
     }
+  }
+
+  // Helper method to debug step 1 validation issues
+  private getStep1Errors() {
+    return {
+      firstName: this.registerForm.get('firstName')?.errors,
+      lastName: this.registerForm.get('lastName')?.errors,
+      email: this.registerForm.get('email')?.errors,
+      phone: this.registerForm.get('phone')?.errors
+    };
   }
 
   previousStep() {
