@@ -68,7 +68,8 @@ select {
 ion-content {
   --background: transparent;
   --padding-top: 0;
-  --padding-bottom: 0;
+  /* Ensure content clears Android/iOS gesture bars globally */
+  --padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
   --padding-start: 0;
   --padding-end: 0;
 }

@@ -173,12 +173,11 @@
       </ion-card-header>
       <ion-card-content>
         <form [formGroup]="securityForm" (ngSubmit)="saveSecuritySettings()">
-          <!-- Join Code Section -->
-          @if (code()) {
+          @if (joinCode()) {
           <div class="join-code-section">
             <h3 class="subsection-title">Family Join Code</h3>
             <div class="join-code-display">
-              <div class="join-code-value">{{ code() }}</div>
+              <div class="join-code-value">{{ joinCode() }}</div>
               <ion-button
                 size="small"
                 fill="outline"
