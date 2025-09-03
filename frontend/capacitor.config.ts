@@ -3,7 +3,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.yourcompany.familyconnect',
   appName: 'Family Connect',
-  webDir: 'dist',
+  webDir: 'dist/family-connect/browser',
   server: {
     url: process.env['NODE_ENV'] === 'development' ? 'http://192.168.1.118:4200' : undefined,
     cleartext: true,
@@ -11,6 +11,9 @@ const config: CapacitorConfig = {
     iosScheme: 'capacitor'
   },
   plugins: {
+    CapacitorHttp: {
+      enabled: true,
+    },
     SplashScreen: {
       launchAutoHide: true,
       launchShowDuration: 300,

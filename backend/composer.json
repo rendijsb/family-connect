@@ -11,6 +11,7 @@
         "laravel/reverb": "^1.5",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
+        "league/flysystem-aws-s3-v3": "^3.29",
         "spatie/laravel-data": "^4.17"
     },
     "require-dev": {

@@ -240,6 +240,7 @@
           </div>
           }
 
+          <!-- Simplified button logic -->
           <div class="button-group">
             @if (currentStep() > 1) {
             <ion-button
@@ -250,15 +251,15 @@
             >
               Previous
             </ion-button>
-            } @if (currentStep() < totalSteps()) {
+            } @if (currentStep() === 1) {
             <ion-button
               expand="block"
-              class="primary-button"
+              class="primary-button continue-button"
               (click)="nextStep()"
             >
               Continue
             </ion-button>
-            } @if (currentStep() === totalSteps()) {
+            } @if (currentStep() === 2) {
             <ion-button
               expand="block"
               type="submit"

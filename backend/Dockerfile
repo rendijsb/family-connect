@@ -2,7 +2,11 @@ FROM php:8.2-fpm
 
 WORKDIR /var/www/html
 
-# Install system dependencies and PHP extensions in single RUN (reduces layers)
+RUN echo "memory_limit = 512M" > /usr/local/etc/php/conf.d/memory-limit.ini
+RUN echo "upload_max_filesize = 500M" > /usr/local/etc/php/conf.d/upload-limits.ini
+RUN echo "post_max_size = 500M" >> /usr/local/etc/php/conf.d/upload-limits.ini
+RUN echo "max_execution_time = 300" >> /usr/local/etc/php/conf.d/upload-limits.ini
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
