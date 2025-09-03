@@ -68,7 +68,8 @@ select {
 ion-content {
   --background: transparent;
   --padding-top: 0;
-  --padding-bottom: 0;
+  /* Ensure content clears Android/iOS gesture bars globally */
+  --padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
   --padding-start: 0;
   --padding-end: 0;
 }
@@ -1077,4 +1078,35 @@ ion-button {
   outline: 2px solid #dc2626 !important;
   outline-offset: 2px !important;
   border-radius: 4px !important;
+}
+
+@media screen and (max-device-width: 768px) {
+  .signup-section,
+  .signin-section,
+  .button-group,
+  .form-actions {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 80px) !important;
+    margin-bottom: 20px !important;
+  }
+
+  .login-container,
+  .register-container {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 120px) !important;
+    justify-content: flex-start !important;
+  }
+
+  .signup-link,
+  .signin-link,
+  .primary-button,
+  .continue-button {
+    position: relative !important;
+    z-index: 1000 !important;
+  }
+}
+
+.android-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 60px) !important;
+  margin-bottom: 40px !important;
+  position: relative !important;
+  z-index: 10 !important;
 }

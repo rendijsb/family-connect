@@ -91,19 +91,15 @@
                   <ion-icon name="phone-portrait-outline" slot="start" class="input-icon"></ion-icon>
                   <ion-input
                     type="tel"
-                    placeholder="Phone Number"
+                    placeholder="Phone Number (Optional)"
                     formControlName="phone"
-                    class="custom-input"
-                    [appValidationError]="isSubmitted()">
+                    class="custom-input">
                   </ion-input>
-                  @if (registerForm.get('phone')?.valid && registerForm.get('phone')?.touched) {
-                    <ion-icon
-                      name="checkmark-outline"
-                      slot="end"
-                      class="validation-icon success">
-                    </ion-icon>
-                  }
                 </ion-item>
+                <!-- Show phone is optional -->
+                <div class="input-hint">
+                  <span class="hint-text">Phone number is optional</span>
+                </div>
               </div>
 
             </div>
@@ -201,6 +197,7 @@
             </div>
           }
 
+          <!-- Simplified button logic -->
           <div class="button-group">
             @if (currentStep() > 1) {
               <ion-button
@@ -212,16 +209,16 @@
               </ion-button>
             }
 
-            @if (currentStep() < totalSteps()) {
+            @if (currentStep() === 1) {
               <ion-button
                 expand="block"
-                class="primary-button"
+                class="primary-button continue-button"
                 (click)="nextStep()">
                 Continue
               </ion-button>
             }
 
-            @if (currentStep() === totalSteps()) {
+            @if (currentStep() === 2) {
               <ion-button
                 expand="block"
                 type="submit"

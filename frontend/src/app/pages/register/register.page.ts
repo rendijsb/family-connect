@@ -64,6 +64,7 @@ export class RegisterPage implements OnInit, OnDestroy {
   readonly keyboardHeight = signal<number>(0);
   readonly isSubmitted = signal<boolean>(false);
 
+  // Simplified validation signals
   readonly step1Valid = signal<boolean>(false);
   readonly step2Valid = signal<boolean>(false);
 
@@ -97,27 +98,21 @@ export class RegisterPage implements OnInit, OnDestroy {
       firstName: ['', [
         Validators.required,
         Validators.minLength(2),
-        Validators.maxLength(50),
-        this.nameValidator
+        Validators.maxLength(50)
       ]],
       lastName: ['', [
         Validators.required,
         Validators.minLength(2),
-        Validators.maxLength(50),
-        this.nameValidator
+        Validators.maxLength(50)
       ]],
       email: ['', [
         Validators.required,
-        Validators.email,
-        this.emailValidator
+        Validators.email
       ]],
-      phone: ['', [
-        this.phoneValidator
-      ]],
+      phone: [''], // Made completely optional - no validators
       password: ['', [
         Validators.required,
-        Validators.minLength(8),
-        this.passwordStrengthValidator
+        Validators.minLength(8)
       ]],
       confirmPassword: ['', [
         Validators.required
@@ -139,27 +134,52 @@ export class RegisterPage implements OnInit, OnDestroy {
       this.validateStep2();
     });
 
+    // Initial validation
     this.validateStep1();
     this.validateStep2();
   }
 
   private validateStep1() {
-    const step1Fields = ['firstName', 'lastName', 'email'];
-    const emailValid = this.registerForm.get('email')?.valid;
-    const firstNameValid = this.registerForm.get('firstName')?.valid;
-    const lastNameValid = this.registerForm.get('lastName')?.valid;
-    const phoneValid = this.registerForm.get('phone')?.valid || !this.registerForm.get('phone')?.value;
+    const firstName = this.registerForm.get('firstName');
+    const lastName = this.registerForm.get('lastName');
+    const email = this.registerForm.get('email');
+    const phone = this.registerForm.get('phone');
 
-    this.step1Valid.set(!!(emailValid && firstNameValid && lastNameValid && phoneValid));
+    // Required fields validation
+    const firstNameValid = firstName?.valid || false;
+    const lastNameValid = lastName?.valid || false;
+    const emailValid = email?.valid || false;
+
+    // Phone is always valid since it's optional
+    const phoneValid = true;
+
+    const isValid = firstNameValid && lastNameValid && emailValid && phoneValid;
+    this.step1Valid.set(isValid);
+
+    console.log('Step 1 validation:', {
+      firstNameValid,
+      lastNameValid,
+      emailValid,
+      phoneValid,
+      isValid,
+      firstName: firstName?.value,
+      lastName: lastName?.value,
+      email: email?.value,
+      phone: phone?.value
+    });
   }
 
   private validateStep2() {
-    const step2Fields = ['password', 'confirmPassword', 'agreeToTerms'];
-    const isValid = step2Fields.every(field => {
-      const control = this.registerForm.get(field);
-      return control?.valid;
-    }) && !this.registerForm.hasError('passwordMismatch');
+    const password = this.registerForm.get('password');
+    const confirmPassword = this.registerForm.get('confirmPassword');
+    const agreeToTerms = this.registerForm.get('agreeToTerms');
 
+    const passwordValid = password?.valid || false;
+    const confirmPasswordValid = confirmPassword?.valid || false;
+    const termsValid = agreeToTerms?.valid || false;
+    const passwordsMatch = !this.registerForm.hasError('passwordMismatch');
+
+    const isValid = passwordValid && confirmPasswordValid && termsValid && passwordsMatch;
     this.step2Valid.set(isValid);
   }
 
@@ -194,64 +214,11 @@ export class RegisterPage implements OnInit, OnDestroy {
     }
   }
 
-  private nameValidator(control: AbstractControl): ValidationErrors | null {
-    if (!control.value) return null;
-
-    const namePattern = /^[a-zA-Z\s'-]+$/;
-    if (!namePattern.test(control.value)) {
-      return {invalidName: true};
-    }
-    return null;
-  }
-
-  private emailValidator(control: AbstractControl): ValidationErrors | null {
-    if (!control.value) return null;
-
-    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!emailPattern.test(control.value)) {
-      return {invalidEmail: true};
-    }
-    return null;
-  }
-
-  private phoneValidator(control: AbstractControl): ValidationErrors | null {
-    if (!control.value) return null;
-
-    const phonePattern = /^[\+]?[\d\s\-\(\)]{10,}$/;
-    if (!phonePattern.test(control.value)) {
-      return {invalidPhone: true};
-    }
-    return null;
-  }
-
-  private passwordStrengthValidator(control: AbstractControl): ValidationErrors | null {
-    if (!control.value) return null;
-
-    const value = control.value;
-    const hasNumber = /[0-9]/.test(value);
-    const hasUpper = /[A-Z]/.test(value);
-    const hasLower = /[a-z]/.test(value);
-    const hasSpecial = /[#?!@$%^&*-]/.test(value);
-    const isLongEnough = value.length >= 8;
-
-    const errors: any = {};
-
-    if (!isLongEnough) {
-      errors.minLength = true;
-    }
-
-    if (!hasNumber || !hasUpper || !hasLower || !hasSpecial) {
-      errors.weakPassword = true;
-    }
-
-    return Object.keys(errors).length > 0 ? errors : null;
-  }
-
   private passwordMatchValidator(form: FormGroup): ValidationErrors | null {
     const password = form.get('password');
     const confirmPassword = form.get('confirmPassword');
 
-    if (password && confirmPassword && password.value !== confirmPassword.value) {
+    if (password && confirmPassword && password.value && confirmPassword.value && password.value !== confirmPassword.value) {
       return {passwordMismatch: true};
     }
     return null;
@@ -278,14 +245,30 @@ export class RegisterPage implements OnInit, OnDestroy {
   }
 
   async nextStep() {
-    if (this.currentStep() < this.totalSteps()) {
-      if (this.currentStep() === 1 && !this.step1Valid()) {
+    console.log('nextStep called, currentStep:', this.currentStep(), 'step1Valid:', this.step1Valid());
+
+    if (this.currentStep() === 1) {
+      // Check if required fields are filled
+      const firstName = this.registerForm.get('firstName')?.value?.trim();
+      const lastName = this.registerForm.get('lastName')?.value?.trim();
+      const email = this.registerForm.get('email')?.value?.trim();
+
+      if (!firstName || !lastName || !email) {
         this.markStep1FieldsAsTouched();
-        await this.toastService.showToast('Please fill in all required fields correctly.', 'danger');
+        await this.toastService.showToast('Please fill in your name and email address.', 'danger');
         return;
       }
 
-      this.currentStep.set(this.currentStep() + 1);
+      // Check email format
+      const emailValid = this.registerForm.get('email')?.valid;
+      if (!emailValid) {
+        this.markStep1FieldsAsTouched();
+        await this.toastService.showToast('Please enter a valid email address.', 'danger');
+        return;
+      }
+
+      // Proceed to next step
+      this.currentStep.set(2);
       this.isSubmitted.set(false);
       this.triggerHapticFeedback();
       this.scrollToTop();
@@ -311,7 +294,7 @@ export class RegisterPage implements OnInit, OnDestroy {
   }
 
   private markStep1FieldsAsTouched() {
-    const step1Fields = ['firstName', 'lastName', 'email', 'phone'];
+    const step1Fields = ['firstName', 'lastName', 'email'];
     step1Fields.forEach(field => {
       this.registerForm.get(field)?.markAsTouched();
     });
@@ -351,11 +334,6 @@ export class RegisterPage implements OnInit, OnDestroy {
     if (!this.registerForm.valid) {
       this.markAllFieldsAsTouched();
       await this.toastService.showToast('Please fix the errors in the form.', 'danger');
-      return;
-    }
-
-    if (!this.step2Valid()) {
-      await this.toastService.showToast('Please complete all required fields.', 'danger');
       return;
     }
 

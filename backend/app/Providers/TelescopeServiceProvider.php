@@ -14,19 +14,14 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
      */
     public function register(): void
     {
-        // Telescope::night();
+        // Enable Telescope in production
+        Telescope::night();
 
         $this->hideSensitiveRequestDetails();
 
-        $isLocal = $this->app->environment('local');
-
-        Telescope::filter(function (IncomingEntry $entry) use ($isLocal) {
-            return $isLocal ||
-                   $entry->isReportableException() ||
-                   $entry->isFailedRequest() ||
-                   $entry->isFailedJob() ||
-                   $entry->isScheduledTask() ||
-                   $entry->hasMonitoredTag();
+        // Allow all entries in production for debugging
+        Telescope::filter(function (IncomingEntry $entry) {
+            return true; // Log everything for admin debugging
         });
     }
 
@@ -35,11 +30,11 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
      */
     protected function hideSensitiveRequestDetails(): void
     {
-        if ($this->app->environment('local')) {
-            return;
-        }
-
-        Telescope::hideRequestParameters(['_token']);
+        Telescope::hideRequestParameters([
+            '_token',
+            'password',
+            'password_confirmation',
+        ]);
 
         Telescope::hideRequestHeaders([
             'cookie',
@@ -50,14 +45,24 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
 
     /**
      * Register the Telescope gate.
-     *
-     * This gate determines who can access Telescope in non-local environments.
      */
     protected function gate(): void
     {
-        Gate::define('viewTelescope', function ($user) {
+        Gate::define('viewTelescope', function ($user = null) {
+            // Allow access if user is authenticated and is admin
+            if (!$user) {
+                return false;
+            }
+
+            // Check if user has admin role (role_id = 1)
+            if (method_exists($user, 'getRoleId')) {
+                return $user->getRoleId() === 1;
+            }
+
+            // Fallback: check by email for specific admin users
             return in_array($user->email, [
-                //
+                'test@admin.com',
+                // Add more admin emails here if needed
             ]);
         });
     }
