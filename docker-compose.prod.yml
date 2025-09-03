@@ -1,0 +1,102 @@
+version: "3.8"
+
+services:
+  nginx:
+    image: nginx:1.25-alpine
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./backend/public:/var/www/html/public:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - nginx_cache:/var/cache/nginx
+    networks:
+      - app-network
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend/storage:/var/www/html/storage
+      - ./backend/bootstrap/cache:/var/www/html/bootstrap/cache
+    networks:
+      - app-network
+    depends_on:
+      - redis
+      # - mysql  # uncomment if using MySQL instead of SQLite
+
+  queue:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    command: php artisan queue:work --sleep=1 --tries=3 --max-time=3600
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend/storage:/var/www/html/storage
+      - ./backend/bootstrap/cache:/var/www/html/bootstrap/cache
+    networks:
+      - app-network
+    depends_on:
+      - api
+      - redis
+
+  scheduler:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    command: sh -c "while :; do php artisan schedule:run --verbose --no-interaction; sleep 60; done"
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend/storage:/var/www/html/storage
+      - ./backend/bootstrap/cache:/var/www/html/bootstrap/cache
+    networks:
+      - app-network
+    depends_on:
+      - api
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - app-network
+    volumes:
+      - redis_data:/data
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: family_connect
+      MYSQL_ROOT_PASSWORD: change_me
+      MYSQL_USER: family
+      MYSQL_PASSWORD: change_me
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile.prod
+  #   volumes:
+  #     - frontend_dist:/dist
+  #   networks:
+  #     - app-network
+
+volumes:
+  nginx_cache:
+  redis_data:
+  mysql_data:
+  # mysql_data:
+
+networks:
+  app-network:
+    driver: bridge

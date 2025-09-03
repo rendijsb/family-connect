@@ -1,0 +1,38 @@
+FROM php:8.2-fpm
+
+WORKDIR /var/www/html
+
+RUN echo "memory_limit = 512M" > /usr/local/etc/php/conf.d/memory-limit.ini \
+ && echo "upload_max_filesize = 100M" > /usr/local/etc/php/conf.d/upload-limits.ini \
+ && echo "post_max_size = 100M" >> /usr/local/etc/php/conf.d/upload-limits.ini \
+ && echo "max_execution_time = 60" >> /usr/local/etc/php/conf.d/upload-limits.ini
+
+RUN apt-get update && apt-get install -y \
+    git \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip \
+  && pecl install redis \
+  && docker-php-ext-enable redis \
+  && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader \
+ && rm -rf /root/.composer
+
+COPY . .
+
+# Ensure required dirs are writable
+RUN chown -R www-data:www-data /var/www/html \
+ && chmod -R 775 storage bootstrap/cache
+
+ENV PHP_FPM_PM=max_children=10
+EXPOSE 9000
+
+CMD ["php-fpm"]
+
+
