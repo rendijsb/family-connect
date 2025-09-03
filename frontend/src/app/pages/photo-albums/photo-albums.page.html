@@ -1,0 +1,187 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Photo Albums</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- Search and Filter Bar -->
+  <div class="filter-controls">
+    <ion-searchbar
+      [(ngModel)]="searchTerm"
+      (ionInput)="onSearchChange($event)"
+      placeholder="Search albums..."
+      debounce="300">
+    </ion-searchbar>
+
+    <div class="controls-row">
+      <!-- View Mode Toggle -->
+      <ion-segment
+        [(ngModel)]="viewMode"
+        (ionChange)="onViewModeChange($event)"
+        class="view-mode-segment">
+        <ion-segment-button value="grid">
+          <ion-icon name="grid-outline"></ion-icon>
+        </ion-segment-button>
+        <ion-segment-button value="list">
+          <ion-icon name="list-outline"></ion-icon>
+        </ion-segment-button>
+      </ion-segment>
+
+      <!-- Sort Dropdown -->
+      <ion-select
+        [(ngModel)]="selectedSort"
+        (ionChange)="onSortChange($event)"
+        placeholder="Sort by..."
+        interface="popover"
+        class="sort-select">
+        <ion-select-option *ngFor="let option of sortOptions" [value]="option.value">
+          {{ option.label }}
+        </ion-select-option>
+      </ion-select>
+    </div>
+
+    <!-- Privacy Filters -->
+    <div class="privacy-filters">
+      <ion-chip
+        *ngFor="let filter of filterOptions"
+        [class.active]="selectedFilter === filter.value"
+        (click)="onFilterChange(filter.value)">
+        <ion-icon [name]="filter.icon"></ion-icon>
+        <ion-label>{{ filter.label }}</ion-label>
+      </ion-chip>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading && albums.length === 0" class="loading-container">
+    <ion-grid *ngIf="viewMode === 'grid'">
+      <ion-row>
+        <ion-col size="6" size-md="4" size-lg="3" *ngFor="let item of getSkeletonItems()">
+          <ion-card class="album-card skeleton">
+            <div class="album-cover">
+              <ion-skeleton-text animated style="width: 100%; height: 200px;"></ion-skeleton-text>
+            </div>
+            <ion-card-content>
+              <ion-skeleton-text animated style="width: 80%; height: 16px; margin-bottom: 8px;"></ion-skeleton-text>
+              <ion-skeleton-text animated style="width: 60%; height: 12px;"></ion-skeleton-text>
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <div *ngIf="viewMode === 'list'" class="list-skeleton">
+      <ion-item *ngFor="let item of getSkeletonItems()">
+        <ion-skeleton-text slot="start" animated style="width: 80px; height: 80px; margin-right: 16px;"></ion-skeleton-text>
+        <ion-label>
+          <ion-skeleton-text animated style="width: 70%; height: 16px; margin-bottom: 8px;"></ion-skeleton-text>
+          <ion-skeleton-text animated style="width: 50%; height: 12px;"></ion-skeleton-text>
+        </ion-label>
+      </ion-item>
+    </div>
+  </div>
+
+  <!-- Albums Grid View -->
+  <ion-grid *ngIf="viewMode === 'grid' && !isLoading">
+    <ion-row>
+      <ion-col 
+        size="6" 
+        size-md="4" 
+        size-lg="3" 
+        *ngFor="let album of filteredAlbums; trackBy: trackByAlbumId">
+        <ion-card class="album-card" (click)="viewAlbum(album)">
+          <div class="album-cover">
+            <img [src]="getAlbumCoverImage(album)" [alt]="album.name" />
+            <div class="album-overlay">
+              <div class="privacy-indicator">
+                <ion-icon [name]="getAlbumPrivacyIcon(album.privacy)"></ion-icon>
+              </div>
+              <div class="options-button" (click)="onAlbumOptionsClick($event, album)">
+                <ion-icon name="ellipsis-vertical"></ion-icon>
+              </div>
+            </div>
+          </div>
+          <ion-card-content>
+            <ion-card-title class="album-title">{{ album.name }}</ion-card-title>
+            <div class="album-stats">
+              <span class="photo-count">
+                <ion-icon name="images-outline"></ion-icon>
+                {{ album.photoCount + album.videoCount }}
+              </span>
+              <span class="file-size">{{ formatFileSize(album.totalSize) }}</span>
+            </div>
+            <p class="album-description" *ngIf="album.description">
+              {{ album.description }}
+            </p>
+            <div class="album-meta">
+              <span class="last-updated">{{ album.lastUpdatedAt | date:'short' }}</span>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <!-- Albums List View -->
+  <div *ngIf="viewMode === 'list' && !isLoading" class="albums-list">
+    <ion-item
+      *ngFor="let album of filteredAlbums; trackBy: trackByAlbumId"
+      (click)="viewAlbum(album)"
+      button>
+      <div slot="start" class="list-album-cover">
+        <img [src]="getAlbumCoverImage(album)" [alt]="album.name" />
+        <div class="privacy-indicator">
+          <ion-icon [name]="getAlbumPrivacyIcon(album.privacy)"></ion-icon>
+        </div>
+      </div>
+      <ion-label>
+        <h2>{{ album.name }}</h2>
+        <p *ngIf="album.description">{{ album.description }}</p>
+        <div class="list-album-stats">
+          <span class="photo-count">
+            <ion-icon name="images-outline"></ion-icon>
+            {{ album.photoCount + album.videoCount }} items
+          </span>
+          <span class="divider">•</span>
+          <span class="file-size">{{ formatFileSize(album.totalSize) }}</span>
+          <span class="divider">•</span>
+          <span class="last-updated">{{ album.lastUpdatedAt | date:'short' }}</span>
+        </div>
+      </ion-label>
+      <ion-button
+        slot="end"
+        fill="clear"
+        (click)="onAlbumOptionsClick($event, album)">
+        <ion-icon name="ellipsis-vertical"></ion-icon>
+      </ion-button>
+    </ion-item>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && filteredAlbums.length === 0" class="empty-state">
+    <div class="empty-content">
+      <ion-icon name="images-outline" class="empty-icon"></ion-icon>
+      <h2 *ngIf="albums.length === 0">No Albums Yet</h2>
+      <h2 *ngIf="albums.length > 0">No Albums Found</h2>
+      <p *ngIf="albums.length === 0">Create your first photo album to start sharing memories with your family.</p>
+      <p *ngIf="albums.length > 0 && searchTerm">No albums match your search criteria.</p>
+      <p *ngIf="albums.length > 0 && !searchTerm && selectedFilter !== 'all'">No albums match the selected filter.</p>
+      <ion-button
+        *ngIf="albums.length === 0"
+        (click)="openCreateAlbumModal()"
+        fill="solid"
+        color="primary">
+        <ion-icon name="add" slot="start"></ion-icon>
+        Create First Album
+      </ion-button>
+    </div>
+  </div>
+
+  <!-- Create Album FAB -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button (click)="openCreateAlbumModal()" color="primary">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>

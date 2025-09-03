@@ -237,15 +237,15 @@ export class RegisterPage implements OnInit, OnDestroy {
 
   private validateStep2() {
     const step2Fields = ['password', 'confirmPassword', 'agreeToTerms'];
-    const isValid =
-      step2Fields.every((field) => {
-        const control = this.registerForm.get(field);
-        return control?.valid;
-      }) && !this.registerForm.hasError('passwordMismatch');
+    step2Fields.every((field) => {
+      const control = this.registerForm.get(field);
+      return control?.valid;
+    }) && !this.registerForm.hasError('passwordMismatch');
 
-    const passwordValid = password?.valid || false;
-    const confirmPasswordValid = confirmPassword?.valid || false;
-    const termsValid = agreeToTerms?.valid || false;
+    const
+      passwordValid = this.registerForm.get('password')?.valid || false;
+    const confirmPasswordValid = this.registerForm.get('confirmPassword')?.valid || false;
+    const termsValid = this.registerForm.get('agreeToTerms')?.valid || false;
     const passwordsMatch = !this.registerForm.hasError('passwordMismatch');
 
     const isValid = passwordValid && confirmPasswordValid && termsValid && passwordsMatch;

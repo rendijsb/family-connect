@@ -1,0 +1,196 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/family/{{ familySlug }}/photos"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ album?.name || 'Album' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button 
+        *ngIf="selectionMode.isActive"
+        (click)="showBulkActions()"
+        [disabled]="selectionMode.selectedPhotos.length === 0">
+        <ion-icon name="ellipsis-vertical"></ion-icon>
+      </ion-button>
+      <ion-button (click)="toggleSelectionMode()">
+        <ion-icon [name]="selectionMode.isActive ? 'close' : 'checkmark-circle-outline'"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+
+  <!-- Selection Mode Header -->
+  <ion-toolbar *ngIf="selectionMode.isActive" color="primary">
+    <ion-title>{{ selectionMode.selectedPhotos.length }} selected</ion-title>
+    <ion-buttons slot="start">
+      <ion-button (click)="selectAllPhotos()" [disabled]="selectionMode.selectedPhotos.length === photos.length">
+        <ion-icon name="checkbox-outline"></ion-icon>
+        <ion-label>All</ion-label>
+      </ion-button>
+    </ion-buttons>
+    <ion-buttons slot="end">
+      <ion-button (click)="deselectAllPhotos()" [disabled]="selectionMode.selectedPhotos.length === 0">
+        <ion-icon name="square-outline"></ion-icon>
+        <ion-label>None</ion-label>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- Album Info -->
+  <div class="album-header" *ngIf="album">
+    <div class="album-info">
+      <div class="album-details">
+        <h1>{{ album.name }}</h1>
+        <p *ngIf="album.description">{{ album.description }}</p>
+        <div class="album-stats">
+          <span class="stat">
+            <ion-icon name="images-outline"></ion-icon>
+            {{ album.photoCount + album.videoCount }} items
+          </span>
+          <span class="stat">
+            <ion-icon name="cloud-outline"></ion-icon>
+            {{ formatFileSize(album.totalSize) }}
+          </span>
+          <span class="stat">
+            <ion-icon [name]="getAlbumPrivacyIcon(album.privacy)"></ion-icon>
+            {{ album.privacy }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-bar" *ngIf="!selectionMode.isActive">
+    <div class="view-controls">
+      <ion-segment [(ngModel)]="viewMode" (ionChange)="onViewModeChange($event)">
+        <ion-segment-button value="grid">
+          <ion-icon name="grid-outline"></ion-icon>
+        </ion-segment-button>
+        <ion-segment-button value="masonry">
+          <ion-icon name="apps-outline"></ion-icon>
+        </ion-segment-button>
+      </ion-segment>
+
+      <ion-select
+        [(ngModel)]="sortBy"
+        (ionChange)="onSortChange($event)"
+        placeholder="Sort by..."
+        interface="popover">
+        <ion-select-option *ngFor="let option of sortOptions" [value]="option.value">
+          {{ option.label }}
+        </ion-select-option>
+      </ion-select>
+    </div>
+
+    <div class="filter-chips">
+      <ion-chip
+        *ngFor="let filter of filterOptions"
+        [class.active]="selectedFilter === filter.value"
+        (click)="onFilterChange(filter.value)">
+        <ion-icon [name]="filter.icon"></ion-icon>
+        <ion-label>{{ filter.label }}</ion-label>
+      </ion-chip>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading && photos.length === 0" class="loading-grid">
+    <div 
+      *ngFor="let item of getSkeletonItems()" 
+      class="photo-skeleton"
+      [class.masonry]="viewMode === 'masonry'">
+      <ion-skeleton-text animated></ion-skeleton-text>
+    </div>
+  </div>
+
+  <!-- Photos Grid -->
+  <div 
+    *ngIf="photos.length > 0"
+    class="photos-grid"
+    [class.masonry]="viewMode === 'masonry'"
+    [class.selection-mode]="selectionMode.isActive">
+    
+    <div 
+      *ngFor="let photo of photos; trackBy: trackByPhotoId"
+      class="photo-item"
+      [style]="getPhotoStyle(photo)"
+      (click)="selectionMode.isActive ? togglePhotoSelection(photo) : openPhotoViewer(photo, photos)">
+      
+      <!-- Selection Overlay -->
+      <div class="selection-overlay" *ngIf="selectionMode.isActive">
+        <ion-checkbox
+          [checked]="isPhotoSelected(photo)"
+          (ionChange)="togglePhotoSelection(photo)">
+        </ion-checkbox>
+      </div>
+
+      <!-- Photo -->
+      <img 
+        [src]="photo.thumbnailPath || photo.path" 
+        [alt]="photo.originalName"
+        loading="lazy" />
+
+      <!-- Video Indicator -->
+      <div class="media-indicator" *ngIf="photo.mimeType.startsWith('video/')">
+        <ion-icon name="play-circle"></ion-icon>
+      </div>
+
+      <!-- Photo Overlay Info -->
+      <div class="photo-overlay" *ngIf="!selectionMode.isActive">
+        <div class="photo-stats">
+          <span *ngIf="photo.likesCount > 0">
+            <ion-icon name="heart"></ion-icon>
+            {{ photo.likesCount }}
+          </span>
+          <span *ngIf="photo.commentsCount > 0">
+            <ion-icon name="chatbubble"></ion-icon>
+            {{ photo.commentsCount }}
+          </span>
+        </div>
+        <div class="photo-actions">
+          <ion-icon 
+            *ngIf="photo.isFavorite" 
+            name="heart" 
+            class="favorite-icon">
+          </ion-icon>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Infinite Scroll -->
+  <ion-infinite-scroll 
+    *ngIf="hasMorePages"
+    threshold="100px"
+    (ionInfinite)="onInfiniteScroll($event)">
+    <ion-infinite-scroll-content
+      loading-spinner="bubbles"
+      loading-text="Loading more photos...">
+    </ion-infinite-scroll-content>
+  </ion-infinite-scroll>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && photos.length === 0" class="empty-state">
+    <div class="empty-content">
+      <ion-icon name="images-outline" class="empty-icon"></ion-icon>
+      <h2>No Photos Yet</h2>
+      <p>This album is waiting for its first photos. Start by uploading some memories!</p>
+      <ion-button (click)="openUploadModal()" fill="solid" color="primary">
+        <ion-icon name="camera" slot="start"></ion-icon>
+        Upload Photos
+      </ion-button>
+    </div>
+  </div>
+
+  <!-- Upload FAB -->
+  <ion-fab 
+    *ngIf="!selectionMode.isActive" 
+    vertical="bottom" 
+    horizontal="end" 
+    slot="fixed">
+    <ion-fab-button (click)="openUploadModal()" color="primary">
+      <ion-icon name="camera"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>
