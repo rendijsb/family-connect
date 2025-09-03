@@ -243,12 +243,11 @@ export class RegisterPage implements OnInit, OnDestroy {
         return control?.valid;
       }) && !this.registerForm.hasError('passwordMismatch');
 
-    const passwordValid = password?.valid || false;
-    const confirmPasswordValid = confirmPassword?.valid || false;
-    const termsValid = agreeToTerms?.valid || false;
+    const passwordValid = this.registerForm.get('password')?.valid || false;
+    const confirmPasswordValid = this.registerForm.get('confirmPassword')?.valid || false;
+    const termsValid = this.registerForm.get('agreeToTerms')?.valid || false;
     const passwordsMatch = !this.registerForm.hasError('passwordMismatch');
 
-    const isValid = passwordValid && confirmPasswordValid && termsValid && passwordsMatch;
     this.step2Valid.set(isValid);
   }
 
