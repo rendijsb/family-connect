@@ -11,6 +11,9 @@ const config: CapacitorConfig = {
     iosScheme: 'capacitor'
   },
   plugins: {
+    CapacitorHttp: {
+      enabled: true,
+    },
     SplashScreen: {
       launchAutoHide: true,
       launchShowDuration: 300,

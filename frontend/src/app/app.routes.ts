@@ -29,6 +29,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadChildren: () => import('./pages/family/family.routes').then(m => m.familyRoutes)
   },
+  {
+    path: 'invitations',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/invitations/pending-invitations.page').then(m => m.PendingInvitationsPage)
+  },
   // {
   //   path: 'profile/:userId',
   //   canActivate: [authGuard],

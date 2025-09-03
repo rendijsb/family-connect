@@ -1,5 +1,16 @@
 import { inject, Injectable } from '@angular/core';
-import { ToastController, LoadingController, AlertController, ActionSheetController } from '@ionic/angular';
+import {
+  ToastController,
+  LoadingController,
+  AlertController,
+  ActionSheetController,
+  ModalController,
+} from '@ionic/angular';
+import { FamilyRoleEnum } from '../../models/families/family.models';
+import {
+  RelationshipTypeEnum,
+  getRelationshipLabel,
+} from '../../models/families/invitation.models';
 
 export interface AlertButton {
   text: string;
@@ -10,7 +21,15 @@ export interface AlertButton {
 
 export interface AlertInput {
   name: string;
-  type: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'radio' | 'checkbox';
+  type:
+    | 'text'
+    | 'email'
+    | 'password'
+    | 'number'
+    | 'tel'
+    | 'url'
+    | 'radio'
+    | 'checkbox';
   placeholder?: string;
   value?: any;
   label?: string;
@@ -30,17 +49,32 @@ export interface ActionSheetButton {
   handler?: () => void | boolean | Promise<void | boolean>;
 }
 
+export interface InviteMemberData {
+  email: string;
+  role: number;
+  message?: string;
+}
+
+export interface RelationshipData {
+  relationshipType: RelationshipTypeEnum;
+  isGuardian: boolean;
+}
+
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ToastService {
   private readonly toastController = inject(ToastController);
   private readonly loadingController = inject(LoadingController);
   private readonly alertController = inject(AlertController);
   private readonly actionSheetController = inject(ActionSheetController);
+  private readonly modalController = inject(ModalController);
 
   // Toast Methods
-  async showToast(message: string, color: 'success' | 'danger' | 'warning' | 'primary' = 'success'): Promise<void> {
+  async showToast(
+    message: string,
+    color: 'success' | 'danger' | 'warning' | 'primary' = 'success'
+  ): Promise<void> {
     const toast = await this.toastController.create({
       message,
       duration: 3000,
@@ -49,28 +83,34 @@ export class ToastService {
       buttons: [
         {
           text: 'Dismiss',
-          role: 'cancel'
-        }
-      ]
+          role: 'cancel',
+        },
+      ],
     });
     await toast.present();
   }
 
-  async showToastWithDuration(message: string, duration: number = 3000, color: 'success' | 'danger' | 'warning' | 'primary' = 'success'): Promise<void> {
+  async showToastWithDuration(
+    message: string,
+    duration: number = 3000,
+    color: 'success' | 'danger' | 'warning' | 'primary' = 'success'
+  ): Promise<void> {
     const toast = await this.toastController.create({
       message,
       duration,
       color,
-      position: 'top'
+      position: 'top',
     });
     await toast.present();
   }
 
   // Loading Methods
-  async showLoading(message: string = 'Please wait...'): Promise<HTMLIonLoadingElement> {
+  async showLoading(
+    message: string = 'Please wait...'
+  ): Promise<HTMLIonLoadingElement> {
     const loading = await this.loadingController.create({
       message,
-      spinner: 'crescent'
+      spinner: 'crescent',
     });
     await loading.present();
     return loading;
@@ -80,17 +120,20 @@ export class ToastService {
     try {
       await this.loadingController.dismiss();
     } catch (error) {
-      // Loading might already be dismissed
       console.log('Loading already dismissed');
     }
   }
 
   // Basic Alert Methods
-  async showAlert(header: string, message: string, buttons: AlertButton[] = [{ text: 'OK', role: 'confirm' }]): Promise<void> {
+  async showAlert(
+    header: string,
+    message: string,
+    buttons: AlertButton[] = [{ text: 'OK', role: 'confirm' }]
+  ): Promise<void> {
     const alert = await this.alertController.create({
       header,
       message,
-      buttons
+      buttons,
     });
     await alert.present();
   }
@@ -105,7 +148,7 @@ export class ToastService {
       header,
       message,
       inputs,
-      buttons
+      buttons,
     });
     await alert.present();
   }
@@ -125,14 +168,14 @@ export class ToastService {
           {
             text: cancelText,
             role: 'cancel',
-            handler: () => resolve(false)
+            handler: () => resolve(false),
           },
           {
             text: confirmText,
             role: 'confirm',
-            handler: () => resolve(true)
-          }
-        ]
+            handler: () => resolve(true),
+          },
+        ],
       });
       await alert.present();
     });
@@ -152,83 +195,226 @@ export class ToastService {
           {
             text: cancelText,
             role: 'cancel',
-            handler: () => resolve(false)
+            handler: () => resolve(false),
           },
           {
             text: confirmText,
             role: 'destructive',
-            handler: () => resolve(true)
-          }
-        ]
-      });
-      await alert.present();
-    });
-  }
-
-  // Input Prompts
-  async showTextInput(
-    title: string,
-    message: string,
-    placeholder: string = '',
-    defaultValue: string = ''
-  ): Promise<string | null> {
-    return new Promise(async (resolve) => {
-      const alert = await this.alertController.create({
-        header: title,
-        message: message,
-        inputs: [
-          {
-            name: 'input',
-            type: 'text',
-            placeholder: placeholder,
-            value: defaultValue
-          }
-        ],
-        buttons: [
-          {
-            text: 'Cancel',
-            role: 'cancel',
-            handler: () => resolve(null)
+            handler: () => resolve(true),
           },
-          {
-            text: 'OK',
-            role: 'confirm',
-            handler: (data) => resolve(data.input?.trim() || null)
-          }
-        ]
+        ],
       });
       await alert.present();
     });
   }
 
-  async showEmailInput(
-    title: string,
-    message: string,
-    placeholder: string = 'Enter email address'
-  ): Promise<string | null> {
+  // Enhanced Family Member Invitation Modal
+  async showInviteMemberModal(
+    familyName: string,
+    canInviteModerators: boolean = false
+  ): Promise<InviteMemberData | null> {
+    const { InviteMemberModal } = await import(
+      '../modals/invite-member/invite-member.modal'
+    );
+
+    const modal = await this.modalController.create({
+      component: InviteMemberModal,
+      componentProps: {
+        familyName,
+        canInviteModerators,
+      },
+      cssClass: 'invite-member-modal',
+    });
+
+    await modal.present();
+
+    const { data, role } = await modal.onWillDismiss();
+
+    if (role === 'confirm' && data) {
+      return {
+        email: data.email,
+        role: data.role,
+        message: data.message,
+      };
+    }
+
+    return null;
+  }
+
+  // Legacy alert-based invitation dialog (for backward compatibility)
+  async showInviteMemberDialog(): Promise<InviteMemberData | null> {
     return new Promise(async (resolve) => {
       const alert = await this.alertController.create({
-        header: title,
-        message: message,
+        header: 'Invite Family Member',
+        message: 'Enter the details for the new family member invitation.',
         inputs: [
           {
             name: 'email',
             type: 'email',
-            placeholder: placeholder
-          }
+            placeholder: 'Email address',
+            attributes: {
+              required: true,
+            },
+          },
+          {
+            name: 'role',
+            type: 'radio',
+            label: 'Family Member',
+            value: FamilyRoleEnum.MEMBER,
+            checked: true,
+          },
+          {
+            name: 'role',
+            type: 'radio',
+            label: 'Family Moderator',
+            value: FamilyRoleEnum.MODERATOR,
+          },
+          {
+            name: 'message',
+            type: 'text',
+            placeholder: 'Personal message (optional)',
+          },
         ],
         buttons: [
           {
             text: 'Cancel',
             role: 'cancel',
-            handler: () => resolve(null)
+            handler: () => resolve(null),
           },
           {
-            text: 'OK',
+            text: 'Send Invitation',
             role: 'confirm',
-            handler: (data) => resolve(data.email?.trim() || null)
-          }
-        ]
+            handler: (data) => {
+              if (!data.email?.trim()) {
+                this.showToast('Please enter a valid email address.', 'danger');
+                return false;
+              }
+              resolve({
+                email: data.email.trim(),
+                role: data.role,
+                message: data.message?.trim() || undefined,
+              });
+              return true;
+            },
+          },
+        ],
+      });
+      await alert.present();
+    });
+  }
+
+  // Relationship Selection Modal
+  async showRelationshipModal(): Promise<RelationshipData | null> {
+    const { RelationshipModal } = await import(
+      '../modals/relationship/relationship.modal'
+    );
+
+    const modal = await this.modalController.create({
+      component: RelationshipModal,
+      cssClass: 'relationship-modal',
+    });
+
+    await modal.present();
+
+    const { data, role } = await modal.onWillDismiss();
+
+    if (role === 'confirm' && data) {
+      return {
+        relationshipType: data.relationshipType,
+        isGuardian: data.isGuardian,
+      };
+    }
+
+    return null;
+  }
+
+  // Legacy relationship dialog (for backward compatibility)
+  async showRelationshipDialog(): Promise<RelationshipData | null> {
+    return new Promise(async (resolve) => {
+      const alert = await this.alertController.create({
+        header: 'Set Relationship',
+        message: 'Define how this member is related to you.',
+        inputs: [
+          ...Object.values(RelationshipTypeEnum).map((type, index) => ({
+            name: 'relationshipType',
+            type: 'radio' as const,
+            label: getRelationshipLabel(type),
+            value: type,
+            checked: index === 0,
+          })),
+          {
+            name: 'isGuardian',
+            type: 'checkbox' as const,
+            label: 'This person is a guardian/caregiver',
+            value: true,
+            checked: false,
+          },
+        ],
+        buttons: [
+          {
+            text: 'Cancel',
+            role: 'cancel',
+            handler: () => resolve(null),
+          },
+          {
+            text: 'Set Relationship',
+            role: 'confirm',
+            handler: (data) =>
+              resolve({
+                relationshipType: data.relationshipType,
+                isGuardian: data.isGuardian || false,
+              }),
+          },
+        ],
+      });
+      await alert.present();
+    });
+  }
+
+  // Role Selection Dialog
+  async showRoleSelectionDialog(
+    currentRole?: FamilyRoleEnum
+  ): Promise<number | null> {
+    return new Promise(async (resolve) => {
+      const alert = await this.alertController.create({
+        header: 'Change Member Role',
+        message: 'Select the new role for this family member.',
+        inputs: [
+          {
+            name: 'role',
+            type: 'radio',
+            label:
+              'Family Member - Can view and participate in family activities',
+            value: FamilyRoleEnum.MEMBER,
+            checked: currentRole === FamilyRoleEnum.MEMBER,
+          },
+          {
+            name: 'role',
+            type: 'radio',
+            label: 'Family Moderator - Can manage members and family settings',
+            value: FamilyRoleEnum.MODERATOR,
+            checked: currentRole === FamilyRoleEnum.MODERATOR,
+          },
+          {
+            name: 'role',
+            type: 'radio',
+            label: 'Child Member - Limited access appropriate for children',
+            value: FamilyRoleEnum.CHILD,
+            checked: currentRole === FamilyRoleEnum.CHILD,
+          },
+        ],
+        buttons: [
+          {
+            text: 'Cancel',
+            role: 'cancel',
+            handler: () => resolve(null),
+          },
+          {
+            text: 'Update Role',
+            role: 'confirm',
+            handler: (data) => resolve(data.role),
+          },
+        ],
       });
       await alert.present();
     });
@@ -248,84 +434,32 @@ export class ToastService {
             placeholder: 'Enter join code',
             attributes: {
               maxlength: 8,
-            }
-          }
+            },
+          },
         ],
         buttons: [
           {
             text: 'Cancel',
             role: 'cancel',
-            handler: () => resolve(null)
+            handler: () => resolve(null),
           },
           {
             text: 'Join',
             role: 'confirm',
-            handler: (data) => resolve(data.joinCode?.trim().toUpperCase() || null)
-          }
-        ]
-      });
-      await alert.present();
-    });
-  }
-
-  // Family Member Invitation (Two-step process)
-  async showInviteMemberDialog(): Promise<{ email: string; role: number } | null> {
-    // Step 1: Get email address
-    const email = await this.showEmailInput(
-      'Invite Family Member',
-      'Enter the email address of the person you want to invite.'
-    );
-
-    if (!email) return null;
-
-    // Step 2: Select role
-    const role = await this.showRoleSelection();
-
-    if (role === null) return null;
-
-    return { email, role };
-  }
-
-  // Role selection for family invitations
-  async showRoleSelection(): Promise<number | null> {
-    return new Promise(async (resolve) => {
-      const alert = await this.alertController.create({
-        header: 'Select Member Role',
-        message: 'Choose the role for this family member.',
-        inputs: [
-          {
-            name: 'role',
-            type: 'radio',
-            label: 'Family Member',
-            value: 4, // FamilyRoleEnum.MEMBER
-            checked: true
+            handler: (data) =>
+              resolve(data.joinCode?.trim().toUpperCase() || null),
           },
-          {
-            name: 'role',
-            type: 'radio',
-            label: 'Family Moderator',
-            value: 3 // FamilyRoleEnum.MODERATOR
-          }
         ],
-        buttons: [
-          {
-            text: 'Cancel',
-            role: 'cancel',
-            handler: () => resolve(null)
-          },
-          {
-            text: 'Send Invite',
-            role: 'confirm',
-            handler: (data) => resolve(data.role)
-          }
-        ]
       });
       await alert.present();
     });
   }
 
   // Delete Confirmation with Text Input
-  async showDeleteConfirmation(itemName: string, itemType: string = 'item'): Promise<boolean> {
+  async showDeleteConfirmation(
+    itemName: string,
+    itemType: string = 'item'
+  ): Promise<boolean> {
     return new Promise(async (resolve) => {
       const alert = await this.alertController.create({
         header: `Delete ${itemType}`,
@@ -334,14 +468,14 @@ export class ToastService {
           {
             name: 'confirmation',
             type: 'text',
-            placeholder: `Type "${itemName}" to confirm`
-          }
+            placeholder: `Type "${itemName}" to confirm`,
+          },
         ],
         buttons: [
           {
             text: 'Cancel',
             role: 'cancel',
-            handler: () => resolve(false)
+            handler: () => resolve(false),
           },
           {
             text: 'Delete',
@@ -350,19 +484,25 @@ export class ToastService {
               if (data.confirmation === itemName) {
                 resolve(true);
               } else {
-                this.showToast('Name does not match. Please try again.', 'danger');
+                this.showToast(
+                  'Name does not match. Please try again.',
+                  'danger'
+                );
                 resolve(false);
               }
-            }
-          }
-        ]
+            },
+          },
+        ],
       });
       await alert.present();
     });
   }
 
   // Action Sheets
-  async showActionSheet(header: string, buttons: ActionSheetButton[]): Promise<void> {
+  async showActionSheet(
+    header: string,
+    buttons: ActionSheetButton[]
+  ): Promise<void> {
     const actionSheet = await this.actionSheetController.create({
       header,
       buttons: [
@@ -370,15 +510,18 @@ export class ToastService {
         {
           text: 'Cancel',
           role: 'cancel',
-          icon: 'close-outline'
-        }
-      ]
+          icon: 'close-outline',
+        },
+      ],
     });
     await actionSheet.present();
   }
 
   // Copy to Clipboard with Toast
-  async copyToClipboard(text: string, successMessage: string = 'Copied to clipboard!'): Promise<void> {
+  async copyToClipboard(
+    text: string,
+    successMessage: string = 'Copied to clipboard!'
+  ): Promise<void> {
     try {
       await navigator.clipboard.writeText(text);
       await this.showToastWithDuration(successMessage, 2000, 'success');
@@ -389,17 +532,23 @@ export class ToastService {
   }
 
   // Share with Fallback to Copy
-  async shareWithFallback(shareData: ShareData, fallbackText: string, fallbackMessage: string): Promise<void> {
+  async shareWithFallback(
+    shareData: ShareData,
+    fallbackText: string,
+    fallbackMessage: string
+  ): Promise<void> {
     if (navigator.share) {
       try {
-        // Filter out invalid URLs (custom schemes) for Web Share API
         const validShareData: ShareData = {
           title: shareData.title,
-          text: shareData.text
+          text: shareData.text,
         };
 
-        // Only include URL if it's a valid HTTP/HTTPS URL
-        if (shareData.url && (shareData.url.startsWith('http://') || shareData.url.startsWith('https://'))) {
+        if (
+          shareData.url &&
+          (shareData.url.startsWith('http://') ||
+            shareData.url.startsWith('https://'))
+        ) {
           validShareData.url = shareData.url;
         }
 
@@ -411,5 +560,119 @@ export class ToastService {
     } else {
       await this.copyToClipboard(fallbackText, fallbackMessage);
     }
+  }
+
+  async showEditNicknameDialog(
+    currentNickname?: string
+  ): Promise<string | null> {
+    return new Promise(async (resolve) => {
+      const alert = await this.alertController.create({
+        header: 'Edit Nickname',
+        message: 'Enter a new nickname for this family member.',
+        inputs: [
+          {
+            name: 'nickname',
+            type: 'text',
+            placeholder: 'Enter nickname',
+            value: currentNickname || '',
+            attributes: {
+              maxlength: 50,
+            },
+          },
+        ],
+        buttons: [
+          {
+            text: 'Cancel',
+            role: 'cancel',
+            handler: () => resolve(null),
+          },
+          {
+            text: 'Save',
+            role: 'confirm',
+            handler: (data) => resolve(data.nickname?.trim() || null),
+          },
+        ],
+      });
+      await alert.present();
+    });
+  }
+
+  async showExpiryWarning(expiresIn: string): Promise<boolean> {
+    return new Promise(async (resolve) => {
+      const alert = await this.alertController.create({
+        header: 'Invitation Expiring Soon',
+        message: `This invitation expires ${expiresIn}. Would you like to accept it now?`,
+        buttons: [
+          {
+            text: 'Not Now',
+            role: 'cancel',
+            handler: () => resolve(false),
+          },
+          {
+            text: 'Accept Now',
+            role: 'confirm',
+            handler: () => resolve(true),
+          },
+        ],
+      });
+      await alert.present();
+    });
+  }
+
+  async showEditMemberModal(member: any): Promise<any | null> {
+    return new Promise(async (resolve) => {
+      const alert = await this.alertController.create({
+        header: 'Edit Member',
+        message: `Update information for ${member.user?.name || 'this member'}`,
+        cssClass: 'custom-alert',
+        inputs: [
+          {
+            name: 'nickname',
+            type: 'text',
+            placeholder: 'Nickname',
+            value: member.nickname || '',
+          },
+          {
+            name: 'phone',
+            type: 'tel',
+            placeholder: 'Phone Number',
+            value: member.phone || '',
+          },
+          {
+            name: 'birthday',
+            type: 'date',
+            placeholder: 'Birthday',
+            value: member.birthday || '',
+          },
+        ],
+        buttons: [
+          {
+            text: 'Cancel',
+            role: 'cancel',
+            handler: () => resolve(null),
+          },
+          {
+            text: 'Update',
+            role: 'confirm',
+            handler: (data: any): any => {
+              if (
+                !data.nickname?.trim() &&
+                !data.phone?.trim() &&
+                !data.birthday
+              ) {
+                return false; // Prevent close if no data entered
+              }
+              resolve({
+                nickname: data.nickname?.trim() || null,
+                phone: data.phone?.trim() || null,
+                birthday: data.birthday || null,
+                notificationsEnabled: true, // You could add this as a checkbox if needed
+              });
+            },
+          },
+        ],
+      });
+      await alert.present();
+    });
   }
 }
