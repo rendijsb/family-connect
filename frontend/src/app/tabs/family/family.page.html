@@ -8,9 +8,7 @@
     </ion-title>
 
     <ion-buttons slot="end">
-      <ion-button class="notification-button">
-        <ion-icon name="notifications-outline"></ion-icon>
-      </ion-button>
+      <app-notification-badge [showInvitationsOnly]="true"></app-notification-badge>
 
       <ion-button class="menu-button" (click)="presentFamilyOptions()">
         <ion-icon name="ellipsis-vertical-outline"></ion-icon>

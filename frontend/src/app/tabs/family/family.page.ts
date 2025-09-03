@@ -26,6 +26,8 @@ import {
   getFamilyRoleName
 } from '../../models/families/family.models';
 import {ToastService} from '../../shared/services/toast.service';
+import {ModalController} from '@ionic/angular';
+import {NotificationBadgeComponent} from '../../shared/components/notification-badge/notification-badge.component';
 
 @Component({
   selector: 'app-family',
@@ -36,7 +38,7 @@ import {ToastService} from '../../shared/services/toast.service';
     CommonModule,
     IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardContent,
     IonButton, IonIcon, IonButtons, IonRefresher, IonRefresherContent,
-    IonFab, IonFabButton, IonFabList, IonSkeletonText, IonAvatar
+    IonFab, IonFabButton, IonFabList, IonSkeletonText, IonAvatar, NotificationBadgeComponent
   ]
 })
 export class FamilyPage implements OnInit, OnDestroy {
@@ -45,6 +47,7 @@ export class FamilyPage implements OnInit, OnDestroy {
   private readonly familyService = inject(FamilyService);
   private readonly authService = inject(AuthService);
   private readonly toastService = inject(ToastService);
+  private readonly modalController = inject(ModalController);
 
   // Signals for reactive state management
   readonly families = signal<Family[]>([]);
@@ -192,6 +195,11 @@ export class FamilyPage implements OnInit, OnDestroy {
         handler: () => this.joinFamily()
       },
       {
+        text: 'View Invitations',
+        icon: 'mail-outline',
+        handler: () => this.viewInvitations()
+      },
+      {
         text: 'Refresh',
         icon: 'refresh-outline',
         handler: () => this.loadFamilies()
@@ -277,9 +285,15 @@ export class FamilyPage implements OnInit, OnDestroy {
   }
 
   async inviteToFamily(family: Family) {
-    const inviteData = await this.toastService.showInviteMemberDialog();
+    const canInviteModerators = family.currentUserRole === FamilyRoleEnum.OWNER;
+
+    const inviteData = await this.toastService.showInviteMemberModal(
+      family.name,
+      canInviteModerators
+    );
+
     if (inviteData) {
-      this.handleInviteMember(family, inviteData.email, inviteData.role);
+      await this.handleInviteMember(family, inviteData.email, inviteData.role);
     }
   }
 
@@ -306,6 +320,10 @@ export class FamilyPage implements OnInit, OnDestroy {
           }
         }
       });
+  }
+
+  async viewInvitations() {
+    await this.router.navigate(['/invitations']);
   }
 
   async confirmLeaveFamily(family: Family) {

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Services\Repositories\Families;
 
 use App\DataTransferObjects\Families\CreateFamilyRequestData;
+use App\DataTransferObjects\Families\InviteMemberRequestData;
 use App\DataTransferObjects\Families\JoinFamilyRequestData;
 use App\DataTransferObjects\Families\UpdateFamilyRequestData;
 use App\Enums\Families\FamilyRoleEnum;
 use App\Models\Families\Family;
+use App\Models\Families\FamilyInvitation;
 use App\Models\Families\FamilyMember;
 use App\Models\Users\User;
 use Carbon\Carbon;
@@ -20,7 +22,8 @@ class FamilyRepository
 {
     public function __construct(
         private readonly Family $family,
-        private readonly FamilyMember $familyMember
+        private readonly FamilyMember $familyMember,
+        private readonly FamilyInvitation $familyInvitation
     )
     {
     }
@@ -30,9 +33,9 @@ class FamilyRepository
         return $this->family->with([
             Family::OWNER_RELATION,
             Family::MEMBERS_RELATION . '.' . FamilyMember::USER_RELATION
-        ])->get()->map(function (Family $family) {
-            return $this->enrichFamilyWithUserRole($family);
-        });
+        ])->where(Family::IS_ACTIVE, true)
+        ->get()
+        ->map(fn(Family $family) => $this->enrichFamilyWithUserRole($family));
     }
 
     public function createFamily(CreateFamilyRequestData $data): Family
@@ -93,12 +96,14 @@ class FamilyRepository
                 FamilyMember::FAMILY_RELATION . '.' . Family::OWNER_RELATION,
                 FamilyMember::FAMILY_RELATION . '.' . Family::MEMBERS_RELATION . '.' . FamilyMember::USER_RELATION
             ])
+            ->whereHas(FamilyMember::FAMILY_RELATION, function ($query) {
+                $query->where(Family::IS_ACTIVE, true);
+            })
             ->get();
 
-        return $familyMembers->map(function (FamilyMember $member) {
-            $family = $member->relatedFamily();
-            return $this->enrichFamilyWithUserRole($family, $member->getRole());
-        });
+        return $familyMembers->map(fn(FamilyMember $member) =>
+            $this->enrichFamilyWithUserRole($member->relatedFamily(), $member->getRole())
+        );
     }
 
     public function getFamilyBySlug(string $slug): Family
@@ -106,6 +111,7 @@ class FamilyRepository
         /** @var Family $family */
         $family = $this->family
             ->where(Family::SLUG, $slug)
+            ->where(Family::IS_ACTIVE, true)
             ->with([
                 Family::OWNER_RELATION,
                 Family::MEMBERS_RELATION . '.' . FamilyMember::USER_RELATION
@@ -206,6 +212,89 @@ class FamilyRepository
         }
 
         return $this->getFamilyBySlug($family->getSlug());
+    }
+
+    public function generateJoinCode(string $slug): string
+    {
+        /** @var Family $family */
+        $family = $this->family->where(Family::SLUG, $slug)->firstOrFail();
+
+        $newCode = $this->generateUniqueJoinCode();
+
+        $family->update([
+            Family::JOIN_CODE => $newCode
+        ]);
+
+        return $newCode;
+    }
+
+    public function generateJoinCodeAndRefreshFamily(string $slug): Family
+    {
+        /** @var Family $family */
+        $family = $this->family->where(Family::SLUG, $slug)->firstOrFail();
+
+        $newCode = $this->generateUniqueJoinCode();
+
+        $family->update([
+            Family::JOIN_CODE => $newCode
+        ]);
+
+        // Return the updated family with all relationships
+        return $this->getFamilyBySlug($slug);
+    }
+
+    public function inviteMember(InviteMemberRequestData $data): void
+    {
+        /** @var User $inviter */
+        $inviter = Auth::user();
+
+        /** @var Family $family */
+        $family = $this->family->where(Family::SLUG, $data->familySlug)->firstOrFail();
+
+        // Check if user is already a member
+        $existingMember = $this->familyMember
+            ->where(FamilyMember::FAMILY_ID, $family->getId())
+            ->whereHas(FamilyMember::USER_RELATION, function ($query) use ($data) {
+                $query->where(User::EMAIL, $data->email);
+            })
+            ->where(FamilyMember::IS_ACTIVE, true)
+            ->first();
+
+        if ($existingMember) {
+            throw new \InvalidArgumentException('This person is already a member of the family.');
+        }
+
+        // Check if there's already a pending invitation
+        $existingInvitation = $this->familyInvitation
+            ->where(FamilyInvitation::FAMILY_ID, $family->getId())
+            ->where(FamilyInvitation::EMAIL, $data->email)
+            ->where(FamilyInvitation::STATUS, 'pending')
+            ->where(FamilyInvitation::EXPIRES_AT, '>', Carbon::now())
+            ->first();
+
+        if ($existingInvitation) {
+            throw new \InvalidArgumentException('An invitation has already been sent to this email address.');
+        }
+
+        // Create new invitation
+        $token = Str::random(64);
+        $expiresAt = Carbon::now()->addDays(7); // Invitation expires in 7 days
+
+        $this->familyInvitation->create([
+            FamilyInvitation::FAMILY_ID => $family->getId(),
+            FamilyInvitation::INVITED_BY => $inviter->getId(),
+            FamilyInvitation::EMAIL => $data->email,
+            FamilyInvitation::TOKEN => $token,
+            FamilyInvitation::ROLE => $data->role,
+            FamilyInvitation::MESSAGE => $data->message,
+            FamilyInvitation::STATUS => 'pending',
+            FamilyInvitation::EXPIRES_AT => $expiresAt,
+        ]);
+
+        // TODO: Send invitation email
+        // For now, we'll just create the invitation record
+        // In a real application, you would send an email with the invitation link
+        // Mail::to($data->email)->send(new FamilyInvitationMail($family, $inviter, $token, $data->message));
     }
 
     private function enrichFamilyWithUserRole(Family $family, ?FamilyRoleEnum $userRole = null): Family
