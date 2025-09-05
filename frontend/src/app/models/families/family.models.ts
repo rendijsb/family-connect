@@ -71,6 +71,7 @@ export interface UpdateFamilyRequest {
   timezone?: string;
   language?: string;
   maxMembers?: number;
+  settings?: any;
 }
 
 export interface JoinFamilyRequest {

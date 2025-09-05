@@ -196,3 +196,15 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 Route::get('/upload', function () {
     return redirect()->route('admin.apps');
 })->name('simple.upload');
+
+// Test route to verify Laravel is working
+Route::get('/test-laravel-working', function () {
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Laravel is working perfectly!',
+        'timestamp' => now()->toISOString(),
+        'environment' => app()->environment(),
+        'php_version' => phpversion(),
+        'laravel_version' => app()->version()
+    ]);
+});

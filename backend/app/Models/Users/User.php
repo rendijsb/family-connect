@@ -72,6 +72,8 @@ class User extends Authenticatable
             self::PASSWORD => 'hashed',
             self::DATE_OF_BIRTH => 'date',
             self::ROLE_ID => 'integer',
+            self::CREATED_AT => 'datetime',
+            self::UPDATED_AT => 'datetime',
         ];
     }
 
@@ -148,17 +150,17 @@ class User extends Authenticatable
         return $this->getAttribute(self::PASSWORD);
     }
 
-    public function getCreatedAt(): Carbon
+    public function getCreatedAt(): ?Carbon
     {
         return $this->getAttribute(self::CREATED_AT);
     }
 
-    public function getUpdatedAt(): Carbon
+    public function getUpdatedAt(): ?Carbon
     {
         return $this->getAttribute(self::UPDATED_AT);
     }
 
-    public function relatedRole(): Role
+    public function relatedRole(): ?Role
     {
         return $this->{self::ROLE_RELATION};
     }

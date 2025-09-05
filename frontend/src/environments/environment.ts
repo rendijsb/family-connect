@@ -1,7 +1,12 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://family-connect.duckdns.org/api',
-  appName: 'Family Connect (DEV)',
-  version: '1.0.0',
-  enableDebugMode: true
+  apiUrl: 'http://localhost:8000/api',
+  reverb: {
+    host: 'localhost',
+    port: 8080,
+    scheme: 'http',
+    key: 'family-connect-key',
+    path: '',
+    cluster: 'mt1',
+  },
 };

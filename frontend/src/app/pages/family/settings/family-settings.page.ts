@@ -93,8 +93,6 @@ import {
     IonList,
     IonItemDivider,
     IonBackButton,
-    IonAlert,
-    IonActionSheet,
     IonRefresher,
     IonRefresherContent,
   ],
@@ -110,6 +108,7 @@ export class FamilySettingsPage implements OnInit, OnDestroy {
 
   // Signals for reactive state management
   readonly family = signal<Family | null>(null);
+  readonly joinCode = signal<string | null>(null);
   readonly isLoading = signal<boolean>(false);
   readonly isSaving = signal<boolean>(false);
   readonly familySlug = signal<string>('');
@@ -229,6 +228,7 @@ export class FamilySettingsPage implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           this.family.set(response.data);
+          this.joinCode.set(response.data.joinCode || null);
           this.populateForms(response.data);
         },
         error: async (error) => {
@@ -425,7 +425,7 @@ export class FamilySettingsPage implements OnInit, OnDestroy {
         )
         .subscribe({
           next: async (response) => {
-            this.family.set(response.data.family);
+            this.joinCode.set(response.data.joinCode);
             await this.toastService.showToast(
               'New join code generated successfully!',
               'success'
